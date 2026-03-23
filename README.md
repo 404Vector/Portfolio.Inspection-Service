@@ -77,10 +77,29 @@ dotnet test --filter "FullyQualifiedName~SomeTest"
 | InspectionService | `http://localhost:5044` | `https://localhost:7108` |
 | FrameGrabberService | `http://localhost:5273` | `https://localhost:7262` |
 
+## Branching
+
+Branch names must follow the pattern `<prefix>/<description>` (lowercase, hyphen-separated).
+
+| Prefix | Use case |
+|--------|----------|
+| `feature/` | New functionality |
+| `fix/` | Bug fixes |
+| `refactor/` | Code restructuring |
+| `chore/` | Build, deps, CI |
+| `docs/` | Documentation only |
+
+Examples: `feature/circle-detection-threshold`, `fix/framegrabber-null-frame`
+
+PRs with non-conforming branch names are blocked by the `Branch Naming Check` status check.
+
 ## CI/CD
 
-Every PR targeting `main` triggers an automated Gemini code review via `.github/workflows/gemini-review.yml`.
+Every PR targeting `main` triggers the following automated checks:
 
-- Gemini reviews the diff and posts a checklist comment
-- All checklist items must pass for the `Gemini Code Review` status check to succeed
-- Branch protection on `main` requires this status check before merging
+| Check | Workflow | Description |
+|-------|----------|-------------|
+| `Branch Naming Check` | `branch-naming.yml` | Enforces branch naming convention |
+| `Gemini Code Review` | `gemini-review.yml` | AI code review — posts checklist comment and blocks merge on failure |
+
+Both status checks must pass before a PR can be merged into `main`.

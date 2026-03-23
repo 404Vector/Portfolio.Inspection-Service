@@ -1,0 +1,71 @@
+name: Branch Naming Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-branch-name:
+    name: Check Branch Naming Convention
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate branch name
+        id: validate
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          PATTERN='^(feature|fix|refactor|chore|docs)/[a-z0-9-]+$'
+          if echo "$BRANCH" | grep -qE "$PATTERN"; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post failure comment and fail
+        if: steps.validate.outputs.valid == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: [
+                '## ❌ Branch Naming Convention Violated',
+                '',
+                `Current branch: \`${branchName}\``,
+                '',
+                'Branch names must follow the pattern: `<prefix>/<description>`',
+                'Description must be lowercase and hyphen-separated (e.g. `my-feature`).',
+                '',
+                '| Prefix | Use case |',
+                '|--------|----------|',
+                '| `feature/` | New functionality |',
+                '| `fix/` | Bug fixes |',
+                '| `refactor/` | Code restructuring |',
+                '| `chore/` | Build, deps, CI |',
+                '| `docs/` | Documentation only |',
+                '',
+                '**How to fix:**',
+                '```bash',
+                '# Rename the branch locally',
+                `git branch -m ${branchName} feature/<new-name>`,
+                '',
+                '# Delete the old remote branch and push the renamed one',
+                `git push origin --delete ${branchName}`,
+                'git push origin feature/<new-name>',
+                '```',
+                '',
+                'Then close this PR and open a new one from the renamed branch.',
+              ].join('\n'),
+            });
+
+            core.setFailed(`Branch "${branchName}" does not follow naming convention.`);
