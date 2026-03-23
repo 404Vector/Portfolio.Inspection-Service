@@ -10,7 +10,11 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 REPO = os.environ["REPO"]
 HEAD_SHA = os.environ["HEAD_SHA"]
 HEAD_BRANCH = os.environ["HEAD_BRANCH"]
-REQUIRED_CHECKS = set(os.environ["REQUIRED_CHECKS"].split(","))
+REQUIRED_CHECKS = {x.strip() for x in os.environ["REQUIRED_CHECKS"].split(",")}
+
+CONVENTIONAL_COMMIT_RE = re.compile(
+    r"^(feat|fix|refactor|chore|docs|test|perf)(\(.+\))?: .{1,72}$"
+)
 
 
 def github_get(path):
@@ -62,18 +66,47 @@ def gemini_generate(prompt):
     try:
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read())
-            return data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
         body = e.read().decode()
         print(f"Gemini API failed [{e.code}]: {body}", file=sys.stderr)
         sys.exit(1)
 
+    candidates = data.get("candidates")
+    if not candidates:
+        print("Gemini returned no candidates (may have been blocked).", file=sys.stderr)
+        sys.exit(1)
+
+    parts = candidates[0].get("content", {}).get("parts")
+    if not parts:
+        print("Gemini response has no parts.", file=sys.stderr)
+        sys.exit(1)
+
+    return parts[0].get("text", "")
+
 
 def strip_code_fences(text):
-    # Remove ```lang ... ``` or ``` ... ``` wrappers that LLMs often add
     text = re.sub(r"^```[^\n]*\n", "", text.strip())
     text = re.sub(r"\n```$", "", text.strip())
     return text.strip()
+
+
+def get_passed_checks(sha):
+    """Aggregate passed check names from both Check Runs and Commit Statuses APIs."""
+    passed = set()
+
+    # Check Runs API (GitHub Actions, GitHub Apps)
+    check_runs = github_get(f"/commits/{sha}/check-runs?per_page=100")
+    for run in check_runs.get("check_runs", []):
+        if run.get("conclusion") == "success":
+            passed.add(run["name"])
+
+    # Commit Statuses API (older CI integrations)
+    status = github_get(f"/commits/{sha}/status")
+    for s in status.get("statuses", []):
+        if s.get("state") == "success":
+            passed.add(s["context"])
+
+    return passed
 
 
 # 1. Find open PR for this branch
@@ -86,17 +119,11 @@ if not pulls:
 pr = pulls[0]
 pr_number = pr["number"]
 pr_title = pr["title"]
-# Truncate PR body to limit prompt injection surface
 pr_body = (pr.get("body") or "")[:500]
 print(f"Found PR #{pr_number}: {pr_title}")
 
-# 2. Verify all required checks have passed
-check_runs = github_get(f"/commits/{HEAD_SHA}/check-runs?per_page=100")
-passed = {
-    run["name"]
-    for run in check_runs["check_runs"]
-    if run["conclusion"] == "success"
-}
+# 2. Verify all required checks have passed (Check Runs + Commit Statuses)
+passed = get_passed_checks(HEAD_SHA)
 missing = REQUIRED_CHECKS - passed
 if missing:
     print(f"Required checks not yet passed: {missing}. Skipping merge.")
@@ -131,9 +158,20 @@ lines = commit_message.splitlines()
 commit_title = lines[0]
 commit_body = "\n".join(lines[1:]).strip()
 
-print(f"Generated commit message:\n{commit_message}")
+# 5. Validate commit title follows Conventional Commits format
+if not CONVENTIONAL_COMMIT_RE.match(commit_title):
+    print(
+        f"WARNING: Gemini output '{commit_title}' does not match Conventional Commits format. "
+        "Falling back to PR title.",
+        file=sys.stderr,
+    )
+    commit_title = pr_title
+    commit_body = commit_messages
 
-# 5. Squash merge
+print(f"Commit title: {commit_title}")
+print(f"Commit body:\n{commit_body}")
+
+# 6. Squash merge
 result = github_put(f"/pulls/{pr_number}/merge", {
     "merge_method": "squash",
     "commit_title": commit_title,
