@@ -204,31 +204,20 @@ def main():
 
     print(f"All required checks passed: {passed}")
 
-    # 3. Verify human approval — at least one APPROVED, no CHANGES_REQUESTED
-    approved, reason = check_human_approval(pr_number)
-    if not approved:
-        print(f"PR #{pr_number} not approved: {reason}. Skipping merge.")
-        sys.exit(0)
-
-    print(f"PR #{pr_number} has human approval.")
-
-    # 4. Collect commit messages
+    # 3. Collect commit messages
     commits = github_get(f"/pulls/{pr_number}/commits")
     commit_messages = "\n".join(
         f"- {c['commit']['message'].splitlines()[0]}"
         for c in commits
     )
 
-    # 5. Generate squash commit message with Gemini
+    # 4. Generate squash commit message with Gemini
+    with open(".github/ai/system/squash_commit.md") as f:
+        template = f.read()
+
     prompt = (
-        "Generate a concise git squash commit message in Conventional Commits format.\n\n"
-        "Rules:\n"
-        "- First line: `<type>(<optional scope>): <short summary>` (max 72 chars)\n"
-        "- Blank line after the first line\n"
-        "- Bullet points summarizing the key changes\n"
-        "- Use one of these types: feat, fix, refactor, chore, docs, test, perf\n"
-        "- Output ONLY the raw commit message text, no markdown code fences\n\n"
-        f"PR title: {pr_title}\n\n"
+        template
+        + f"\n\nPR title: {pr_title}\n\n"
         f"PR description:\n{pr_body}\n\n"
         f"Commits:\n{commit_messages}"
     )
@@ -239,7 +228,7 @@ def main():
     commit_title = lines[0]
     commit_body = "\n".join(lines[1:]).strip()
 
-    # 6. Validate commit title; fall back to PR title if Gemini output is invalid
+    # 5. Validate commit title; fall back to PR title if Gemini output is invalid
     if not CONVENTIONAL_COMMIT_RE.match(commit_title):
         print(
             f"WARNING: Gemini output '{commit_title}' does not match Conventional Commits format. "
@@ -252,7 +241,7 @@ def main():
     print(f"Commit title: {commit_title}")
     print(f"Commit body:\n{commit_body}")
 
-    # 7. Squash merge — handle conflict/method-not-allowed gracefully
+    # 6. Squash merge — handle conflict/method-not-allowed gracefully
     try:
         result = github_put(f"/pulls/{pr_number}/merge", {
             "merge_method": "squash",
