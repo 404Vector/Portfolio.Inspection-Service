@@ -12,9 +12,27 @@ if not diff.strip():
         json.dump(result, f)
     sys.exit(0)
 
+policy = ""
+try:
+    with open(".github/REVIEW_POLICY.md") as f:
+        policy = f.read().strip()
+except FileNotFoundError:
+    pass
+
+policy_section = (
+    f"## Project Review Policy\n\n{policy}\n\n"
+    if policy else ""
+)
+
 prompt = (
-    "You are a senior code reviewer. Review the following git diff carefully and produce structured feedback.\n\n"
-    "Evaluate each item below and mark it as PASS or FAIL with a brief reason:\n\n"
+    "You are a senior code reviewer for this specific project.\n\n"
+    "Before evaluating, read the Project Review Policy section carefully.\n"
+    "Treat every item listed under 'Accepted Patterns' as an intentional design\n"
+    "decision that has already been approved — do not flag these as issues.\n"
+    "Only mark something as FAIL if it is an unintentional bug, an unrecognized\n"
+    "security flaw, or a clear deviation from what the change is trying to achieve.\n\n"
+    + policy_section
+    + "Evaluate each item below and mark it as PASS or FAIL with a brief reason:\n\n"
     "- Correctness: Logic is sound, no obvious bugs\n"
     "- Security: No injection, auth bypass, secrets in code, or other OWASP Top 10 issues\n"
     "- Performance: No unnecessary N+1 queries, blocking calls, or memory issues\n"
