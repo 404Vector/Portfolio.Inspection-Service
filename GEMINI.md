@@ -36,19 +36,19 @@ dotnet run --project src/FrameGrabberService/FrameGrabberService.csproj
 dotnet run --project src/InspectionService/InspectionService.csproj
 ```
 
-## CI/CD — Claude Code Review
+## CI/CD — Gemini Code Review
 
-Every PR targeting `main` triggers an automated Claude code review (`.github/workflows/claude-review.yml`).
+Every PR targeting `main` triggers an automated Gemini code review (`.github/workflows/gemini-review.yml`).
 
 **Flow:**
-1. Open a PR → Claude reviews the diff and posts a checklist comment
-2. If all items pass → commit status `Claude Code Review` is set to `success`
+1. Open a PR → Gemini reviews the diff and posts a checklist comment
+2. If all items pass → commit status `Gemini Code Review` is set to `success`
 3. Branch protection requires that status to pass → merge is unblocked
-4. If Claude requests changes → status is `failure` → merge is blocked until the diff is fixed and re-reviewed
+4. If Gemini requests changes → status is `failure` → merge is blocked until the diff is fixed and re-reviewed
 
 **Required setup (one-time, repo admin):**
 
-1. Add `ANTHROPIC_API_KEY` as a repository secret:
+1. Add `GEMINI_API_KEY` as a repository secret:
    `Settings → Secrets and variables → Actions → New repository secret`
 
 2. Enable branch protection on `main`:
@@ -56,7 +56,7 @@ Every PR targeting `main` triggers an automated Claude code review (`.github/wor
    - Branch name pattern: `main`
    - Enable **Restrict pushes that create files** (no direct push)
    - Enable **Require status checks to pass**
-     - Add required check: `Claude Code Review`
+     - Add required check: `Gemini Code Review`
    - Enable **Require a pull request before merging**
 
 ## Development Conventions
