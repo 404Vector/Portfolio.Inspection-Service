@@ -1,6 +1,8 @@
 import os
 import json
+import re
 import urllib.request
+import urllib.error
 import sys
 
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
@@ -8,8 +10,7 @@ GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 REPO = os.environ["REPO"]
 HEAD_SHA = os.environ["HEAD_SHA"]
 HEAD_BRANCH = os.environ["HEAD_BRANCH"]
-
-REQUIRED_CHECKS = {"Gemini Code Review", "Branch Naming Check"}
+REQUIRED_CHECKS = set(os.environ["REQUIRED_CHECKS"].split(","))
 
 
 def github_get(path):
@@ -19,8 +20,13 @@ def github_get(path):
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     })
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"GitHub API GET {path} failed [{e.code}]: {body}", file=sys.stderr)
+        sys.exit(1)
 
 
 def github_put(path, data):
@@ -32,8 +38,13 @@ def github_put(path, data):
         "Content-Type": "application/json",
         "X-GitHub-Api-Version": "2022-11-28",
     })
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"GitHub API PUT {path} failed [{e.code}]: {body}", file=sys.stderr)
+        sys.exit(1)
 
 
 def gemini_generate(prompt):
@@ -48,9 +59,21 @@ def gemini_generate(prompt):
     req = urllib.request.Request(
         url, data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read())
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+    try:
+        with urllib.request.urlopen(req) as resp:
+            data = json.loads(resp.read())
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"Gemini API failed [{e.code}]: {body}", file=sys.stderr)
+        sys.exit(1)
+
+
+def strip_code_fences(text):
+    # Remove ```lang ... ``` or ``` ... ``` wrappers that LLMs often add
+    text = re.sub(r"^```[^\n]*\n", "", text.strip())
+    text = re.sub(r"\n```$", "", text.strip())
+    return text.strip()
 
 
 # 1. Find open PR for this branch
@@ -63,7 +86,8 @@ if not pulls:
 pr = pulls[0]
 pr_number = pr["number"]
 pr_title = pr["title"]
-pr_body = pr.get("body") or ""
+# Truncate PR body to limit prompt injection surface
+pr_body = (pr.get("body") or "")[:500]
 print(f"Found PR #{pr_number}: {pr_title}")
 
 # 2. Verify all required checks have passed
@@ -95,13 +119,14 @@ prompt = (
     "- Blank line after the first line\n"
     "- Bullet points summarizing the key changes\n"
     "- Use one of these types: feat, fix, refactor, chore, docs, test, perf\n"
-    "- Output ONLY the commit message, no explanation or code fences\n\n"
+    "- Output ONLY the raw commit message text, no markdown code fences\n\n"
     f"PR title: {pr_title}\n\n"
     f"PR description:\n{pr_body}\n\n"
     f"Commits:\n{commit_messages}"
 )
 
-commit_message = gemini_generate(prompt).strip()
+raw = gemini_generate(prompt)
+commit_message = strip_code_fences(raw)
 lines = commit_message.splitlines()
 commit_title = lines[0]
 commit_body = "\n".join(lines[1:]).strip()

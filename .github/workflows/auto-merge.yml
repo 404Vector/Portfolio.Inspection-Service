@@ -2,7 +2,7 @@ name: Auto Merge
 
 on:
   workflow_run:
-    workflows: ["Gemini Code Review"]
+    workflows: ["Gemini Code Review", "Branch Naming Check"]
     types: [completed]
 
 permissions:
@@ -26,4 +26,5 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          REQUIRED_CHECKS: "Gemini Code Review,Branch Naming Check"
         run: python3 .github/scripts/auto_merge.py
