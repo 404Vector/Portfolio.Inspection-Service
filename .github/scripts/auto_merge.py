@@ -211,7 +211,7 @@ def main():
         for c in commits
     )
 
-    # 5. Generate squash commit message with Gemini
+    # 4. Generate squash commit message with Gemini
     with open(".github/ai/system/squash_commit.md") as f:
         template = f.read()
 
@@ -228,7 +228,7 @@ def main():
     commit_title = lines[0]
     commit_body = "\n".join(lines[1:]).strip()
 
-    # 6. Validate commit title; fall back to PR title if Gemini output is invalid
+    # 5. Validate commit title; fall back to PR title if Gemini output is invalid
     if not CONVENTIONAL_COMMIT_RE.match(commit_title):
         print(
             f"WARNING: Gemini output '{commit_title}' does not match Conventional Commits format. "
@@ -241,7 +241,7 @@ def main():
     print(f"Commit title: {commit_title}")
     print(f"Commit body:\n{commit_body}")
 
-    # 7. Squash merge — handle conflict/method-not-allowed gracefully
+    # 6. Squash merge — handle conflict/method-not-allowed gracefully
     try:
         result = github_put(f"/pulls/{pr_number}/merge", {
             "merge_method": "squash",
