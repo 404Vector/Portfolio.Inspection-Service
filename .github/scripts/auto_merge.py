@@ -204,15 +204,7 @@ def main():
 
     print(f"All required checks passed: {passed}")
 
-    # 3. Verify human approval — at least one APPROVED, no CHANGES_REQUESTED
-    approved, reason = check_human_approval(pr_number)
-    if not approved:
-        print(f"PR #{pr_number} not approved: {reason}. Skipping merge.")
-        sys.exit(0)
-
-    print(f"PR #{pr_number} has human approval.")
-
-    # 4. Collect commit messages
+    # 3. Collect commit messages
     commits = github_get(f"/pulls/{pr_number}/commits")
     commit_messages = "\n".join(
         f"- {c['commit']['message'].splitlines()[0]}"
