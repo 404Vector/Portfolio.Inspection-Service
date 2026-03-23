@@ -220,15 +220,12 @@ def main():
     )
 
     # 5. Generate squash commit message with Gemini
+    with open(".github/ai/system/squash_commit.md") as f:
+        template = f.read()
+
     prompt = (
-        "Generate a concise git squash commit message in Conventional Commits format.\n\n"
-        "Rules:\n"
-        "- First line: `<type>(<optional scope>): <short summary>` (max 72 chars)\n"
-        "- Blank line after the first line\n"
-        "- Bullet points summarizing the key changes\n"
-        "- Use one of these types: feat, fix, refactor, chore, docs, test, perf\n"
-        "- Output ONLY the raw commit message text, no markdown code fences\n\n"
-        f"PR title: {pr_title}\n\n"
+        template
+        + f"\n\nPR title: {pr_title}\n\n"
         f"PR description:\n{pr_body}\n\n"
         f"Commits:\n{commit_messages}"
     )

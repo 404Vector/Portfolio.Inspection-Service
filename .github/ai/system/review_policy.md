@@ -1,5 +1,3 @@
-# Review Policy
-
 ## Accepted Patterns
 
 - **CI-gated auto-merge without human approval**: This repository restricts
