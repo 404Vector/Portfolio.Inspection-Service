@@ -79,8 +79,8 @@ dotnet test --filter "FullyQualifiedName~SomeTest"
 
 ## CI/CD
 
-Every PR targeting `main` triggers an automated Claude Code review via `.github/workflows/claude-review.yml`.
+Every PR targeting `main` triggers an automated Gemini code review via `.github/workflows/gemini-review.yml`.
 
-- Claude reviews the diff and posts a checklist comment
-- All checklist items must pass for the `Claude Code Review` status check to succeed
+- Gemini reviews the diff and posts a checklist comment
+- All checklist items must pass for the `Gemini Code Review` status check to succeed
 - Branch protection on `main` requires this status check before merging
