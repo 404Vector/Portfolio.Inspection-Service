@@ -127,8 +127,13 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     {
         _logger.LogInformation("SubscribeFrames started");
 
-        var channel = Channel.CreateUnbounded<FrameInfo>(
-            new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+        var channel = Channel.CreateBounded<FrameInfo>(
+            new BoundedChannelOptions(32)
+            {
+                FullMode     = BoundedChannelFullMode.DropOldest,
+                SingleReader = true,
+                SingleWriter = false
+            });
 
         void Handler(FrameInfo info) => channel.Writer.TryWrite(info);
         _ringBuffer.FrameGrabbed += Handler;

@@ -12,3 +12,7 @@
   in `.github/scripts/` are integration-heavy by nature. Pure helper
   functions are unit-tested; end-to-end flows are validated by the CI
   pipeline itself.
+
+- **`net10.0` target framework**: This project intentionally targets .NET 10,
+  which has been officially released. Do not flag `net10.0` as unreleased or
+  unsupported.
