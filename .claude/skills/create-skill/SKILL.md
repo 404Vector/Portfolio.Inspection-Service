@@ -5,7 +5,6 @@ argument-hint: [skill-name] [brief purpose]
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Read, Write, Glob, Bash(mkdir *), Bash(python3 *)
-allowed-tools: Read, Write, Glob, Bash(mkdir *), Bash(python3 *)
 model: sonnet
 context: ~
 agent: ~
@@ -62,7 +61,6 @@ skill은 `SKILL.md` 하나로도 동작하지만, 지원 파일을 추가하면 
 | `template.md` | 고정 구조가 있는 출력(PR 설명, 커밋 메시지 등) | 형식을 강제해야 할 때 |
 | `examples/` | Claude가 참고할 구체적인 출력 예시 | 형식이 복잡하거나 애매할 때 |
 | `scripts/` | **Python** 스크립트 (기본) 또는 Shell | 동적 데이터 수집·검증이 필요할 때 |
-| `scripts/` | **Python** 스크립트 (기본) 또는 Shell | 동적 데이터 수집·검증이 필요할 때 |
 | `reference.md` | 대형 API 문서, 규칙집 등 | 항상 로드하기엔 너무 큰 참조 문서 |
 
 ### 스크립트 우선 원칙 (컨텍스트 최소화)
@@ -76,19 +74,11 @@ skill은 `SKILL.md` 하나로도 동작하지만, 지원 파일을 추가하면 
 - 외부 패키지 설치가 필요한 경우에만 예외적으로 허용
 - 실행: `python3 ${CLAUDE_SKILL_DIR}/scripts/<script>.py`
 
-**스크립트 언어 기본값: Python 3**
-- 표준 라이브러리만으로 YAML 파싱, 정규식, 파일 검사 등 대부분의 작업을 처리 가능
-- Shell 스크립트보다 안전하고 이식성이 높음
-- 외부 패키지 설치가 필요한 경우에만 예외적으로 허용
-- 실행: `python3 ${CLAUDE_SKILL_DIR}/scripts/<script>.py`
-
 | 상황 | 비선호 방식 | 선호 방식 |
 |------|------------|----------|
 | 현재 git 상태 파악 | `context.md`에 설명 나열 | `!`git status --short`` 동적 주입 |
 | 코드베이스 규칙 검증 | `reference.md`를 통째로 로드 | `scripts/lint.py`를 실행해 결과만 주입 |
-| 코드베이스 규칙 검증 | `reference.md`를 통째로 로드 | `scripts/lint.py`를 실행해 결과만 주입 |
 | 대형 API 문서 참조 | `reference.md` 전체 로드 | 스크립트로 필요한 항목만 추출 후 주입 |
-| 파일 목록 수집 | Claude가 Glob 반복 실행 | `scripts/collect.py`로 한 번에 수집 |
 | 파일 목록 수집 | Claude가 Glob 반복 실행 | `scripts/collect.py`로 한 번에 수집 |
 
 동적 주입 구문(`! + backtick + command + backtick`): skill 실행 전 명령어 출력을 컨텍스트에 삽입합니다.
