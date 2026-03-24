@@ -81,18 +81,19 @@ skill은 `SKILL.md` 하나로도 동작하지만, 지원 파일을 추가하면 
 | 대형 API 문서 참조 | `reference.md` 전체 로드 | 스크립트로 필요한 항목만 추출 후 주입 |
 | 파일 목록 수집 | Claude가 Glob 반복 실행 | `scripts/collect.py`로 한 번에 수집 |
 
-동적 주입 구문(`!`command``): skill 실행 전 명령어 출력을 컨텍스트에 삽입합니다.
+동적 주입 구문(`! + backtick + command + backtick`): skill 실행 전 명령어 출력을 컨텍스트에 삽입합니다.
 
-```yaml
+```
 ## 현재 상태
-- 브랜치: !`git branch --show-current`
-- 변경 파일: !`git diff --name-only HEAD`
+- 브랜치: ! + `git branch --show-current`
+- 변경 파일: ! + `git diff --name-only HEAD`
 ```
 
-`${CLAUDE_SKILL_DIR}` 변수로 skill 디렉토리 내 스크립트를 절대 경로로 참조합니다:
+`${CLAUDE_SKILL_DIR}` 변수로 skill 디렉토리 내 스크립트를 절대 경로로 참조합니다.
+실제 SKILL.md에서는 아래처럼 작성합니다 (backtick 앞의 `!`가 동적 주입 트리거):
 
-```yaml
-- 검증 결과: !`python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py $SKILL_PATH`
+```
+- 검증 결과: ! + `python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py 경로`
 ```
 
 정적 파일(`template.md`, `examples/`)은 스크립트로 대체할 수 없는 경우에만 사용합니다.
