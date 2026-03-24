@@ -1,11 +1,9 @@
-# InspectionApp
-
-> **주의:** 이 프로젝트는 현재 폴더명 `Inspector/`로 존재하며, 추후 `InspectionApp/`으로 이름 변경 예정.
+# InspectionClient
 
 ## 역할
 
-검사 시스템의 **Avalonia GUI 클라이언트**. 운영자가 검사 결과를 모니터링하고 제어하는 워크스테이션 애플리케이션.
-gRPC를 통해 FrameGrabberService, InspectionService와 통신한다.
+검사 시스템의 **Avalonia GUI 클라이언트**. 운영자가 서비스를 제어하고 결과를 모니터링하는 애플리케이션.
+gRPC **클라이언트**로서 `FrameGrabberService`, `InspectionService`와 통신한다.
 
 ## 포함 대상
 
@@ -13,6 +11,7 @@ gRPC를 통해 FrameGrabberService, InspectionService와 통신한다.
 - gRPC 클라이언트 코드 (서비스 호출)
 - UI 상태 관리
 - 결과 시각화 (이미지 렌더링, 검사 결과 표시)
+- 서비스 로그 출력
 
 ## 제외 대상
 
@@ -23,9 +22,9 @@ gRPC를 통해 FrameGrabberService, InspectionService와 통신한다.
 ## 의존성 규칙
 
 ```
-InspectionApp → Core, Core.Logging
-InspectionApp → Grpc.Net.Client (gRPC 클라이언트, NuGet)
-InspectionApp → Avalonia (NuGet)
+InspectionClient → Core, Core.Logging
+InspectionClient → Grpc.Net.Client (gRPC 클라이언트, NuGet)
+InspectionClient → Avalonia (NuGet)
 ```
 
 - `Core.SharedMemory`를 참조하지 않는다.
@@ -39,4 +38,4 @@ InspectionApp → Avalonia (NuGet)
 
 ## 네임스페이스
 
-`InspectionApp.*`
+`InspectionClient.*`

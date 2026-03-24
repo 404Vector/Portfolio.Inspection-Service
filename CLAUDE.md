@@ -16,8 +16,8 @@ Portfolio.Inspection-Service is a .NET application for an inspection service con
 - **InspectionService**: gRPC 서비스. SharedMemory Read(Consumer) 및 검사 로직.
 
 **Application**
-- **InspectionApp**: Avalonia GUI 클라이언트. gRPC를 통해 서비스와 통신.
-  - 현재 폴더명: `src/Inspector/` → 추후 `src/InspectionApp/`으로 이름 변경 예정.
+- **InspectionClient**: Avalonia GUI 클라이언트. gRPC를 통해 서비스를 제어·모니터링.
+  - 현재 폴더명: `src/Inspector/` → 추후 `src/InspectionClient/`으로 이름 변경 예정.
 
 The projects are organized under `Portfolio.Inspection-Service.sln`.
 
@@ -26,7 +26,7 @@ The projects are organized under `Portfolio.Inspection-Service.sln`.
 ### 의존성 방향
 
 ```
-InspectionApp       →  Core, Core.Logging
+InspectionClient    →  Core, Core.Logging
 FrameGrabberService →  Core, Core.Logging, Core.SharedMemory
 InspectionService   →  Core, Core.Logging, Core.SharedMemory
 Core.Logging        →  Core
@@ -38,7 +38,7 @@ Core                →  (외부 패키지 없음 또는 BCL만)
 - 서비스 간 직접 프로젝트 참조 금지 — gRPC를 통해서만 통신
 - Core는 다른 내부 프로젝트를 참조하지 않음
 - unsafe 코드는 Core.SharedMemory에만 허용 (`AllowUnsafeBlocks = true`)
-- InspectionApp은 SharedMemory에 직접 접근하지 않음 — gRPC 경유
+- InspectionClient는 SharedMemory에 직접 접근하지 않음 — gRPC 경유
 
 ### 프로젝트별 상세 설계 원칙
 
