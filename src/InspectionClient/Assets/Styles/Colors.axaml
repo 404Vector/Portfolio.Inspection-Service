@@ -1,0 +1,30 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ── Background ────────────────────────────────────────── -->
+  <SolidColorBrush x:Key="BgBase"       Color="#0F0F17" />  <!-- Window / Center -->
+  <SolidColorBrush x:Key="BgSurface"    Color="#1A1B26" />  <!-- Header / Nav / Right panel -->
+  <SolidColorBrush x:Key="BgElevated"   Color="#1E2030" />  <!-- Nav label popup -->
+  <SolidColorBrush x:Key="BgLog"        Color="#0D0D14" />  <!-- Log panel -->
+  <SolidColorBrush x:Key="BgLogInner"   Color="#13131A" />  <!-- Log inner area -->
+
+  <!-- ── Nav Interactive ───────────────────────────────────── -->
+  <SolidColorBrush x:Key="NavHover"     Color="#252636" />
+  <SolidColorBrush x:Key="NavPressed"   Color="#1E1F30" />
+
+  <!-- ── Border / Divider ──────────────────────────────────── -->
+  <SolidColorBrush x:Key="BorderSubtle" Color="#2A2B3A" />
+
+  <!-- ── Text ──────────────────────────────────────────────── -->
+  <SolidColorBrush x:Key="TextPrimary"  Color="#C0CAF5" />
+  <SolidColorBrush x:Key="TextMuted"    Color="#565F89" />
+
+  <!-- ── Accent ───────────────────────────────────────────────── -->
+  <SolidColorBrush x:Key="Accent"        Color="#7AA2F7" />
+
+  <!-- ── Status ────────────────────────────────────────────── -->
+  <SolidColorBrush x:Key="StatusOffline"    Color="#565F89" />
+  <SolidColorBrush x:Key="StatusConnected"  Color="#9ECE6A" />
+  <SolidColorBrush x:Key="StatusError"      Color="#F7768E" />
+
+</ResourceDictionary>
