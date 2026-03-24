@@ -4,7 +4,8 @@ description: 코드 제출 전체 워크플로우. branch 생성 → 커밋 → 
 argument-hint: ~
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: ~
+allowed-tools: 
+  - Bash(python3 .claude/skills/submit/scripts/*)
 model: sonnet
 context: ~
 agent: ~
