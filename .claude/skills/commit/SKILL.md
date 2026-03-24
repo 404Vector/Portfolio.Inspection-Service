@@ -8,6 +8,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools:
   - Bash
+  - python3 $(git rev-parse --show-toplevel)/.claude/skills/commit/scripts*
 model: haiku
 context: fork
 agent: general-purpose

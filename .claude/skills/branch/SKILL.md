@@ -4,15 +4,15 @@ description: >
   Analyzes current git changes and creates a new branch.
   Triggered when the user requests "create branch", "branch", "/branch",
   or when another skill workflow needs to create a branch.
-argument-hint: "[description hint]"
+argument-hint: "[description hint] [--auto]"
 disable-model-invocation: false
 user-invocable: true
 allowed-tools:
-  - Bash(git status:*)
-  - Bash(git diff:*)
-  - Bash(git log:*)
-  - Bash(git branch:*)
-  - Bash(git switch:*)
+  - Bash(git status *)
+  - Bash(git diff *)
+  - Bash(git log *)
+  - Bash(git branch *)
+  - Bash(git switch *)
 model: haiku
 context: ~
 agent: ~
@@ -49,6 +49,10 @@ Description rules:
 
 $ARGUMENTS
 
+## Flags
+
+- `--auto`: Skip confirmation prompt and create the branch immediately.
+
 ## Procedure
 
 ### Step 1 — Check current branch
@@ -68,7 +72,9 @@ Use `$ARGUMENTS` as a hint for the branch name if provided.
 Select the appropriate prefix from the table above and compose a concise slug.
 Verify the name matches `^(feature|fix|refactor|chore|docs)/[a-z0-9-]+$`.
 
-Output the proposal and wait for user input:
+If `--auto` is present in `$ARGUMENTS`, skip the prompt and proceed directly to Step 4.
+
+Otherwise, output the proposal and wait for user input:
 > Proposed branch name: `<branch-name>`
 > Proceed? (yes / edit / cancel)
 
