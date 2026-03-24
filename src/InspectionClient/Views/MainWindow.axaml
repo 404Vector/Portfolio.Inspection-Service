@@ -13,16 +13,16 @@
 
     <!-- ── Header ─────────────────────────────────────────── -->
     <Border DockPanel.Dock="Top"
-            Height="52"
+            Height="24"
             Background="{DynamicResource BgSurface}"
             BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1"
             Padding="16,0">
       <Grid ColumnDefinitions="*,Auto">
 
-        <TextBlock Grid.Column="0"
-                   Text="Inspection Client"
+        <TextBlock Name="TitleText"
+                   Grid.Column="0"
                    VerticalAlignment="Center"
-                   FontSize="16" FontWeight="SemiBold"
+                   FontSize="12" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimary}" />
 
         <StackPanel Grid.Column="1"
@@ -94,7 +94,8 @@
 
           <!-- Inspection -->
           <Button Name="NavInspection" Classes="nav-item active" Click="OnNavClick"
-                  ToolTip.Tip="Inspection" ToolTip.Placement="Right"                   >
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Inspection" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
               <mi:MaterialIcon Kind="Magnify" />
@@ -103,7 +104,8 @@
 
           <!-- History -->
           <Button Name="NavHistory" Classes="nav-item" Click="OnNavClick"
-                  ToolTip.Tip="History" ToolTip.Placement="Right"                   >
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="History" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
               <mi:MaterialIcon Kind="History" />
@@ -115,7 +117,8 @@
 
           <!-- Optic Setting -->
           <Button Name="NavOpticSetting" Classes="nav-item" Click="OnNavClick"
-                  ToolTip.Tip="Optic Setting" ToolTip.Placement="Right"                   >
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Optic Setting" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
               <mi:MaterialIcon Kind="Tune" />
@@ -124,7 +127,8 @@
 
           <!-- App Setting -->
           <Button Name="NavAppSetting" Classes="nav-item" Click="OnNavClick"
-                  ToolTip.Tip="App Setting" ToolTip.Placement="Right"                   >
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="App Setting" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
               <mi:MaterialIcon Kind="CogOutline" />
