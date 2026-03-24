@@ -1,75 +1,74 @@
+using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
+using InspectionClient.ViewModels;
 
 namespace InspectionClient.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly InspectionView   _inspectionView   = new();
-    private readonly HistoryView      _historyView      = new();
-    private readonly OpticSettingView _opticSettingView = new();
-    private readonly AppSettingView   _appSettingView   = new();
-
-    private Button? _activeNavButton;
-    private string  _currentViewName = string.Empty;
-
-    private static readonly System.Collections.Generic.Dictionary<string, string> NavNames = new()
+    // 버튼 Name → 논리적 뷰 이름 매핑 (PointerEntered hover 미리보기용)
+    private static readonly Dictionary<string, string> ButtonToViewName = new()
     {
-        { nameof(NavInspection),   "Inspection"    },
-        { nameof(NavHistory),      "History"       },
-        { nameof(NavOpticSetting), "Optic Setting" },
-        { nameof(NavAppSetting),   "App Setting"   },
+        [nameof(NavInspection)]   = "Inspection",
+        [nameof(NavHistory)]      = "History",
+        [nameof(NavOpticSetting)] = "OpticSetting",
+        [nameof(NavAppSetting)]   = "AppSetting",
     };
+
+    private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
 
     public MainWindow()
     {
         InitializeComponent();
-        Navigate(NavInspection, _inspectionView);
+        DataContextChanged += OnDataContextChanged;
     }
 
-    private void OnNavClick(object? sender, RoutedEventArgs e)
+    // ActiveViewName이 바뀔 때 nav 버튼의 active CSS 클래스를 동기화
+    private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (sender is not Button button) return;
+        if (DataContext is not MainWindowViewModel vm) return;
 
-        var view = button.Name switch
+        UpdateActiveButton(vm.ActiveViewName);
+        vm.PropertyChanged += (_, args) =>
         {
-            nameof(NavInspection)   => (Control)_inspectionView,
-            nameof(NavHistory)      => _historyView,
-            nameof(NavOpticSetting) => _opticSettingView,
-            nameof(NavAppSetting)   => _appSettingView,
-            _                       => null
+            if (args.PropertyName == nameof(MainWindowViewModel.ActiveViewName))
+                UpdateActiveButton(vm.ActiveViewName);
+        };
+    }
+
+    private void UpdateActiveButton(string activeViewName)
+    {
+        var buttons = new Dictionary<string, Button?>
+        {
+            ["Inspection"]   = NavInspection,
+            ["History"]      = NavHistory,
+            ["OpticSetting"] = NavOpticSetting,
+            ["AppSetting"]   = NavAppSetting,
         };
 
-        if (view is not null)
-            Navigate(button, view);
+        foreach (var (name, btn) in buttons)
+        {
+            if (btn is null) continue;
+            if (name == activeViewName)
+                btn.Classes.Add("active");
+            else
+                btn.Classes.Remove("active");
+        }
     }
 
     private void OnNavPointerEntered(object? sender, PointerEventArgs e)
     {
-        if (sender is not Button button || button.Name is null) return;
-        if (!NavNames.TryGetValue(button.Name, out var hoverName)) return;
-
-        TitleText.Text = $"{_currentViewName} > {hoverName}";
+        if (sender is Button { Name: { } name }
+            && ButtonToViewName.TryGetValue(name, out var viewName))
+        {
+            Vm.OnHoverEnter(viewName);
+        }
     }
 
     private void OnNavPointerExited(object? sender, PointerEventArgs e)
     {
-        TitleText.Text = _currentViewName;
-    }
-
-    private void Navigate(Button navButton, Control view)
-    {
-        _activeNavButton?.Classes.Remove("active");
-        navButton.Classes.Add("active");
-        _activeNavButton = navButton;
-
-        if (navButton.Name is not null && NavNames.TryGetValue(navButton.Name, out var name))
-        {
-            _currentViewName = name;
-            TitleText.Text   = name;
-        }
-
-        MainContent.Content = view;
+        Vm.OnHoverExit();
     }
 }

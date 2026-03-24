@@ -3,8 +3,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:mi="using:Material.Icons.Avalonia"
+        xmlns:vm="using:InspectionClient.ViewModels"
+        xmlns:views="using:InspectionClient.Views"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="InspectionClient.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="Inspection Client"
         MinWidth="800" MinHeight="600"
         Background="{DynamicResource BgBase}">
@@ -19,11 +22,11 @@
             Padding="16,0">
       <Grid ColumnDefinitions="*,Auto">
 
-        <TextBlock Name="TitleText"
-                   Grid.Column="0"
+        <TextBlock Grid.Column="0"
                    VerticalAlignment="Center"
                    FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextPrimary}" />
+                   Foreground="{DynamicResource TextPrimary}"
+                   Text="{Binding TitleText}" />
 
         <StackPanel Grid.Column="1"
                     Orientation="Horizontal" Spacing="20"
@@ -93,7 +96,8 @@
         <StackPanel VerticalAlignment="Top" Spacing="2" Margin="0,8,0,0">
 
           <!-- Inspection -->
-          <Button Name="NavInspection" Classes="nav-item active" Click="OnNavClick"
+          <Button Name="NavInspection" Classes="nav-item active"
+                  Command="{Binding NavigateCommand}" CommandParameter="Inspection"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
                   ToolTip.Tip="Inspection" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
@@ -103,7 +107,8 @@
           </Button>
 
           <!-- History -->
-          <Button Name="NavHistory" Classes="nav-item" Click="OnNavClick"
+          <Button Name="NavHistory" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="History"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
                   ToolTip.Tip="History" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
@@ -116,7 +121,8 @@
           <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="10,4" />
 
           <!-- Optic Setting -->
-          <Button Name="NavOpticSetting" Classes="nav-item" Click="OnNavClick"
+          <Button Name="NavOpticSetting" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="OpticSetting"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
                   ToolTip.Tip="Optic Setting" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
@@ -126,7 +132,8 @@
           </Button>
 
           <!-- App Setting -->
-          <Button Name="NavAppSetting" Classes="nav-item" Click="OnNavClick"
+          <Button Name="NavAppSetting" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="AppSetting"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
                   ToolTip.Tip="App Setting" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
@@ -139,7 +146,22 @@
       </Border>
 
       <!-- View Content Area -->
-      <ContentControl Name="MainContent" Grid.Column="1" />
+      <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="vm:InspectionViewModel">
+            <views:InspectionView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:HistoryViewModel">
+            <views:HistoryView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:OpticSettingViewModel">
+            <views:OpticSettingView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:AppSettingViewModel">
+            <views:AppSettingView />
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
 
     </Grid>
 
