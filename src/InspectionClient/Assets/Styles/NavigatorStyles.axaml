@@ -1,0 +1,67 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mi="using:Material.Icons.Avalonia">
+
+  <!-- ── Nav Item Button ──────────────────────────────────── -->
+  <Style Selector="Button.nav-item">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+
+  <Style Selector="Button.nav-item:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavHover}" />
+  </Style>
+
+  <Style Selector="Button.nav-item:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavPressed}" />
+  </Style>
+
+  <!-- ── Nav Accent Bar ────────────────────────────────────── -->
+  <Style Selector="Button.nav-item Rectangle.nav-accent">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Width" Value="3" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Fill" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <Style Selector="Button.nav-item.active Rectangle.nav-accent">
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
+
+  <!-- ── Active State ─────────────────────────────────────── -->
+  <Style Selector="Button.nav-item.active /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavHover}" />
+  </Style>
+
+  <!-- ── Nav Icon ─────────────────────────────────────────── -->
+  <Style Selector="Button.nav-item mi|MaterialIcon">
+    <Setter Property="Width" Value="22" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <Style Selector="Button.nav-item:pointerover mi|MaterialIcon">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="Button.nav-item.active mi|MaterialIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <!-- ── Nav ToolTip ──────────────────────────────────────── -->
+  <!-- FluentTheme 기본 템플릿을 유지하고 색상만 재정의 -->
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{DynamicResource BgElevated}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+</Styles>
