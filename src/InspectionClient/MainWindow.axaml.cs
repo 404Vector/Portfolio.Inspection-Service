@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Inspector;
+namespace InspectionClient;
 
 public partial class MainWindow : Window
 {

@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B25AA382-EFD5-424F-9ACC-142D546868F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inspector", "src\Inspector\Inspector.csproj", "{08F13331-3B83-4E07-96DE-0B52DFE0B468}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InspectionClient", "src\InspectionClient\InspectionClient.csproj", "{08F13331-3B83-4E07-96DE-0B52DFE0B468}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FrameGrabberService", "src\FrameGrabberService\FrameGrabberService.csproj", "{4BCF2591-0BE3-4C72-9E6F-79571377C12F}"
 EndProject
