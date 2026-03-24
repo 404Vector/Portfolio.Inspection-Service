@@ -32,7 +32,7 @@ url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generate
 
 payload = json.dumps({
     "contents": [{"parts": [{"text": prompt}]}],
-    "generationConfig": {"maxOutputTokens": 4096},
+    "generationConfig": {"maxOutputTokens": 8192},
 }).encode()
 
 req = urllib.request.Request(
