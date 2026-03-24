@@ -4,11 +4,12 @@
 Usage: python3 cleanup.py <pr_number> <branch_name>
 
 처리 순서:
-  1. PR 상태가 MERGED가 될 때까지 대기 (10초 간격, 최대 30분)
-  2. 원격 브랜치 삭제
-  3. git checkout main
-  4. git fetch origin main && git pull origin main
-  5. 로컬 브랜치 삭제
+  1. main/master 브랜치명 사전 확인
+  2. PR 상태가 MERGED가 될 때까지 대기 (10초 간격, 최대 30분)
+  3. 원격 브랜치 삭제
+  4. main(또는 master)으로 checkout
+  5. fetch + pull
+  6. 로컬 브랜치 삭제
 """
 import subprocess
 import json
@@ -20,13 +21,28 @@ POLL_INTERVAL = 10     # seconds
 MAX_WAIT = 1800        # 30분
 
 
-def run(cmd, check=False):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+def run(cmd_list):
+    result = subprocess.run(cmd_list, capture_output=True, text=True)
     return result.stdout.strip(), result.stderr.strip(), result.returncode
 
 
+def detect_main_branch():
+    """로컬/원격에서 main 또는 master 중 사용 중인 브랜치명을 반환합니다."""
+    _, _, rc = run(["git", "show-ref", "--verify", "--quiet", "refs/remotes/origin/main"])
+    if rc == 0:
+        return "main"
+    _, _, rc = run(["git", "show-ref", "--verify", "--quiet", "refs/remotes/origin/master"])
+    if rc == 0:
+        return "master"
+    # 로컬 브랜치 확인
+    _, _, rc = run(["git", "show-ref", "--verify", "--quiet", "refs/heads/main"])
+    if rc == 0:
+        return "main"
+    return "master"
+
+
 def get_pr_state(pr_number):
-    out, err, rc = run(f"gh pr view {pr_number} --json state,mergedAt")
+    out, err, rc = run(["gh", "pr", "view", str(pr_number), "--json", "state,mergedAt"])
     if rc != 0:
         return None, err
     data = json.loads(out)
@@ -42,7 +58,11 @@ def main():
     branch = sys.argv[2]
     start_time = time.time()
 
-    # Step 1 — 머지 대기
+    # Step 1 — main/master 브랜치명 사전 확인
+    main_branch = detect_main_branch()
+    print(f"기본 브랜치: {main_branch}", file=sys.stderr)
+
+    # Step 2 — 머지 대기
     print(f"PR #{pr_number} 머지 완료를 대기합니다...", file=sys.stderr)
     while True:
         elapsed = time.time() - start_time
@@ -69,38 +89,32 @@ def main():
 
     errors = []
 
-    # Step 2 — 원격 브랜치 삭제
-    _, err, rc = run(f"git push origin --delete {branch}")
+    # Step 3 — 원격 브랜치 삭제
+    _, err, rc = run(["git", "push", "origin", "--delete", branch])
     if rc != 0:
-        # 이미 삭제된 경우 무시
-        if "remote ref does not exist" in err or "error: unable to delete" not in err:
-            print(f"원격 브랜치 삭제 스킵 (이미 없음): {err}", file=sys.stderr)
+        if "remote ref does not exist" in err:
+            print(f"원격 브랜치 삭제 스킵 (이미 없음)", file=sys.stderr)
         else:
             errors.append(f"원격 브랜치 삭제 실패: {err}")
 
-    # Step 3 — main으로 전환
-    _, err, rc = run("git checkout main")
+    # Step 4 — main/master으로 전환
+    _, err, rc = run(["git", "checkout", main_branch])
     if rc != 0:
-        _, err2, rc2 = run("git checkout master")
-        if rc2 != 0:
-            errors.append(f"main/master checkout 실패: {err}")
+        errors.append(f"{main_branch} checkout 실패: {err}")
 
-    # Step 4 — main 최신화
-    _, err, rc = run("git fetch origin main")
+    # Step 5 — 최신화
+    _, err, rc = run(["git", "fetch", "origin", main_branch])
     if rc != 0:
-        run("git fetch origin master")
+        errors.append(f"fetch 실패: {err}")
 
-    _, err, rc = run("git pull origin main")
+    _, err, rc = run(["git", "pull", "origin", main_branch])
     if rc != 0:
-        _, err2, rc2 = run("git pull origin master")
-        if rc2 != 0:
-            errors.append(f"main pull 실패: {err}")
+        errors.append(f"pull 실패: {err}")
 
-    # Step 5 — 로컬 브랜치 삭제
-    _, err, rc = run(f"git branch -d {branch}")
+    # Step 6 — 로컬 브랜치 삭제
+    _, err, rc = run(["git", "branch", "-d", branch])
     if rc != 0:
-        # 강제 삭제 시도
-        _, err2, rc2 = run(f"git branch -D {branch}")
+        _, err2, rc2 = run(["git", "branch", "-D", branch])
         if rc2 != 0:
             errors.append(f"로컬 브랜치 삭제 실패: {err2}")
 
@@ -119,7 +133,7 @@ def main():
             "status": "success",
             "branch": branch,
             "pr_number": pr_number,
-            "message": f"브랜치 '{branch}' 정리 완료. main 브랜치가 최신 상태입니다.",
+            "message": f"브랜치 '{branch}' 정리 완료. {main_branch} 브랜치가 최신 상태입니다.",
             "elapsed_seconds": int(elapsed)
         }, ensure_ascii=False))
 

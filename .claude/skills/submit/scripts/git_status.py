@@ -5,13 +5,13 @@ import json
 import sys
 
 
-def run(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+def run(cmd_list):
+    result = subprocess.run(cmd_list, capture_output=True, text=True)
     return result.stdout.strip(), result.returncode
 
 
 def main():
-    branch, rc = run("git branch --show-current")
+    branch, rc = run(["git", "branch", "--show-current"])
     if rc != 0 or not branch:
         print(json.dumps({"error": "git 저장소가 아니거나 branch를 확인할 수 없습니다."}, ensure_ascii=False))
         sys.exit(1)
@@ -19,11 +19,11 @@ def main():
     is_main = branch in ("main", "master")
 
     # 미커밋 변경사항 (staged + unstaged + untracked)
-    status_output, _ = run("git status --porcelain")
+    status_output, _ = run(["git", "status", "--porcelain"])
     uncommitted_changes = [line for line in status_output.splitlines() if line.strip()]
 
     # 원격 트래킹 브랜치 존재 여부 및 미푸시 커밋
-    unpushed_output, rc = run(f"git log origin/{branch}..HEAD --oneline 2>/dev/null")
+    unpushed_output, rc = run(["git", "log", f"origin/{branch}..HEAD", "--oneline"])
     if rc != 0:
         remote_tracking_exists = False
         unpushed_commits = []
@@ -31,8 +31,10 @@ def main():
         remote_tracking_exists = True
         unpushed_commits = [line for line in unpushed_output.splitlines() if line.strip()]
 
-    # main 대비 커밋 목록
-    commits_output, _ = run("git log main..HEAD --oneline 2>/dev/null || git log master..HEAD --oneline 2>/dev/null")
+    # main 대비 커밋 목록 (main 없으면 master 시도)
+    commits_output, rc = run(["git", "log", "main..HEAD", "--oneline"])
+    if rc != 0:
+        commits_output, _ = run(["git", "log", "master..HEAD", "--oneline"])
     commits_vs_main = [line for line in commits_output.splitlines() if line.strip()]
 
     result = {
