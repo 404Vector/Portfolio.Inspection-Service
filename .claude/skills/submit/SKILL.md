@@ -1,10 +1,12 @@
 ---
 name: submit
 description: 코드 제출 전체 워크플로우. branch 생성 → 커밋 → PR 생성 → 리뷰 대기 → 머지 → 브랜치 정리를 순서대로 처리합니다. "submit", "PR 만들어", "PR 올려", "pr 생성", "코드 제출" 키워드로 트리거.
-argument-hint: ~
+argument-hint: "[--auto]"
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: ~
+allowed-tools: 
+  - Bash(python3 .claude/skills/submit/scripts/*)
+  - Bash(gh pr create --title *)
 model: sonnet
 context: ~
 agent: ~
@@ -18,12 +20,16 @@ hooks: ~
 
 위 결과를 기반으로 아래 단계를 순서대로 실행합니다.
 
+## Flags
+
+- `--auto`: 모든 확인 프롬프트를 스킵하고 자동으로 진행합니다.
+
 ## 실행 단계
 
 ### Step 1 — Branch 확인
 현재 branch가 `main`/`master`이면:
-- 사용자에게 알리고 `/branch` skill을 호출해 새 branch 생성·전환을 요청합니다.
-- **사용자 확인 필요.** 거절 시 워크플로우를 중단합니다.
+- `--auto`가 있으면 `/branch --auto` skill을 호출해 확인 없이 자동으로 새 branch를 생성합니다.
+- `--auto`가 없으면 사용자에게 알리고 `/branch` skill을 호출해 새 branch 생성·전환을 요청합니다. **사용자 확인 필요.** 거절 시 워크플로우를 중단합니다.
 
 ### Step 2 — 미커밋 변경사항 처리
 `git_status.py` 결과에 `uncommitted_changes`가 있으면:
@@ -31,8 +37,9 @@ hooks: ~
 
 ### Step 3 — PR 생성
 1. `git log main..HEAD`와 변경 파일 목록을 바탕으로 PR 제목·본문 초안을 작성합니다.
-2. 초안을 사용자에게 보여줍니다. **사용자 확인 필요.**
-3. 확인 후 `gh pr create`로 PR을 생성하고 PR URL과 번호를 출력합니다.
+2. `--auto`가 없으면 초안을 사용자에게 보여줍니다. **사용자 확인 필요.**
+3. `--auto`가 있으면 확인 없이 즉시 `gh pr create`로 PR을 생성합니다.
+4. PR URL과 번호를 출력합니다.
 
 ### Step 4 — 리뷰 대기
 `check_pr.py`를 실행합니다. 스크립트가 내부에서 3초 간격으로 폴링합니다:

@@ -8,6 +8,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools:
   - Bash
+  - python3 .claude/skills/commit/scripts*
 model: haiku
 context: fork
 agent: general-purpose
@@ -18,7 +19,7 @@ hooks: ~
 
 ## 현재 Git 상태
 
-`!python3 $(git rev-parse --show-toplevel)/.claude/skills/commit/scripts/collect_git_state.py`
+`!python3 .claude/skills/commit/scripts/collect_git_state.py`
 
 ## 절차
 
