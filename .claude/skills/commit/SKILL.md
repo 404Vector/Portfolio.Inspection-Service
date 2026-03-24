@@ -18,7 +18,7 @@ hooks: ~
 
 ## 현재 Git 상태
 
-`!python3 /Users/4by4_khs/repos/Portfolio.Inspection-Service/.claude/skills/commit/scripts/collect_git_state.py`
+`!python3 $(git rev-parse --show-toplevel)/.claude/skills/commit/scripts/collect_git_state.py`
 
 ## 절차
 
@@ -37,7 +37,7 @@ hooks: ~
    - type: feat, fix, refactor, test, docs, chore, style
    - subject: 명령형, 50자 이하
    - 필요 시 본문에 why 설명
-   - 마지막 줄: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+   - 마지막 줄: `Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>`
 
 5. **커밋 실행** — HEREDOC으로 메시지를 전달합니다.
 
