@@ -6,7 +6,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: 
   - Bash(python3 .claude/skills/submit/scripts/*)
-  - Bash(gh pr create --title *)
+  - Bash(gh pr create *)
 model: sonnet
 context: ~
 agent: ~
