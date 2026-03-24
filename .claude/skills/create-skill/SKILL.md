@@ -92,7 +92,7 @@ skill은 `SKILL.md` 하나로도 동작하지만, 지원 파일을 추가하면 
 `${CLAUDE_SKILL_DIR}` 변수로 skill 디렉토리 내 스크립트를 절대 경로로 참조합니다:
 
 ```yaml
-- 검증 결과: !`python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py <path>`
+- 검증 결과: !`python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py $SKILL_PATH`
 ```
 
 정적 파일(`template.md`, `examples/`)은 스크립트로 대체할 수 없는 경우에만 사용합니다.
@@ -212,8 +212,10 @@ hooks: ~
 파일 생성 후 validate.py로 구조를 검증합니다:
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py <생성된-SKILL.md-경로>
+python3 ${CLAUDE_SKILL_DIR}/scripts/validate.py <skill-dir>/SKILL.md
 ```
+
+(`<skill-dir>`은 실제 생성 경로로 대체합니다.)
 
 - ✓ 통과 → 완료 메시지 출력
 - ✗ 실패 → 오류 목록을 출력하고 자동으로 수정한 뒤 재검증
