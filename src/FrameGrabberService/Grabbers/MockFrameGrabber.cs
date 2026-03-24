@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using CE = Core.Enums;
 
 namespace FrameGrabberService.Grabbers;
 
 public sealed class MockFrameGrabber : IFrameGrabber
 {
-    private GrabberConfig _config = GrabberConfig.Default;
-    private GrabberState  _state  = GrabberState.Idle;
-    private long          _frameCount;
+    private GrabberConfig          _config = GrabberConfig.Default;
+    private CE.GrabberState        _state  = CE.GrabberState.Idle;
+    private long                   _frameCount;
 
     private Channel<GrabbedFrame>    _channel = CreateChannel();
     private CancellationTokenSource? _continuousCts;
@@ -19,7 +20,7 @@ public sealed class MockFrameGrabber : IFrameGrabber
 
     public Task ConfigureAsync(GrabberConfig config, CancellationToken ct = default)
     {
-        if (_state == GrabberState.Acquiring)
+        if (_state == CE.GrabberState.Acquiring)
             throw new InvalidOperationException("Cannot configure while acquiring.");
 
         _config  = config;
@@ -29,11 +30,11 @@ public sealed class MockFrameGrabber : IFrameGrabber
 
     public Task StartAsync(CancellationToken ct = default)
     {
-        if (_state == GrabberState.Acquiring) return Task.CompletedTask;
+        if (_state == CE.GrabberState.Acquiring) return Task.CompletedTask;
 
-        _state = GrabberState.Acquiring;
+        _state = CE.GrabberState.Acquiring;
 
-        if (_config.Mode == AcquisitionMode.Continuous)
+        if (_config.Mode == CE.AcquisitionMode.Continuous)
         {
             _continuousCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             _ = RunContinuousLoopAsync(_continuousCts.Token);
@@ -51,7 +52,7 @@ public sealed class MockFrameGrabber : IFrameGrabber
             _continuousCts = null;
         }
 
-        _state = GrabberState.Idle;
+        _state = CE.GrabberState.Idle;
     }
 
     public async Task<GrabbedFrame> TriggerAsync(CancellationToken ct = default)
@@ -93,7 +94,7 @@ public sealed class MockFrameGrabber : IFrameGrabber
         catch (OperationCanceledException) { }
         finally
         {
-            _state = GrabberState.Idle;
+            _state = CE.GrabberState.Idle;
         }
     }
 
@@ -126,7 +127,7 @@ public sealed class MockFrameGrabber : IFrameGrabber
             byte v   = (byte)((x + y + offset) % 256);
             int  idx = y * stride + x * bpp;
 
-            if (_config.PixelFormat == PixelFormat.Mono8)
+            if (_config.PixelFormat == CE.PixelFormat.Mono8)
             {
                 data[idx] = v;
             }
@@ -141,11 +142,11 @@ public sealed class MockFrameGrabber : IFrameGrabber
         return data;
     }
 
-    private static int BytesPerPixel(PixelFormat fmt) => fmt switch
+    private static int BytesPerPixel(CE.PixelFormat fmt) => fmt switch
     {
-        PixelFormat.Mono8              => 1,
-        PixelFormat.Rgb8 or PixelFormat.Bgr8 => 3,
-        _                              => 1
+        CE.PixelFormat.Mono8                                => 1,
+        CE.PixelFormat.Rgb8 or CE.PixelFormat.Bgr8 => 3,
+        _                                                   => 1
     };
 
     private static Channel<GrabbedFrame> CreateChannel() =>

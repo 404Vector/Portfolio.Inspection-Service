@@ -1,5 +1,5 @@
+using Core.SharedMemory;
 using FrameGrabberService.Grabbers;
-using FrameGrabberService.SharedMemory;
 
 namespace FrameGrabberService.Services;
 
@@ -31,7 +31,14 @@ public sealed class FramePumpService : BackgroundService
         {
             await foreach (var frame in _grabber.GetFramesAsync(stoppingToken))
             {
-                _ringBuffer.Write(frame);
+                _ringBuffer.Write(
+                    frame.FrameId,
+                    frame.PixelData,
+                    frame.Width,
+                    frame.Height,
+                    frame.PixelFormat,
+                    frame.Stride,
+                    frame.Timestamp);
             }
         }
         catch (OperationCanceledException) { }

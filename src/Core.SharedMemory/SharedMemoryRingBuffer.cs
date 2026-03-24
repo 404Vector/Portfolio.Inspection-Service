@@ -1,9 +1,8 @@
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
-using FrameGrabberService.Grabbers;
-using DomainPixelFormat = FrameGrabberService.Grabbers.PixelFormat;
+using Core.Enums;
 
-namespace FrameGrabberService.SharedMemory;
+namespace Core.SharedMemory;
 
 /// <summary>
 /// 단일 MMF 위에 구현된 고정 크기 링버퍼 (SPSC, OverwriteOldest 정책).
@@ -63,7 +62,14 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
     /// 프레임을 다음 슬롯에 기록하고 FrameGrabbed 이벤트를 발행한다.
     /// 버퍼가 가득 찬 경우 가장 오래된 슬롯을 덮어쓴다(OverwriteOldest).
     /// </summary>
-    public FrameInfo Write(GrabbedFrame frame)
+    public FrameInfo Write(
+        string      frameId,
+        byte[]      pixelData,
+        int         width,
+        int         height,
+        PixelFormat pixelFormat,
+        int         stride,
+        DateTimeOffset timestamp)
     {
         long seq       = ++_writeSeq;
         int  slotIndex = (int)((seq - 1) % _capacity);
@@ -74,27 +80,27 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         Volatile.Write(ref slot.State, SlotState.Writing);
 
         // 픽셀 데이터 복사
-        fixed (byte* src = frame.PixelData)
+        fixed (byte* src = pixelData)
         {
-            Buffer.MemoryCopy(src, SlotDataPtr(slotIndex), _slotDataSize, frame.PixelData.Length);
+            Buffer.MemoryCopy(src, SlotDataPtr(slotIndex), _slotDataSize, pixelData.Length);
         }
 
         // 메타데이터 기록
-        slot.TimestampUs = frame.Timestamp.ToUnixTimeMilliseconds() * 1_000L;
+        slot.TimestampUs = timestamp.ToUnixTimeMilliseconds() * 1_000L;
         slot.Sequence    = seq;
 
         // Ready 로 전환 (release barrier)
         Volatile.Write(ref slot.State, SlotState.Ready);
 
         var info = new FrameInfo(
-            FrameId:         frame.FrameId,
+            FrameId:         frameId,
             SlotIndex:       slotIndex,
             SharedMemoryKey: Name,
             TimestampUs:     slot.TimestampUs,
-            Width:           frame.Width,
-            Height:          frame.Height,
-            PixelFormat:     frame.PixelFormat,
-            Stride:          frame.Stride,
+            Width:           width,
+            Height:          height,
+            PixelFormat:     pixelFormat,
+            Stride:          stride,
             SizeBytes:       _slotDataSize,
             Sequence:        seq);
 
@@ -141,10 +147,10 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         + (long)slotIndex * _slotTotalSize
         + RingBufferLayout.SlotHeaderSize;
 
-    private static int BytesPerPixel(DomainPixelFormat fmt) => fmt switch
+    private static int BytesPerPixel(PixelFormat fmt) => fmt switch
     {
-        DomainPixelFormat.Rgb8 or DomainPixelFormat.Bgr8 => 3,
-        _                                                 => 1
+        PixelFormat.Rgb8 or PixelFormat.Bgr8 => 3,
+        _                                     => 1
     };
 
     // ── IDisposable ──────────────────────────────────────────────────────────

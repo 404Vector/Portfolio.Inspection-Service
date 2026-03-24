@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace FrameGrabberService.SharedMemory;
+namespace Core.SharedMemory;
 
 /// <summary>
 /// 링버퍼 메모리 레이아웃 상수
@@ -35,7 +35,7 @@ internal struct RingBufferHeader
     [FieldOffset( 8)] public int Width;
     [FieldOffset(12)] public int Height;
     [FieldOffset(16)] public int Stride;
-    [FieldOffset(20)] public int PixelFormatValue; // Grabbers.PixelFormat as int
+    [FieldOffset(20)] public int PixelFormatValue; // Core.Enums.PixelFormat as int
     // [24..63] reserved
 }
 

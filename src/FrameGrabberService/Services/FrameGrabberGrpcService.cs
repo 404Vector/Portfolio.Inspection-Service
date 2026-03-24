@@ -1,11 +1,11 @@
 using System.Threading.Channels;
 using Grpc.Core;
+using Core.SharedMemory;
 using FrameGrabberService.Grabbers;
-using FrameGrabberService.SharedMemory;
 
-using DomainAcquisitionMode = FrameGrabberService.Grabbers.AcquisitionMode;
-using DomainPixelFormat      = FrameGrabberService.Grabbers.PixelFormat;
-using DomainGrabberState     = FrameGrabberService.Grabbers.GrabberState;
+using DomainAcquisitionMode = Core.Enums.AcquisitionMode;
+using DomainPixelFormat      = Core.Enums.PixelFormat;
+using DomainGrabberState     = Core.Enums.GrabberState;
 
 namespace FrameGrabberService.Services;
 

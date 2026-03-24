@@ -1,13 +1,11 @@
 namespace FrameGrabberService.Grabbers;
 
-public enum AcquisitionMode { Continuous, Triggered }
-
 public record GrabberConfig(
-    AcquisitionMode Mode         = AcquisitionMode.Continuous,
-    PixelFormat     PixelFormat  = PixelFormat.Mono8,
-    int             Width        = 1280,
-    int             Height       = 1024,
-    double          FrameRateHz  = 30.0)
+    Core.Enums.AcquisitionMode Mode         = Core.Enums.AcquisitionMode.Continuous,
+    Core.Enums.PixelFormat     PixelFormat  = Core.Enums.PixelFormat.Mono8,
+    int                        Width        = 1280,
+    int                        Height       = 1024,
+    double                     FrameRateHz  = 30.0)
 {
     public static readonly GrabberConfig Default = new();
 }
