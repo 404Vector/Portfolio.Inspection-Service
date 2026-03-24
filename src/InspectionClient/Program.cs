@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using System;
 
-namespace Inspector;
+namespace InspectionClient;
 
 class Program
 {
