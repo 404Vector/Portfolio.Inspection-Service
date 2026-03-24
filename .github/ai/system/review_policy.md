@@ -16,3 +16,8 @@
 - **`net10.0` target framework**: This project intentionally targets .NET 10,
   which has been officially released. Do not flag `net10.0` as unreleased or
   unsupported.
+
+- **No unit tests for application code (early stage)**: This project is in
+  its initial architecture phase and has not yet established a test
+  infrastructure. Do not flag missing unit tests for application code as a
+  failure. Test coverage will be addressed in a dedicated future milestone.
