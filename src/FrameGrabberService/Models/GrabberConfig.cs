@@ -1,4 +1,4 @@
-namespace FrameGrabberService.Grabbers;
+namespace FrameGrabberService.Models;
 
 public record GrabberConfig(
     Core.Enums.AcquisitionMode Mode         = Core.Enums.AcquisitionMode.Continuous,

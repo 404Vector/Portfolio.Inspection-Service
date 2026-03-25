@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using FrameGrabberService.Interfaces;
+using FrameGrabberService.Models;
 using CE = Core.Enums;
 
 namespace FrameGrabberService.Grabbers;

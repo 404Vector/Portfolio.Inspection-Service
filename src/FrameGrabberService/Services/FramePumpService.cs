@@ -1,5 +1,5 @@
 using Core.SharedMemory;
-using FrameGrabberService.Grabbers;
+using FrameGrabberService.Interfaces;
 
 namespace FrameGrabberService.Services;
 

@@ -1,4 +1,6 @@
-namespace FrameGrabberService.Grabbers;
+using FrameGrabberService.Models;
+
+namespace FrameGrabberService.Interfaces;
 
 public interface IFrameGrabber : IAsyncDisposable
 {

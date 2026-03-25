@@ -1,7 +1,8 @@
 using System.Threading.Channels;
 using Grpc.Core;
 using Core.SharedMemory;
-using FrameGrabberService.Grabbers;
+using FrameGrabberService.Interfaces;
+using FrameGrabberService.Models;
 
 using DomainAcquisitionMode = Core.Enums.AcquisitionMode;
 using DomainPixelFormat      = Core.Enums.PixelFormat;

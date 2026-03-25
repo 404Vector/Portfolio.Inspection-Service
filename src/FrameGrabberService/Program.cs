@@ -1,5 +1,6 @@
 using Core.SharedMemory;
 using FrameGrabberService.Grabbers;
+using FrameGrabberService.Interfaces;
 using FrameGrabberService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
