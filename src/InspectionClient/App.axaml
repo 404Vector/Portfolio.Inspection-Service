@@ -7,7 +7,7 @@
     <Application.Styles>
         <FluentTheme />
         <materialIcons:MaterialIconStyles />
-        <StyleInclude Source="avares://InspectionClient/Assets/Styles/NavigatorStyles.axaml" />
+<StyleInclude Source="avares://InspectionClient/Assets/Styles/NavigatorStyles.axaml" />
     </Application.Styles>
 
     <Application.Resources>

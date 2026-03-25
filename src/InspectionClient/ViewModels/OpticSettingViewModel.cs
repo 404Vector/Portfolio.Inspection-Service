@@ -1,5 +1,6 @@
 using Avalonia.Media.Imaging;
 using InspectionClient.Interfaces;
+using InspectionClient.Models;
 
 namespace InspectionClient.ViewModels;
 
@@ -7,6 +8,8 @@ public partial class OpticSettingViewModel : ViewModelBase
 {
     private readonly ILogService  _log;
     private readonly IFrameSource _frameSource;
+
+    public OpticSettings Settings { get; } = new();
 
     // [ObservableProperty] 대신 수동 정의 —
     // 동일 인스턴스 재할당 시 자동 알림이 누락되지 않도록 setter가 항상 OnPropertyChanged를 발생시킨다.
