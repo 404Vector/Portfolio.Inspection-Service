@@ -1,3 +1,3 @@
-namespace InspectionClient.Enums;
+namespace Core.Logging.Enums;
 
 public enum LogLevel { Trace, Debug, Info, Warning, Error }

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Core.Logging.Interfaces;
 using InspectionClient.Models;
 
 namespace InspectionClient.Interfaces;
