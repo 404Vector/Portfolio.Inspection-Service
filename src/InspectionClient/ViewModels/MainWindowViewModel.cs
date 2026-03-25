@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using InspectionClient.Interfaces;
 
 namespace InspectionClient.ViewModels;
 
@@ -18,6 +19,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _activeViewName = string.Empty;
     [ObservableProperty] private string _titleText = string.Empty;
 
+    public IObservableLogService Log { get; }
+
     private readonly InspectionViewModel   _inspectionVm;
     private readonly HistoryViewModel      _historyVm;
     private readonly OpticSettingViewModel _opticSettingVm;
@@ -27,12 +30,14 @@ public partial class MainWindowViewModel : ViewModelBase
         InspectionViewModel   inspectionVm,
         HistoryViewModel      historyVm,
         OpticSettingViewModel opticSettingVm,
-        AppSettingViewModel   appSettingVm)
+        AppSettingViewModel   appSettingVm,
+        IObservableLogService logService)
     {
         _inspectionVm   = inspectionVm;
         _historyVm      = historyVm;
         _opticSettingVm = opticSettingVm;
         _appSettingVm   = appSettingVm;
+        Log             = logService;
 
         Navigate("Inspection");
     }
@@ -52,16 +57,16 @@ public partial class MainWindowViewModel : ViewModelBase
         TitleText = DisplayNames.GetValueOrDefault(viewName, viewName);
     }
 
-    // View가 hover 진입 시 호출 — 제목 미리보기 표시
-    public void OnHoverEnter(string viewName)
+    [RelayCommand]
+    private void HoverEnter(string viewName)
     {
         var current = DisplayNames.GetValueOrDefault(ActiveViewName, ActiveViewName);
         var hover   = DisplayNames.GetValueOrDefault(viewName, viewName);
         TitleText = $"{current} > {hover}";
     }
 
-    // View가 hover 종료 시 호출 — 현재 뷰 제목 복원
-    public void OnHoverExit()
+    [RelayCommand]
+    private void HoverExit()
     {
         TitleText = DisplayNames.GetValueOrDefault(ActiveViewName, ActiveViewName);
     }

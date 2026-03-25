@@ -17,7 +17,7 @@ public partial class MainWindow : Window
         [nameof(NavAppSetting)]   = "AppSetting",
     };
 
-    private MainWindowViewModel Vm => (MainWindowViewModel)DataContext!;
+    private MainWindowViewModel view_model => (MainWindowViewModel)DataContext!;
 
     public MainWindow()
     {
@@ -63,12 +63,12 @@ public partial class MainWindow : Window
         if (sender is Button { Name: { } name }
             && ButtonToViewName.TryGetValue(name, out var viewName))
         {
-            Vm.OnHoverEnter(viewName);
+            view_model.HoverEnterCommand.Execute(viewName);
         }
     }
 
     private void OnNavPointerExited(object? sender, PointerEventArgs e)
     {
-        Vm.OnHoverExit();
+        view_model.HoverExitCommand.Execute(null);
     }
 }
