@@ -87,25 +87,4 @@ public class OpticSettings
     [DisplayName("Mode")]
     [Description("Continuous / Strobe")]
     public LightMode LightMode { get; set; } = LightMode.Strobe;
-
-    // ── 복사 ─────────────────────────────────────────────────
-
-    public OpticSettings DeepCopy() => new()
-    {
-        ExposureUs             = ExposureUs,
-        Gain                   = Gain,
-        BlackLevel             = BlackLevel,
-        PixelFormat            = PixelFormat,
-        PixelSizeUm            = PixelSizeUm,
-        ImageWidth             = ImageWidth,
-        ImageHeight            = ImageHeight,
-        FrameCount             = FrameCount,
-        AcquisitionTimeoutMs   = AcquisitionTimeoutMs,
-        TriggerMode            = TriggerMode,
-        TriggerDelayUs         = TriggerDelayUs,
-        TriggerActivation      = TriggerActivation,
-        ObjectiveMagnification = ObjectiveMagnification,
-        LightIntensity         = LightIntensity,
-        LightMode              = LightMode,
-    };
 }

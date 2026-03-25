@@ -37,8 +37,6 @@ public sealed class MockFrameSourceService : IFrameSource
 {
     public event EventHandler<WriteableBitmap>? FrameSwapped;
 
-    // SetProperty에서 지원하는 key 목록
-    private static readonly string[] SupportedKeys = ["ImageWidth", "ImageHeight", "ExposureUs"];
 
     private readonly ILogService _log;
 
@@ -144,14 +142,12 @@ public sealed class MockFrameSourceService : IFrameSource
                 break;
 
             case "ExposureUs" when value is int us and > 0:
-                Fps = 1_000_000 / us;
+                Fps = Math.Max(1, 1_000_000 / us);
                 _log.Info(this, $"SetProperty: {key} = {us} μs → Fps = {Fps}");
                 break;
 
             default:
-                _log.Error(this,
-                    $"SetProperty: 지원하지 않는 key '{key}'. " +
-                    $"지원 항목: {string.Join(", ", SupportedKeys)}");
+                // Unsupported key — silently ignore per IFrameSource contract
                 break;
         }
     }
