@@ -13,7 +13,7 @@ public partial class OpticSettingViewModel : ViewModelBase
     private readonly ILogService  _log;
     private readonly IFrameSource _frameSource;
 
-    public OpticSettings Settings    { get; } = new();
+    public OpticSettings Settings    { get; private set; } = new();
     public OpticSettings RealSettings { get; } = new();
 
     // [ObservableProperty] 대신 수동 정의 —
@@ -55,8 +55,12 @@ public partial class OpticSettingViewModel : ViewModelBase
     [RelayCommand]
     private void Restore()
     {
-        foreach (var prop in FindDifference(RealSettings, Settings))
-            prop.SetValue(Settings, prop.GetValue(RealSettings));
+        var restored = new OpticSettings();
+        foreach (var prop in typeof(OpticSettings).GetProperties())
+            prop.SetValue(restored, prop.GetValue(RealSettings));
+
+        Settings = restored;
+        OnPropertyChanged(nameof(Settings));
     }
 
     // ── 유틸리티 ─────────────────────────────────────────────
