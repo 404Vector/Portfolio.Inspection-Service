@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+option csharp_namespace = "FrameGrabberService";
+
+package framegrabber;
+
+service FrameGrabber {
+  rpc Configure         (ConfigureRequest)        returns (ConfigureResponse);
+  rpc StartAcquisition  (StartAcquisitionRequest) returns (StartAcquisitionResponse);
+  rpc StopAcquisition   (StopAcquisitionRequest)  returns (StopAcquisitionResponse);
+  rpc TriggerFrame      (TriggerFrameRequest)     returns (FrameHandle);
+  rpc SubscribeFrames   (SubscribeFramesRequest)  returns (stream FrameHandle);
+  rpc GetStatus         (GetStatusRequest)        returns (StatusResponse);
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum AcquisitionMode {
+  ACQUISITION_MODE_UNSPECIFIED = 0;
+  ACQUISITION_MODE_CONTINUOUS  = 1;
+  ACQUISITION_MODE_TRIGGERED   = 2;
+}
+
+enum PixelFormat {
+  PIXEL_FORMAT_UNSPECIFIED = 0;
+  PIXEL_FORMAT_MONO8       = 1;
+  PIXEL_FORMAT_RGB8        = 2;
+  PIXEL_FORMAT_BGR8        = 3;
+}
+
+enum GrabberState {
+  GRABBER_STATE_UNSPECIFIED = 0;
+  GRABBER_STATE_IDLE        = 1;
+  GRABBER_STATE_ACQUIRING   = 2;
+  GRABBER_STATE_ERROR       = 3;
+}
+
+// ── Requests / Responses ─────────────────────────────────────────────────────
+
+message ConfigureRequest {
+  AcquisitionMode mode          = 1;
+  PixelFormat     pixel_format  = 2;
+  int32           width         = 3;
+  int32           height        = 4;
+  double          frame_rate_hz = 5;
+}
+message ConfigureResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+message StartAcquisitionRequest {}
+message StartAcquisitionResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+message StopAcquisitionRequest {}
+message StopAcquisitionResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+message TriggerFrameRequest {}
+
+message SubscribeFramesRequest {}
+
+message GetStatusRequest {}
+message StatusResponse {
+  GrabberState    state          = 1;
+  AcquisitionMode mode           = 2;
+  int64           frames_grabbed = 3;
+  string          message        = 4;
+}
+
+// ── Frame Handle (shared memory pointer) ─────────────────────────────────────
+
+message FrameHandle {
+  string      frame_id          = 1;
+  string      shared_memory_key = 2;  // MMF 이름 (OpenExisting 키)
+  int64       timestamp_us      = 3;
+  int32       width             = 4;
+  int32       height            = 5;
+  PixelFormat pixel_format      = 6;
+  int32       stride            = 7;
+  int64       size_bytes        = 8;
+  int32       slot_index        = 9;  // 링버퍼 슬롯 인덱스
+  int64       sequence          = 10; // 단조 증가 시퀀스 (누락 감지용)
+}
