@@ -19,11 +19,18 @@ namespace InspectionClient.Services;
 ///   Dispatcher.UIThread.Post 로 두 버퍼의 역할을 교체하고
 ///   FrameSwapped 이벤트를 발생시킨다.
 ///
+/// 동기화:
+///   _swapReady(AutoResetEvent)가 배경 스레드와 UI 스레드 사이의 게이트 역할을 한다.
+///   - 배경 스레드: WaitOne() → RenderFrame() → Post(swap + Set())
+///   - UI 스레드:   swap() → _swapReady.Set()
+///   이 순서를 통해 이전 교체가 완료되기 전에 배경 스레드가
+///   새 프레임을 쓰기 시작하는 레이스 컨디션을 방지한다.
+///
 /// 런타임 설정 변경:
 ///   - Fps:    volatile int — 배경 스레드가 루프마다 읽는다. lock 불필요.
 ///   - Width/Height: 변경 시 _resizePending 플래그를 세운다.
-///                   배경 스레드는 프레임 시작 전 플래그를 확인하고
-///                   안전하게 버퍼를 재할당한다.
+///                   배경 스레드는 WaitOne() 이후 플래그를 확인하고
+///                   두 버퍼를 모두 안전하게 재할당한다.
 /// </summary>
 public sealed class MockFrameSourceService : IFrameSource
 {
@@ -76,10 +83,11 @@ public sealed class MockFrameSourceService : IFrameSource
 
     // ── 내부 상태 ─────────────────────────────────────────────────────────
 
-    private readonly Thread _thread;
-    private volatile bool   _running;
-    private volatile bool   _resizePending;
-    private int             _frameIndex;
+    private readonly Thread          _thread;
+    private readonly AutoResetEvent  _swapReady = new(initialState: true);
+    private volatile bool            _running;
+    private volatile bool            _resizePending;
+    private int                      _frameIndex;
 
     // ── 생성자 ────────────────────────────────────────────────────────────
 
@@ -110,7 +118,8 @@ public sealed class MockFrameSourceService : IFrameSource
     public void Stop()
     {
         _running = false;
-        // IsBackground = true 이므로 Join 없이도 프로세스 종료 시 스레드가 정리된다.
+        // WaitOne()에서 블로킹 중인 배경 스레드가 루프 조건을 확인하고 정상 종료되도록 신호를 보낸다.
+        _swapReady.Set();
     }
 
     // ── 배경 스레드 루프 ──────────────────────────────────────────────────
@@ -119,16 +128,18 @@ public sealed class MockFrameSourceService : IFrameSource
     {
         while (_running)
         {
-            // Width/Height 변경 요청이 있으면 프레임 시작 전에 버퍼를 재할당한다.
-            // 이 시점에서 _writeBuffer는 배경 스레드만 접근하므로 lock이 불필요하다.
+            // 이전 프레임의 버퍼 교체가 UI 스레드에서 완료될 때까지 대기한다.
+            // _swapReady는 초기값 true이므로 첫 프레임은 대기 없이 통과한다.
+            // Stop() 호출 시에도 Set()으로 깨어나 루프 조건에서 종료된다.
+            _swapReady.WaitOne();
+            if (!_running) break;
+
+            // Width/Height 변경 요청: WaitOne() 통과 후에는 UI 스레드가 버퍼를 보지 않는 것이
+            // 보장되므로 _readBuffer도 배경 스레드에서 직접 교체해도 안전하다.
             if (_resizePending)
             {
                 _resizePending = false;
-                var (wb, rb) = AllocateBuffers(_width, _height);
-
-                // _readBuffer 교체는 UI 스레드에서 수행해야 한다.
-                Dispatcher.UIThread.Post(() => _readBuffer = rb, DispatcherPriority.Normal);
-                _writeBuffer = wb;
+                (_writeBuffer, _readBuffer) = AllocateBuffers(_width, _height);
             }
 
             var sw       = Stopwatch.StartNew();
@@ -137,10 +148,11 @@ public sealed class MockFrameSourceService : IFrameSource
             // 1. 배경 스레드에서 _writeBuffer에만 픽셀을 쓴다.
             RenderFrame(_writeBuffer);
 
-            // 2. UI 스레드에서 버퍼 역할을 교체하고 이벤트를 발생시킨다.
+            // 2. UI 스레드에서 버퍼 역할을 교체하고, 완료 신호를 보낸 뒤 이벤트를 발생시킨다.
             Dispatcher.UIThread.Post(() =>
             {
                 (_readBuffer, _writeBuffer) = (_writeBuffer, _readBuffer);
+                _swapReady.Set();
                 FrameSwapped?.Invoke(this, _readBuffer);
             }, DispatcherPriority.Render);
 
