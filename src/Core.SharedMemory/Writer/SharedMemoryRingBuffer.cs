@@ -42,10 +42,10 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         long   totalSize = RingBufferLayout.SlotsOffset + (long)_capacity * _slotTotalSize;
         string filePath  = Path.Combine(Path.GetTempPath(), options.Name);
 
-        // CreateFromFile: Windows/macOS/Linux 모두 지원
+        // mapName: null — Named maps는 Windows 전용. 파일 경로로만 식별하므로 불필요.
         // 컨슈머는 동일 경로로 CreateFromFile(FileMode.Open)하여 접근
         _mmf      = MemoryMappedFile.CreateFromFile(
-                        filePath, FileMode.Create, options.Name, totalSize);
+                        filePath, FileMode.Create, mapName: null, totalSize);
         _accessor = _mmf.CreateViewAccessor(0, totalSize, MemoryMappedFileAccess.ReadWrite);
 
         byte* ptr = null;
