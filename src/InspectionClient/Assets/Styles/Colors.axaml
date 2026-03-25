@@ -27,4 +27,7 @@
   <SolidColorBrush x:Key="StatusConnected"  Color="#9ECE6A" />
   <SolidColorBrush x:Key="StatusError"      Color="#F7768E" />
 
+  <!-- ── Log Level ──────────────────────────────────────── -->
+  <SolidColorBrush x:Key="LogWarning"       Color="#E0AF68" />
+
 </ResourceDictionary>

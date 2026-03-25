@@ -17,11 +17,14 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            var logVm = new LogViewModel();
+
             var vm = new MainWindowViewModel(
                 new InspectionViewModel(),
                 new HistoryViewModel(),
                 new OpticSettingViewModel(),
-                new AppSettingViewModel());
+                new AppSettingViewModel(),
+                logVm);
 
             desktop.MainWindow = new MainWindow { DataContext = vm };
         }
