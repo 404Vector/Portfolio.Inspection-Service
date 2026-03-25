@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using InspectionClient.Services;
 using InspectionClient.ViewModels;
 using InspectionClient.Views;
 
@@ -17,14 +18,14 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var logVm = new LogViewModel();
+            var logService = new LogService();
 
             var vm = new MainWindowViewModel(
-                new InspectionViewModel(),
-                new HistoryViewModel(),
-                new OpticSettingViewModel(),
-                new AppSettingViewModel(),
-                logVm);
+                new InspectionViewModel(logService),
+                new HistoryViewModel(logService),
+                new OpticSettingViewModel(logService),
+                new AppSettingViewModel(logService),
+                logService);
 
             desktop.MainWindow = new MainWindow { DataContext = vm };
         }

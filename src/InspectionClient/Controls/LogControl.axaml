@@ -1,11 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mi="using:Material.Icons.Avalonia"
-             xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:models="using:InspectionClient.Models"
              xmlns:conv="using:InspectionClient.Converters"
-             x:Class="InspectionClient.Views.LogControl"
-             x:DataType="vm:LogViewModel">
+             x:Class="InspectionClient.Controls.LogControl"
+             x:Name="Root">
 
   <UserControl.Resources>
     <conv:LogLevelToForegroundConverter x:Key="LevelToFg" />
@@ -25,7 +24,7 @@
                    FontSize="11" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextMuted}"
                    VerticalAlignment="Center" />
-        <Button Command="{Binding ClearCommand}"
+        <Button Click="OnClearClicked"
                 Padding="6,1" FontSize="10"
                 Foreground="{DynamicResource TextMuted}">
           Clear
@@ -39,7 +38,7 @@
         <ScrollViewer x:Name="LogScrollViewer"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-          <ItemsControl ItemsSource="{Binding Entries}">
+          <ItemsControl ItemsSource="{Binding #Root.Entries}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="models:LogEntry">
                 <TextBlock Text="{Binding Display}"

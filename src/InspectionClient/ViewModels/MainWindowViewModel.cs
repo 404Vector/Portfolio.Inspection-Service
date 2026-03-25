@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using InspectionClient.Interfaces;
 
 namespace InspectionClient.ViewModels;
 
@@ -18,7 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _activeViewName = string.Empty;
     [ObservableProperty] private string _titleText = string.Empty;
 
-    public LogViewModel Log { get; }
+    public IObservableLogService Log { get; }
 
     private readonly InspectionViewModel   _inspectionVm;
     private readonly HistoryViewModel      _historyVm;
@@ -30,13 +31,13 @@ public partial class MainWindowViewModel : ViewModelBase
         HistoryViewModel      historyVm,
         OpticSettingViewModel opticSettingVm,
         AppSettingViewModel   appSettingVm,
-        LogViewModel          logVm)
+        IObservableLogService logService)
     {
         _inspectionVm   = inspectionVm;
         _historyVm      = historyVm;
         _opticSettingVm = opticSettingVm;
         _appSettingVm   = appSettingVm;
-        Log             = logVm;
+        Log             = logService;
 
         Navigate("Inspection");
     }

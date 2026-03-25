@@ -5,6 +5,7 @@
         xmlns:mi="using:Material.Icons.Avalonia"
         xmlns:vm="using:InspectionClient.ViewModels"
         xmlns:views="using:InspectionClient.Views"
+        xmlns:controls="using:InspectionClient.Controls"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="InspectionClient.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -55,9 +56,9 @@
     </Border>
 
     <!-- ── Log Panel ──────────────────────────────────────── -->
-    <views:LogControl DockPanel.Dock="Bottom"
-                      Height="160"
-                      DataContext="{Binding Log}" />
+    <controls:LogControl DockPanel.Dock="Bottom"
+                         Height="160"
+                         Entries="{Binding Log.Entries}" />
 
     <!-- ── Main Content ───────────────────────────────────── -->
     <Grid ColumnDefinitions="48,*" ClipToBounds="False">
