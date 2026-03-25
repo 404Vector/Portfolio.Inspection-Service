@@ -22,7 +22,7 @@ public sealed class MicrosoftLogService : ILogService
 
     private static string ResolveCategoryName(object sender)
     {
-        var name = sender is string s ? s : sender.GetType().Name;
+        var name = sender switch { string s => s, null => "Unknown", _ => sender.GetType().Name };
         foreach (var suffix in new[] { "ViewModel", "Service", "View" })
         {
             if (name.EndsWith(suffix, StringComparison.Ordinal))

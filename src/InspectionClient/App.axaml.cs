@@ -23,7 +23,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var logDirectory  = Path.Combine(AppContext.BaseDirectory, "logs");
-            var loggerFactory = FileLoggerFactory.Create(logDirectory, fileNamePrefix: "inspection");
+            var loggerFactory         = FileLoggerFactory.Create(logDirectory, fileNamePrefix: "inspection");
 
             var uiLogService   = new LogService();
             var fileLogService = new MicrosoftLogService(loggerFactory);
