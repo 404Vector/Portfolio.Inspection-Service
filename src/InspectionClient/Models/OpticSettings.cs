@@ -30,8 +30,17 @@ public class OpticSettings
     [Category("Camera")]
     [DisplayName("Pixel Size (μm/px)")]
     [Description("Effective pixel size derived from magnification and sensor pixel pitch.")]
-    [ReadOnly(true)]
     public double PixelSizeUm { get; set; } = 0.55;
+
+    [Category("Camera")]
+    [DisplayName("Image Width (px)")]
+    [Description("Captured frame width in pixels.")]
+    public int ImageWidth { get; set; } = 1024;
+
+    [Category("Camera")]
+    [DisplayName("Image Height (px)")]
+    [Description("Captured frame height in pixels.")]
+    public int ImageHeight { get; set; } = 1024;
 
     // ── Frame Grabber ────────────────────────────────────────
 
@@ -53,7 +62,7 @@ public class OpticSettings
     [Category("Frame Grabber")]
     [DisplayName("Trigger Delay (μs)")]
     [Description("Delay from trigger signal reception to exposure start.")]
-    public int TriggerDelayUs { get; set; } = 0;
+    public int TriggerDelayUs { get; set; } = 1000;
 
     [Category("Frame Grabber")]
     [DisplayName("Trigger Activation")]
@@ -78,4 +87,25 @@ public class OpticSettings
     [DisplayName("Mode")]
     [Description("Continuous / Strobe")]
     public LightMode LightMode { get; set; } = LightMode.Strobe;
+
+    // ── 복사 ─────────────────────────────────────────────────
+
+    public OpticSettings DeepCopy() => new()
+    {
+        ExposureUs             = ExposureUs,
+        Gain                   = Gain,
+        BlackLevel             = BlackLevel,
+        PixelFormat            = PixelFormat,
+        PixelSizeUm            = PixelSizeUm,
+        ImageWidth             = ImageWidth,
+        ImageHeight            = ImageHeight,
+        FrameCount             = FrameCount,
+        AcquisitionTimeoutMs   = AcquisitionTimeoutMs,
+        TriggerMode            = TriggerMode,
+        TriggerDelayUs         = TriggerDelayUs,
+        TriggerActivation      = TriggerActivation,
+        ObjectiveMagnification = ObjectiveMagnification,
+        LightIntensity         = LightIntensity,
+        LightMode              = LightMode,
+    };
 }

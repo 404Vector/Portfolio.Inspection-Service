@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Core.Logging.Interfaces;
 using InspectionClient.Interfaces;
 
 namespace InspectionClient.Services;
@@ -35,6 +36,11 @@ namespace InspectionClient.Services;
 public sealed class MockFrameSourceService : IFrameSource
 {
     public event EventHandler<WriteableBitmap>? FrameSwapped;
+
+    // SetProperty에서 지원하는 key 목록
+    private static readonly string[] SupportedKeys = ["ImageWidth", "ImageHeight", "ExposureUs"];
+
+    private readonly ILogService _log;
 
     // ── 설정 프로퍼티 ─────────────────────────────────────────────────────
 
@@ -91,8 +97,9 @@ public sealed class MockFrameSourceService : IFrameSource
 
     // ── 생성자 ────────────────────────────────────────────────────────────
 
-    public MockFrameSourceService(int fps = 60, int width = 1024, int height = 1024)
+    public MockFrameSourceService(ILogService logService, int fps = 60, int width = 1024, int height = 1024)
     {
+        _log    = logService;
         _fps    = Math.Max(1, fps);
         _width  = Math.Max(1, width);
         _height = Math.Max(1, height);
@@ -120,6 +127,33 @@ public sealed class MockFrameSourceService : IFrameSource
         _running = false;
         // WaitOne()에서 블로킹 중인 배경 스레드가 루프 조건을 확인하고 정상 종료되도록 신호를 보낸다.
         _swapReady.Set();
+    }
+
+    public void SetProperty(string key, object? value)
+    {
+        switch (key)
+        {
+            case "ImageWidth" when value is int w:
+                Width = w;
+                _log.Info(this, $"SetProperty: {key} = {w} px");
+                break;
+
+            case "ImageHeight" when value is int h:
+                Height = h;
+                _log.Info(this, $"SetProperty: {key} = {h} px");
+                break;
+
+            case "ExposureUs" when value is int us and > 0:
+                Fps = 1_000_000 / us;
+                _log.Info(this, $"SetProperty: {key} = {us} μs → Fps = {Fps}");
+                break;
+
+            default:
+                _log.Error(this,
+                    $"SetProperty: 지원하지 않는 key '{key}'. " +
+                    $"지원 항목: {string.Join(", ", SupportedKeys)}");
+                break;
+        }
     }
 
     // ── 배경 스레드 루프 ──────────────────────────────────────────────────
