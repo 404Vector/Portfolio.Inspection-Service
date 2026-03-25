@@ -28,6 +28,10 @@
   <SolidColorBrush x:Key="StatusError"      Color="#F7768E" />
 
   <!-- ── Log Level ──────────────────────────────────────── -->
-  <SolidColorBrush x:Key="LogWarning"       Color="#E0AF68" />
+  <SolidColorBrush x:Key="LogTrace"         Color="#FF9E64" />  <!-- 주황 -->
+  <SolidColorBrush x:Key="LogDebug"         Color="#6B7498" />  <!-- 회색 -->
+  <SolidColorBrush x:Key="LogInfo"          Color="#C0CAF5" />  <!-- 흰색 -->
+  <SolidColorBrush x:Key="LogWarning"       Color="#E0AF68" />  <!-- 노랑 -->
+  <SolidColorBrush x:Key="LogError"         Color="#F7768E" />  <!-- 붉은색 -->
 
 </ResourceDictionary>
