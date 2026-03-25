@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using InspectionClient.Enums;
+using Core.Logging.Enums;
 
 namespace InspectionClient.Converters;
 

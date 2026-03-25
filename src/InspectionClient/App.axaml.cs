@@ -1,6 +1,10 @@
+using System;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Core.Logging.Factories;
+using Core.Logging.Services;
 using InspectionClient.Services;
 using InspectionClient.ViewModels;
 using InspectionClient.Views;
@@ -18,7 +22,13 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var logService  = new LogService();
+            var logDirectory  = Path.Combine(AppContext.BaseDirectory, "logs");
+            var loggerFactory         = FileLoggerFactory.Create(logDirectory, fileNamePrefix: "inspection");
+
+            var uiLogService   = new LogService();
+            var fileLogService = new MicrosoftLogService(loggerFactory);
+            var logService     = new CompositeLogService(uiLogService, fileLogService);
+
             var frameSource = new MockFrameSourceService();
 
             var vm = new MainWindowViewModel(
@@ -26,10 +36,14 @@ public partial class App : Application
                 new HistoryViewModel(logService),
                 new OpticSettingViewModel(logService, frameSource),
                 new AppSettingViewModel(logService),
-                logService);
+                uiLogService);
 
             desktop.MainWindow = new MainWindow { DataContext = vm };
-            desktop.Exit += (_, _) => frameSource.Stop();
+            desktop.Exit += (_, _) =>
+            {
+                frameSource.Stop();
+                loggerFactory.Dispose();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();

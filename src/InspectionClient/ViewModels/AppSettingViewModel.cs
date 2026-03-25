@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
-using InspectionClient.Enums;
-using InspectionClient.Interfaces;
+using Core.Logging.Enums;
+using Core.Logging.Interfaces;
 
 namespace InspectionClient.ViewModels;
 

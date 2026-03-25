@@ -1,4 +1,5 @@
 using Avalonia.Media.Imaging;
+using Core.Logging.Interfaces;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
 

@@ -1,5 +1,5 @@
 using System;
-using InspectionClient.Enums;
+using Core.Logging.Enums;
 
 namespace InspectionClient.Models;
 

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-using InspectionClient.Enums;
+using Core.Logging.Enums;
+using Core.Logging.Interfaces;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
 

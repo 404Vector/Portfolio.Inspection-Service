@@ -1,4 +1,4 @@
-using InspectionClient.Interfaces;
+using Core.Logging.Interfaces;
 
 namespace InspectionClient.ViewModels;
 
