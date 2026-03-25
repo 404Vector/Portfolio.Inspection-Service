@@ -18,4 +18,11 @@ public interface IFrameSource
 
     void Start();
     void Stop();
+
+    /// <summary>
+    /// 런타임 프레임 소스 속성을 설정한다.
+    /// key는 OpticSettings의 속성명(nameof)을 사용한다.
+    /// 구현체가 지원하지 않는 key는 무시한다.
+    /// </summary>
+    void SetProperty(string key, object? value);
 }

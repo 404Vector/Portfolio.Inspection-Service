@@ -29,7 +29,7 @@ public partial class App : Application
             var fileLogService = new MicrosoftLogService(loggerFactory);
             var logService     = new CompositeLogService(uiLogService, fileLogService);
 
-            var frameSource = new MockFrameSourceService();
+            var frameSource = new MockFrameSourceService(logService);
 
             var vm = new MainWindowViewModel(
                 new InspectionViewModel(logService),
