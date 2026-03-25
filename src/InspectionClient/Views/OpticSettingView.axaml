@@ -3,12 +3,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="using:InspectionClient.Controls"
+             xmlns:pg="clr-namespace:Avalonia.PropertyGrid.Controls;assembly=Avalonia.PropertyGrid"
              xmlns:vm="using:InspectionClient.ViewModels"
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
              x:Class="InspectionClient.Views.OpticSettingView"
              x:DataType="vm:OpticSettingViewModel">
 
-  <Grid ColumnDefinitions="*,240">
+  <Grid ColumnDefinitions="*,500">
 
     <!-- Center: Display -->
     <controls:DisplayControl Grid.Column="0"
@@ -18,10 +19,11 @@
     <Border Grid.Column="1"
             Background="{DynamicResource BgSurface}"
             BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1,0,0,0"
-            Padding="16">
-      <TextBlock Text="Optic Setting Controls"
-                 Foreground="{DynamicResource TextMuted}" FontSize="13"
-                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+            Padding="8">
+      <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+        <pg:PropertyGrid DataContext="{Binding Settings}" />
+      </ScrollViewer>
     </Border>
 
   </Grid>

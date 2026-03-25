@@ -1,3 +1,3 @@
 namespace Core.Enums;
 
-public enum PixelFormat { Mono8, Rgb8, Bgr8 }
+public enum PixelFormat { Mono8, Mono10, Mono12, Rgb8, Bgr8 }
