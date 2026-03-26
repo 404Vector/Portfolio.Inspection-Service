@@ -1,31 +1,40 @@
 using System.Threading.Channels;
 using Grpc.Core;
+using Core.FrameGrabber.Interfaces;
+using Core.FrameGrabber.Models;
 using Core.SharedMemory;
 using FrameGrabberService.Grabbers;
+using FrameGrabberService.Grpc;
 
-using DomainAcquisitionMode = Core.Enums.AcquisitionMode;
-using DomainPixelFormat      = Core.Enums.PixelFormat;
-using DomainGrabberState     = Core.Enums.GrabberState;
+using DomainAcquisitionMode    = Core.Enums.AcquisitionMode;
+using DomainPixelFormat         = Core.Enums.PixelFormat;
+using DomainGrabberState        = Core.Enums.GrabberState;
+using DomainParameterValue      = Core.FrameGrabber.Models.ParameterValue;
+using DomainParameterValueType  = Core.FrameGrabber.Models.ParameterValueType;
+using DomainCommandResult       = Core.FrameGrabber.Models.CommandResult;
+
+using ProtoParameterValue    = FrameGrabberService.Grpc.ParameterValue;
+using ProtoCommandResult     = FrameGrabberService.Grpc.CommandResult;
 
 namespace FrameGrabberService.Services;
 
 public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 {
     private readonly IFrameGrabber          _grabber;
-    private readonly SharedMemoryRingBuffer _ringBuffer;
+    private readonly FramePump              _pump;
     private readonly ILogger<FrameGrabberGrpcService> _logger;
 
     public FrameGrabberGrpcService(
         IFrameGrabber                    grabber,
-        SharedMemoryRingBuffer           ringBuffer,
+        FramePump                        pump,
         ILogger<FrameGrabberGrpcService> logger)
     {
-        _grabber    = grabber;
-        _ringBuffer = ringBuffer;
-        _logger     = logger;
+        _grabber = grabber;
+        _pump    = pump;
+        _logger  = logger;
     }
 
-    // ── RPCs ─────────────────────────────────────────────────────────────────
+    // ── 획득 제어 RPCs ────────────────────────────────────────────────────────
 
     public override async Task<ConfigureResponse> Configure(
         ConfigureRequest request, ServerCallContext context)
@@ -56,6 +65,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         try
         {
             await _grabber.StartAsync(context.CancellationToken);
+            _pump.Start();
             _logger.LogInformation("Acquisition started");
             return new StartAcquisitionResponse { Success = true };
         }
@@ -71,6 +81,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     {
         try
         {
+            await _pump.StopAsync();
             await _grabber.StopAsync(context.CancellationToken);
             _logger.LogInformation("Acquisition stopped");
             return new StopAcquisitionResponse { Success = true };
@@ -84,8 +95,8 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
     /// <summary>
     /// 즉시 프레임 1개를 캡처한다.
-    /// TriggerAsync()로 Channel에 프레임을 밀어 넣고,
-    /// FramePumpService가 링버퍼에 기록 후 발행하는 FrameGrabbed 이벤트를 1회 수신한다.
+    /// TriggerAsync()로 IFrameGrabber 채널에 프레임을 밀어 넣고,
+    /// FramePump가 링버퍼에 기록한 뒤 발행하는 FrameWritten 이벤트를 1회 수신한다.
     /// </summary>
     public override async Task<FrameHandle> TriggerFrame(
         TriggerFrameRequest request, ServerCallContext context)
@@ -95,11 +106,11 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
         void Handler(FrameInfo info)
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             tcs.TrySetResult(info);
         }
 
-        _ringBuffer.FrameGrabbed += Handler;
+        _pump.FrameWritten += Handler;
 
         try
         {
@@ -111,13 +122,13 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         }
         catch
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             throw;
         }
     }
 
     /// <summary>
-    /// 링버퍼에 프레임이 기록될 때마다 FrameHandle을 스트리밍한다.
+    /// FramePump가 링버퍼에 프레임을 기록할 때마다 FrameHandle을 스트리밍한다.
     /// 클라이언트 연결이 끊기면 이벤트 구독을 해제한다.
     /// </summary>
     public override async Task SubscribeFrames(
@@ -136,7 +147,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
             });
 
         void Handler(FrameInfo info) => channel.Writer.TryWrite(info);
-        _ringBuffer.FrameGrabbed += Handler;
+        _pump.FrameWritten += Handler;
 
         try
         {
@@ -149,7 +160,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         }
         finally
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             channel.Writer.TryComplete();
             _logger.LogInformation("SubscribeFrames ended");
         }
@@ -166,6 +177,97 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
             FramesGrabbed = s.FramesGrabbed,
             Message       = s.Message ?? string.Empty
         });
+    }
+
+    // ── 동적 파라미터 / 명령 RPCs ─────────────────────────────────────────────
+
+    public override Task<CapabilitiesResponse> GetCapabilities(
+        GetCapabilitiesRequest request, ServerCallContext context)
+    {
+        var response = new CapabilitiesResponse();
+
+        foreach (var p in _grabber.GetParameters())
+        {
+            var descriptor = new Grpc.ParameterDescriptor
+            {
+                Key         = p.Key,
+                DisplayName = p.DisplayName,
+                ValueType   = ToProtoParameterValueType(p.ValueType),
+            };
+            if (p.MinValue     is not null) descriptor.MinValue     = ToProtoParameterValueFromRaw(p.MinValue, p.ValueType);
+            if (p.MaxValue     is not null) descriptor.MaxValue     = ToProtoParameterValueFromRaw(p.MaxValue, p.ValueType);
+            if (p.DefaultValue is not null) descriptor.DefaultValue = ToProtoParameterValueFromRaw(p.DefaultValue, p.ValueType);
+            response.Parameters.Add(descriptor);
+        }
+
+        foreach (var c in _grabber.GetCommands())
+        {
+            response.Commands.Add(new Grpc.CommandDescriptor
+            {
+                Key         = c.Key,
+                DisplayName = c.DisplayName,
+                Description = c.Description ?? string.Empty
+            });
+        }
+
+        return Task.FromResult(response);
+    }
+
+    public override Task<GetParameterResponse> GetParameter(
+        GetParameterRequest request, ServerCallContext context)
+    {
+        try
+        {
+            var value = _grabber.GetParameter(request.Key);
+            return Task.FromResult(new GetParameterResponse
+            {
+                Key   = request.Key,
+                Value = ToProtoValue(value)
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message));
+        }
+    }
+
+    public override async Task<SetParameterResponse> SetParameter(
+        SetParameterRequest request, ServerCallContext context)
+    {
+        try
+        {
+            var value = ToDomainValue(request.Value);
+            await _grabber.SetParameterAsync(request.Key, value, context.CancellationToken);
+            _logger.LogInformation("SetParameter: {Key}", request.Key);
+            return new SetParameterResponse { Success = true };
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return new SetParameterResponse { Success = false, Message = ex.Message };
+        }
+        catch (ArgumentException ex)
+        {
+            return new SetParameterResponse { Success = false, Message = ex.Message };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new SetParameterResponse { Success = false, Message = ex.Message };
+        }
+    }
+
+    public override async Task<ProtoCommandResult> ExecuteCommand(
+        ExecuteCommandRequest request, ServerCallContext context)
+    {
+        try
+        {
+            var result = await _grabber.ExecuteCommandAsync(request.Command, context.CancellationToken);
+            _logger.LogInformation("ExecuteCommand: {Command} success={Success}", request.Command, result.Success);
+            return ToProtoCommandResult(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message));
+        }
     }
 
     // ── 매핑 ─────────────────────────────────────────────────────────────────
@@ -216,4 +318,61 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         DomainGrabberState.Error     => GrabberState.Error,
         _                            => GrabberState.Idle
     };
+
+    private static Grpc.ParameterValueType ToProtoParameterValueType(DomainParameterValueType t) => t switch
+    {
+        DomainParameterValueType.Int64  => Grpc.ParameterValueType.Int64,
+        DomainParameterValueType.Double => Grpc.ParameterValueType.Double,
+        DomainParameterValueType.Bool   => Grpc.ParameterValueType.Bool,
+        DomainParameterValueType.String => Grpc.ParameterValueType.String,
+        _                               => Grpc.ParameterValueType.Unspecified
+    };
+
+    /// <summary>
+    /// ParameterDescriptor의 MinValue/MaxValue/DefaultValue(object?)를 proto ParameterValue로 변환.
+    /// </summary>
+    private static ProtoParameterValue ToProtoParameterValueFromRaw(object rawValue, DomainParameterValueType type)
+    {
+        var proto = new ProtoParameterValue();
+        switch (type)
+        {
+            case DomainParameterValueType.Int64:  proto.IntVal    = Convert.ToInt64(rawValue);   break;
+            case DomainParameterValueType.Double: proto.DoubleVal = Convert.ToDouble(rawValue);  break;
+            case DomainParameterValueType.Bool:   proto.BoolVal   = Convert.ToBoolean(rawValue); break;
+            case DomainParameterValueType.String: proto.StringVal = rawValue.ToString() ?? string.Empty; break;
+        }
+        return proto;
+    }
+
+    private static ProtoParameterValue ToProtoValue(DomainParameterValue v) => v switch
+    {
+        DomainParameterValue.Int64Value  i => new ProtoParameterValue { IntVal    = i.Value },
+        DomainParameterValue.DoubleValue d => new ProtoParameterValue { DoubleVal = d.Value },
+        DomainParameterValue.BoolValue   b => new ProtoParameterValue { BoolVal   = b.Value },
+        DomainParameterValue.StringValue s => new ProtoParameterValue { StringVal = s.Value },
+        _                                  => new ProtoParameterValue()
+    };
+
+    private static DomainParameterValue ToDomainValue(ProtoParameterValue proto) =>
+        proto.ValueCase switch
+        {
+            ProtoParameterValue.ValueOneofCase.IntVal    => new DomainParameterValue.Int64Value(proto.IntVal),
+            ProtoParameterValue.ValueOneofCase.DoubleVal => new DomainParameterValue.DoubleValue(proto.DoubleVal),
+            ProtoParameterValue.ValueOneofCase.BoolVal   => new DomainParameterValue.BoolValue(proto.BoolVal),
+            ProtoParameterValue.ValueOneofCase.StringVal => new DomainParameterValue.StringValue(proto.StringVal),
+            _ => throw new ArgumentException("ParameterValue has no value set")
+        };
+
+    private static ProtoCommandResult ToProtoCommandResult(DomainCommandResult result)
+    {
+        var proto = new ProtoCommandResult { Success = result.Success };
+        switch (result.ReturnValue)
+        {
+            case DomainParameterValue.Int64Value  i: proto.IntVal    = i.Value; break;
+            case DomainParameterValue.DoubleValue d: proto.DoubleVal = d.Value; break;
+            case DomainParameterValue.BoolValue   b: proto.BoolVal   = b.Value; break;
+            case DomainParameterValue.StringValue s: proto.StringVal = s.Value; break;
+        }
+        return proto;
+    }
 }

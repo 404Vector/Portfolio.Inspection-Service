@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.FrameGrabber\Core.FrameGrabber.csproj" />
     <ProjectReference Include="..\Core.SharedMemory\Core.SharedMemory.csproj" />
   </ItemGroup>
 
