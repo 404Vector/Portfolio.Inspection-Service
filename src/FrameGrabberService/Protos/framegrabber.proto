@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "FrameGrabberService";
+option csharp_namespace = "FrameGrabberService.Grpc";
 
 package framegrabber;
 
@@ -11,6 +11,12 @@ service FrameGrabber {
   rpc TriggerFrame      (TriggerFrameRequest)     returns (FrameHandle);
   rpc SubscribeFrames   (SubscribeFramesRequest)  returns (stream FrameHandle);
   rpc GetStatus         (GetStatusRequest)        returns (StatusResponse);
+
+  // ── 동적 파라미터 / 명령 ─────────────────────────────────────────────────
+  rpc GetCapabilities   (GetCapabilitiesRequest)  returns (CapabilitiesResponse);
+  rpc GetParameter      (GetParameterRequest)     returns (GetParameterResponse);
+  rpc SetParameter      (SetParameterRequest)     returns (SetParameterResponse);
+  rpc ExecuteCommand    (ExecuteCommandRequest)   returns (CommandResult);
 }
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -33,6 +39,25 @@ enum GrabberState {
   GRABBER_STATE_IDLE        = 1;
   GRABBER_STATE_ACQUIRING   = 2;
   GRABBER_STATE_ERROR       = 3;
+}
+
+enum ParameterValueType {
+  PARAMETER_VALUE_TYPE_UNSPECIFIED = 0;
+  PARAMETER_VALUE_TYPE_INT64       = 1;
+  PARAMETER_VALUE_TYPE_DOUBLE      = 2;
+  PARAMETER_VALUE_TYPE_BOOL        = 3;
+  PARAMETER_VALUE_TYPE_STRING      = 4;
+}
+
+// ── Common value type ─────────────────────────────────────────────────────────
+
+message ParameterValue {
+  oneof value {
+    int64  int_val    = 1;
+    double double_val = 2;
+    bool   bool_val   = 3;
+    string string_val = 4;
+  }
 }
 
 // ── Requests / Responses ─────────────────────────────────────────────────────
@@ -71,6 +96,65 @@ message StatusResponse {
   AcquisitionMode mode           = 2;
   int64           frames_grabbed = 3;
   string          message        = 4;
+}
+
+// ── Dynamic capabilities ──────────────────────────────────────────────────────
+
+message GetCapabilitiesRequest {}
+
+message ParameterDescriptor {
+  string             key           = 1;
+  string             display_name  = 2;
+  ParameterValueType value_type    = 3;
+  ParameterValue     min_value     = 4;
+  ParameterValue     max_value     = 5;
+  ParameterValue     default_value = 6;
+}
+
+message CommandDescriptor {
+  string key          = 1;
+  string display_name = 2;
+  string description  = 3;
+}
+
+message CapabilitiesResponse {
+  repeated ParameterDescriptor parameters = 1;
+  repeated CommandDescriptor   commands   = 2;
+}
+
+// ── Parameter get / set ───────────────────────────────────────────────────────
+
+message GetParameterRequest {
+  string key = 1;
+}
+message GetParameterResponse {
+  string         key   = 1;
+  ParameterValue value = 2;
+}
+
+message SetParameterRequest {
+  string         key   = 1;
+  ParameterValue value = 2;
+}
+message SetParameterResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+// ── Command execution ─────────────────────────────────────────────────────────
+
+message ExecuteCommandRequest {
+  string command = 1;
+}
+
+message CommandResult {
+  bool           success = 1;
+  oneof return_value {
+    int64  int_val    = 2;
+    double double_val = 3;
+    bool   bool_val   = 4;
+    string string_val = 5;
+  }
 }
 
 // ── Frame Handle (shared memory pointer) ─────────────────────────────────────

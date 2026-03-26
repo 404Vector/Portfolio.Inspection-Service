@@ -1,6 +1,6 @@
+using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory;
 using FrameGrabberService.Grabbers;
-using FrameGrabberService.Interfaces;
 using FrameGrabberService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,10 +19,19 @@ var ringBufferOptions = builder.Configuration
 builder.Services.AddSingleton(ringBufferOptions);
 builder.Services.AddSingleton<SharedMemoryRingBuffer>();
 
-// ── Background Pump (IFrameGrabber → RingBuffer, 단일 프로듀서 보장) ─────────
-builder.Services.AddHostedService<FramePumpService>();
+// ── Frame Pump (IFrameGrabber → RingBuffer, 단일 프로듀서 보장) ──────────────
+// 순수 클래스. lifecycle은 FrameGrabberGrpcService의 StartAcquisition/StopAcquisition이 제어한다.
+builder.Services.AddSingleton<FramePump>();
 
 var app = builder.Build();
+
+// ── 앱 종료 시 FramePump 정리 ────────────────────────────────────────────────
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStopping.Register(() =>
+{
+    var pump = app.Services.GetRequiredService<FramePump>();
+    pump.StopAsync().GetAwaiter().GetResult();
+});
 
 app.MapGrpcService<FrameGrabberGrpcService>();
 app.MapGet("/", () => "FrameGrabberService (gRPC). Use a gRPC client to interact with this service.");
