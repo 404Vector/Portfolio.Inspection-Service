@@ -9,7 +9,6 @@ namespace InspectionClient.ViewModels;
 
 public partial class AppSettingViewModel : ViewModelBase
 {
-    private readonly ILogService _log;
     private Timer? _logTimer;
 
     public IReadOnlyList<LogLevel> LogLevels { get; } = Enum.GetValues<LogLevel>();
@@ -17,10 +16,7 @@ public partial class AppSettingViewModel : ViewModelBase
     [ObservableProperty] private bool     _isLogTestRunning;
     [ObservableProperty] private LogLevel _selectedLogLevel = LogLevel.Info;
 
-    public AppSettingViewModel(ILogService logService)
-    {
-        _log = logService;
-    }
+    public AppSettingViewModel(ILogService logService) : base(logService) { }
 
     partial void OnIsLogTestRunningChanged(bool value)
     {
@@ -28,18 +24,18 @@ public partial class AppSettingViewModel : ViewModelBase
         else       StopLogTest();
     }
 
-    private void StartLogTest()
+    private void StartLogTest() => Execute(() =>
     {
         _logTimer = new Timer(_ =>
         {
             var hash = DateTimeOffset.Now.GetHashCode().ToString("X8");
             _log.Log(this, SelectedLogLevel, $"{hash}");
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(100));
-    }
+    });
 
-    private void StopLogTest()
+    private void StopLogTest() => Execute(() =>
     {
         _logTimer?.Dispose();
         _logTimer = null;
-    }
+    });
 }

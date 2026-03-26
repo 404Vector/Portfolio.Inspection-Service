@@ -31,7 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase
         HistoryViewModel      historyVm,
         OpticSettingViewModel opticSettingVm,
         AppSettingViewModel   appSettingVm,
-        IObservableLogService logService)
+        IObservableLogService logService) : base(logService)
     {
         _inspectionVm   = inspectionVm;
         _historyVm      = historyVm;
@@ -43,7 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Navigate(string viewName)
+    private void Navigate(string viewName) => Execute(() =>
     {
         CurrentViewModel = viewName switch
         {
@@ -55,7 +55,7 @@ public partial class MainWindowViewModel : ViewModelBase
         };
         ActiveViewName = viewName;
         TitleText = DisplayNames.GetValueOrDefault(viewName, viewName);
-    }
+    }, nameof(Navigate));
 
     [RelayCommand]
     private void HoverEnter(string viewName)

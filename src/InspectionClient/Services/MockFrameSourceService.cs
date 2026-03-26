@@ -127,6 +127,8 @@ public sealed class MockFrameSourceService : IFrameSource
         _swapReady.Set();
     }
 
+    private static readonly string[] SupportedProperties = ["ImageWidth", "ImageHeight", "ExposureUs"];
+
     public void SetProperty(string key, object? value)
     {
         switch (key)
@@ -147,7 +149,7 @@ public sealed class MockFrameSourceService : IFrameSource
                 break;
 
             default:
-                // Unsupported key — silently ignore per IFrameSource contract
+                _log.Warning(this, $"SetProperty: '{key}' is not supported. Supported properties: {string.Join(", ", SupportedProperties)}");
                 break;
         }
     }
