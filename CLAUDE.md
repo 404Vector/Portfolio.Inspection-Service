@@ -17,7 +17,6 @@ Portfolio.Inspection-Service is a .NET application for an inspection service con
 
 **Application**
 - **InspectionClient**: Avalonia GUI 클라이언트. gRPC를 통해 서비스를 제어·모니터링.
-  - 현재 폴더명: `src/Inspector/` → 추후 `src/InspectionClient/`으로 이름 변경 예정.
 
 The projects are organized under `Portfolio.Inspection-Service.sln`.
 
@@ -52,7 +51,7 @@ dotnet test         # Run all tests
 dotnet test --filter "FullyQualifiedName~SomeTest"  # Run a single test
 
 # Run individual services
-dotnet run --project src/Inspector/Inspector.csproj
+dotnet run --project src/InspectionClient/InspectionClient.csproj
 dotnet run --project src/FrameGrabberService/FrameGrabberService.csproj
 dotnet run --project src/InspectionService/InspectionService.csproj
 ```
@@ -92,6 +91,58 @@ Every PR targeting `main` triggers an automated Gemini code review (`.github/wor
    - Enable **Require status checks to pass**
      - Add required check: `Gemini Code Review`
    - Enable **Require a pull request before merging**
+
+## Coding Conventions
+
+### C# — Google Style Guide 준수
+
+- 들여쓰기: 스페이스 2칸
+- 중괄호: K&R 스타일 (여는 중괄호를 같은 줄에)
+- 네이밍:
+  - 클래스/인터페이스/enum/메서드: `PascalCase`
+  - 로컬 변수/파라미터: `camelCase`
+  - private 필드: `_camelCase` (언더스코어 접두사)
+  - 상수: `PascalCase`
+- 파일 하나에 클래스/인터페이스 하나
+- `var` 사용: 타입이 오른쪽에서 명확히 드러날 때만 사용
+- 불필요한 `this.` 생략
+- `using` 지시문: 파일 상단, 알파벳순 정렬
+- 접근 제한자는 항상 명시 (`private`, `public` 등 생략 금지)
+
+자세한 내용: [Google C# Style Guide](https://google.github.io/styleguide/csharp-style.html)
+
+### Python — Google Style Guide 준수
+
+- 들여쓰기: 스페이스 4칸
+- 네이밍:
+  - 클래스: `PascalCase`
+  - 함수/변수: `snake_case`
+  - 상수: `UPPER_SNAKE_CASE`
+  - private: `_single_underscore` 접두사
+- 타입 힌트 필수 (`def foo(x: int) -> str:`)
+- docstring: Google 스타일 (`Args:`, `Returns:`, `Raises:` 섹션)
+- 한 줄 최대 80자
+
+자세한 내용: [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
+
+## OOP 설계 원칙
+
+모든 클래스/인터페이스 설계 시 아래 원칙을 준수한다.
+
+### SOLID
+
+- **S** (Single Responsibility): 클래스는 하나의 책임만 가진다.
+- **O** (Open/Closed): 확장에는 열려 있고, 수정에는 닫혀 있어야 한다. 구현 변경보다 인터페이스 추가를 우선한다.
+- **L** (Liskov Substitution): 하위 타입은 상위 타입을 대체할 수 있어야 한다. `override`는 계약을 깨지 않는 범위 내에서만 허용한다.
+- **I** (Interface Segregation): 인터페이스는 클라이언트가 사용하지 않는 메서드를 강제하지 않도록 작게 분리한다.
+- **D** (Dependency Inversion): 구체 클래스 대신 인터페이스에 의존한다. 의존성은 DI 컨테이너를 통해 주입한다.
+
+### 추가 원칙
+
+- **캡슐화**: 내부 상태는 `private`으로 보호하고, 필요한 경우에만 프로퍼티 또는 메서드로 노출한다.
+- **구성 우선(Composition over Inheritance)**: 상속보다 인터페이스 구현과 구성을 우선한다. 구현 상속은 명확한 IS-A 관계에서만 사용한다.
+- **불변성 선호**: 가변 상태를 최소화한다. DTO/값 객체는 `record` 또는 `readonly struct`로 정의한다.
+- **Fail Fast**: 잘못된 인자는 생성자 또는 메서드 진입 시점에 즉시 검증한다 (`ArgumentNullException`, `ArgumentOutOfRangeException`).
 
 ## Notes
 

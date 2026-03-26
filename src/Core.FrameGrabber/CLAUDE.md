@@ -29,6 +29,12 @@ Core.FrameGrabber → Core
 - 외부 NuGet 패키지를 추가하지 않는다.
 - `AllowUnsafeBlocks`를 활성화하지 않는다.
 
+## 설계 원칙
+
+- `IFrameGrabber`는 ISP에 따라 분리 가능한 경우 역할별 인터페이스로 나눈다 (예: 획득 제어 / 파라미터 / 명령).
+- 모델 타입(`GrabbedFrame`, `GrabberConfig` 등)은 `record` 또는 불변 클래스로 정의한다.
+- `ParameterValue`는 `oneof` 형태의 값 타입 — 기본형 네 가지(`int64`, `double`, `bool`, `string`)로 제한한다.
+
 ## 네임스페이스
 
 - `Core.FrameGrabber.Interfaces`
