@@ -2,7 +2,8 @@ using System.Threading.Channels;
 using Grpc.Core;
 using Core.FrameGrabber.Interfaces;
 using Core.FrameGrabber.Models;
-using Core.SharedMemory;
+using Core.SharedMemory.Models;
+using Core.SharedMemory.Writer;
 using FrameGrabberService.Grabbers;
 using FrameGrabberService.Grpc;
 

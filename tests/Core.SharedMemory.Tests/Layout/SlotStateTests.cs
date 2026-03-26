@@ -1,3 +1,5 @@
+using Core.SharedMemory.Layout;
+
 namespace Core.SharedMemory.Tests.Layout;
 
 [TestFixture]

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Layout;
 
 /// <summary>
 /// 링버퍼 전체 메타데이터 (Offset 0, 64 bytes)

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Layout;
 
 /// <summary>
 /// 슬롯별 메타데이터 (각 슬롯 앞 64 bytes)

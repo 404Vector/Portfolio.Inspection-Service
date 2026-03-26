@@ -1,7 +1,10 @@
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
+using Core.SharedMemory.Enums;
+using Core.SharedMemory.Layout;
+using Core.SharedMemory.Models;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Reader;
 
 /// <summary>
 /// SharedMemoryRingBuffer(Writer)가 생성한 MMF를 읽는 컨슈머.

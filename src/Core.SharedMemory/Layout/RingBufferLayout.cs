@@ -1,4 +1,4 @@
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Layout;
 
 /// <summary>
 /// 링버퍼 메모리 레이아웃 상수

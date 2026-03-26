@@ -1,6 +1,6 @@
 using Core.Enums;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Models;
 
 /// <summary>
 /// 프레임이 링버퍼에 기록된 직후 발행되는 도메인 이벤트 페이로드.
