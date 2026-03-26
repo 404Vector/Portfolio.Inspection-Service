@@ -8,11 +8,12 @@ Portfolio.Inspection-Service is a .NET application for an inspection service con
 
 **Shared Libraries**
 - **Core**: 공통 인터페이스, 공통 데이터 구조, 도메인 열거형. 의존성 최하단.
+- **Core.Grpc**: gRPC proto 중앙 저장소. 모든 서비스의 proto 파일과 생성 코드를 포함.
 - **Core.Logging**: 서비스 전반 로깅 표준화 래퍼.
 - **Core.SharedMemory**: MMF 기반 링버퍼 구현. unsafe 코드 격리.
 
 **Services**
-- **FrameGrabberService**: gRPC 서비스. 프레임 획득 및 SharedMemory Write (Producer).
+- **FileFrameGrabberService**: gRPC 서비스. 프레임 획득 및 SharedMemory Write (Producer).
 - **InspectionService**: gRPC 서비스. SharedMemory Read(Consumer) 및 검사 로직.
 
 **Application**
@@ -25,9 +26,10 @@ The projects are organized under `Portfolio.Inspection-Service.sln`.
 ### 의존성 방향
 
 ```
-InspectionClient    →  Core, Core.Logging
-FrameGrabberService →  Core, Core.Logging, Core.SharedMemory
+InspectionClient    →  Core, Core.Grpc, Core.Logging, Core.SharedMemory
+FileFrameGrabberService →  Core, Core.FrameGrabber, Core.Grpc, Core.Logging, Core.SharedMemory
 InspectionService   →  Core, Core.Logging, Core.SharedMemory
+Core.Grpc           →  (proto 생성 코드만 — Grpc.AspNetCore NuGet)
 Core.Logging        →  Core
 Core.SharedMemory   →  Core
 Core                →  (외부 패키지 없음 또는 BCL만)
@@ -52,7 +54,7 @@ dotnet test --filter "FullyQualifiedName~SomeTest"  # Run a single test
 
 # Run individual services
 dotnet run --project src/InspectionClient/InspectionClient.csproj
-dotnet run --project src/FrameGrabberService/FrameGrabberService.csproj
+dotnet run --project src/FileFrameGrabberService/FileFrameGrabberService.csproj
 dotnet run --project src/InspectionService/InspectionService.csproj
 ```
 

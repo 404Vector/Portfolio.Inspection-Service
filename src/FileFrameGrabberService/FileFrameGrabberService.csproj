@@ -8,12 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\framegrabber.proto" GrpcServices="Server" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Core.FrameGrabber\Core.FrameGrabber.csproj" />
+    <ProjectReference Include="..\Core.Grpc\Core.Grpc.csproj" />
     <ProjectReference Include="..\Core.SharedMemory\Core.SharedMemory.csproj" />
   </ItemGroup>
 

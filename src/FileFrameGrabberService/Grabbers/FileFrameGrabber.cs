@@ -4,9 +4,9 @@ using Core.FrameGrabber.Interfaces;
 using Core.FrameGrabber.Models;
 using CE = Core.Enums;
 
-namespace FrameGrabberService.Grabbers;
+namespace FileFrameGrabberService.Grabbers;
 
-public sealed class MockFrameGrabber : IFrameGrabber
+public sealed class FileFrameGrabber : IFrameGrabber
 {
     private readonly object _lock = new();
 

@@ -15,7 +15,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.Grpc\Core.Grpc.csproj" />
     <ProjectReference Include="..\Core.Logging\Core.Logging.csproj" />
+    <ProjectReference Include="..\Core.SharedMemory\Core.SharedMemory.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,18 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\framegrabber.proto" GrpcServices="Client" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="bodong.Avalonia.PropertyGrid" Version="11.2.3.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.34.1" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.76.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.78.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Material.Icons.Avalonia" Version="2.1.0" />
     <PackageReference Include="Avalonia" Version="11.2.3" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />

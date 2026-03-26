@@ -1,4 +1,4 @@
-# FrameGrabberService
+# FileFrameGrabberService
 
 ## 역할
 
@@ -7,9 +7,9 @@ gRPC를 통해 클라이언트가 Frame Grabber를 제어(설정, 획득 시작/
 
 ## 포함 대상
 
-- gRPC 서버 구현 (`framegrabber.proto` 기반, 네임스페이스: `FrameGrabberService.Grpc`)
+- gRPC 서버 구현 (`framegrabber.proto` 기반, 네임스페이스: `FileFrameGrabberService.Grpc`)
 - `Grabbers/` — `IFrameGrabber` 구현체
-  - `MockFrameGrabber` — 그래디언트 패턴 생성 시뮬레이터
+  - `FileFrameGrabber` — 스토리지 이미지를 읽어 그랩 이벤트를 발생시키는 구현체
   - `FramePump` — `IFrameGrabber` → `SharedMemoryRingBuffer` 단일 프로듀서 (순수 클래스, lifecycle은 gRPC 서비스가 제어)
 - `Services/FrameGrabberGrpcService` — gRPC RPC 구현 및 FramePump 오케스트레이션
 
@@ -23,8 +23,8 @@ gRPC를 통해 클라이언트가 Frame Grabber를 제어(설정, 획득 시작/
 ## 의존성 규칙
 
 ```
-FrameGrabberService → Core, Core.FrameGrabber, Core.Logging, Core.SharedMemory
-FrameGrabberService → Grpc.AspNetCore (NuGet)
+FileFrameGrabberService → Core, Core.FrameGrabber, Core.Grpc, Core.Logging, Core.SharedMemory
+FileFrameGrabberService → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 ```
 
 - `InspectionService`, `InspectionClient` 프로젝트를 참조하지 않는다.
@@ -48,7 +48,7 @@ FrameGrabberService → Grpc.AspNetCore (NuGet)
 
 - `IFrameGrabber.GetParameters()` / `GetCommands()`로 구현체가 지원하는 항목을 노출한다.
 - gRPC: `GetCapabilities`, `GetParameter`, `SetParameter`, `ExecuteCommand` RPC로 클라이언트에 노출.
-- `ParameterValue`는 `oneof(int64, double, bool, string)` — proto 타입은 `FrameGrabberService.Grpc` 네임스페이스.
+- `ParameterValue`는 `oneof(int64, double, bool, string)` — proto 타입은 `Core.Grpc.FrameGrabber` 네임스페이스.
 
 ## 설계 원칙
 
@@ -58,6 +58,6 @@ FrameGrabberService → Grpc.AspNetCore (NuGet)
 
 ## 네임스페이스
 
-- `FrameGrabberService.Grabbers` — 구현체
-- `FrameGrabberService.Services` — gRPC 서비스
-- `FrameGrabberService.Grpc` — proto 생성 코드 (`csharp_namespace`)
+- `FileFrameGrabberService.Grabbers` — 구현체
+- `FileFrameGrabberService.Services` — gRPC 서비스
+- `Core.Grpc.FrameGrabber` — proto 생성 코드 (`Core.Grpc` 프로젝트, `csharp_namespace`)

@@ -1,8 +1,8 @@
 using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
 using Core.SharedMemory.Writer;
-using FrameGrabberService.Grabbers;
-using FrameGrabberService.Services;
+using FileFrameGrabberService.Grabbers;
+using FileFrameGrabberService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +10,7 @@ builder.Services.AddGrpc();
 
 // ── Frame Grabber ────────────────────────────────────────────────────────────
 // IFrameGrabber 구현체를 교체하는 것으로 실제 카메라로 전환 가능
-builder.Services.AddSingleton<IFrameGrabber, MockFrameGrabber>();
+builder.Services.AddSingleton<IFrameGrabber, FileFrameGrabber>();
 
 // ── Shared Memory Ring Buffer ────────────────────────────────────────────────
 var ringBufferOptions = builder.Configuration
@@ -35,6 +35,6 @@ lifetime.ApplicationStopping.Register(() =>
 });
 
 app.MapGrpcService<FrameGrabberGrpcService>();
-app.MapGet("/", () => "FrameGrabberService (gRPC). Use a gRPC client to interact with this service.");
+app.MapGet("/", () => "FileFrameGrabberService (gRPC). Use a gRPC client to interact with this service.");
 
 app.Run();
