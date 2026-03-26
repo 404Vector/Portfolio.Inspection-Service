@@ -18,21 +18,23 @@ A .NET 10 inspection service system consisting of a desktop GUI client, two gRPC
            │         Consumer          │         Producer
            └──────────────────────────┘
                          │
-              ┌──────────▼──────────┐
-              │    Core Libraries   │
-              │  Core / Core.Logging│
-              │  Core.SharedMemory  │
-              └─────────────────────┘
+              ┌──────────▼──────────────────┐
+              │        Core Libraries        │
+              │  Core / Core.Logging         │
+              │  Core.SharedMemory           │
+              │  Core.FrameGrabber           │
+              └──────────────────────────────┘
 ```
 
 ### Dependency Direction
 
 ```
 InspectionClient    →  Core, Core.Logging
-FrameGrabberService →  Core, Core.Logging, Core.SharedMemory
+FrameGrabberService →  Core, Core.FrameGrabber, Core.SharedMemory
 InspectionService   →  Core, Core.Logging, Core.SharedMemory
 Core.Logging        →  Core
 Core.SharedMemory   →  Core
+Core.FrameGrabber   →  Core
 Core                →  (BCL only)
 ```
 
@@ -49,6 +51,7 @@ Core                →  (BCL only)
 | **Core** | Shared Library | Common interfaces, data structures, domain enums |
 | **Core.Logging** | Shared Library | Service-wide logging standardization wrapper |
 | **Core.SharedMemory** | Shared Library | MMF-based ring buffer implementation (unsafe code isolated) |
+| **Core.FrameGrabber** | Shared Library | Frame grabber domain contracts and dynamic capability API |
 | **FrameGrabberService** | gRPC Service | Frame acquisition and shared memory write (Producer) |
 | **InspectionService** | gRPC Service | Shared memory read (Consumer) and inspection logic |
 | **InspectionClient** | Desktop App | Cross-platform desktop UI (Avalonia) — controls and monitors services via gRPC |
@@ -59,6 +62,9 @@ Core                →  (BCL only)
 - **Avalonia 11** — cross-platform desktop UI
 - **gRPC / ASP.NET Core** — inter-service communication over HTTP/2
 - **Shared Memory (MMF)** — high-throughput frame transfer via ring buffer
+- **CommunityToolkit.Mvvm** — MVVM source generators
+- **Serilog** — structured file logging
+- **NUnit** — unit and integration tests
 - **Computer Vision**
   - Object Detection (Rule-Based)
   - RANSAC
