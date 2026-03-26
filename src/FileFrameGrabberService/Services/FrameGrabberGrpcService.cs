@@ -4,7 +4,6 @@ using Grpc.Core;
 using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
 using Core.SharedMemory.Writer;
-using FileFrameGrabberService.Grabbers;
 
 using DomainAcquisitionMode   = Core.Enums.AcquisitionMode;
 using DomainPixelFormat        = Core.Enums.PixelFormat;
@@ -24,12 +23,12 @@ namespace FileFrameGrabberService.Services;
 public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 {
   private readonly IFrameGrabber          _grabber;
-  private readonly FramePump              _pump;
+  private readonly FramePumpHostedService _pump;
   private readonly ILogger<FrameGrabberGrpcService> _logger;
 
   public FrameGrabberGrpcService(
       IFrameGrabber                    grabber,
-      FramePump                        pump,
+      FramePumpHostedService           pump,
       ILogger<FrameGrabberGrpcService> logger)
   {
     _grabber = grabber;
@@ -68,7 +67,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     try
     {
       await _grabber.StartAsync(context.CancellationToken);
-      _pump.Start();
+      _pump.StartPump();
       _logger.LogInformation("Acquisition started");
       return new StartAcquisitionResponse { Success = true };
     }
@@ -84,7 +83,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
   {
     try
     {
-      await _pump.StopAsync();
+      await _pump.StopPumpAsync();
       await _grabber.StopAsync(context.CancellationToken);
       _logger.LogInformation("Acquisition stopped");
       return new StopAcquisitionResponse { Success = true };
