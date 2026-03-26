@@ -4,10 +4,5 @@ namespace InspectionClient.ViewModels;
 
 public partial class InspectionViewModel : ViewModelBase
 {
-    private readonly ILogService _log;
-
-    public InspectionViewModel(ILogService logService)
-    {
-        _log = logService;
-    }
+    public InspectionViewModel(ILogService logService) : base(logService) { }
 }

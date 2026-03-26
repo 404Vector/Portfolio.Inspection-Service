@@ -10,7 +10,6 @@ namespace InspectionClient.ViewModels;
 
 public partial class OpticSettingViewModel : ViewModelBase
 {
-    private readonly ILogService  _log;
     private readonly IFrameSource _frameSource;
 
     public OpticSettings Settings    { get; private set; } = new();
@@ -29,9 +28,8 @@ public partial class OpticSettingViewModel : ViewModelBase
         }
     }
 
-    public OpticSettingViewModel(ILogService logService, IFrameSource frameSource)
+    public OpticSettingViewModel(ILogService logService, IFrameSource frameSource) : base(logService)
     {
-        _log         = logService;
         _frameSource = frameSource;
 
         // FrameSwapped는 UI 스레드에서 발생하므로 직접 Source를 교체해도 안전하다.
@@ -42,7 +40,7 @@ public partial class OpticSettingViewModel : ViewModelBase
     // ── Apply / Restore ──────────────────────────────────────
 
     [RelayCommand]
-    private void Apply()
+    private void Apply() => Execute(() =>
     {
         foreach (var prop in FindDifference(Settings, RealSettings))
         {
@@ -50,10 +48,10 @@ public partial class OpticSettingViewModel : ViewModelBase
             prop.SetValue(RealSettings, value);
             _frameSource.SetProperty(prop.Name, value);
         }
-    }
+    });
 
     [RelayCommand]
-    private void Restore()
+    private void Restore() => Execute(() =>
     {
         var restored = new OpticSettings();
         foreach (var prop in typeof(OpticSettings).GetProperties())
@@ -61,7 +59,7 @@ public partial class OpticSettingViewModel : ViewModelBase
 
         Settings = restored;
         OnPropertyChanged(nameof(Settings));
-    }
+    });
 
     // ── 유틸리티 ─────────────────────────────────────────────
 

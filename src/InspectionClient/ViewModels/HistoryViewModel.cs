@@ -4,10 +4,5 @@ namespace InspectionClient.ViewModels;
 
 public partial class HistoryViewModel : ViewModelBase
 {
-    private readonly ILogService _log;
-
-    public HistoryViewModel(ILogService logService)
-    {
-        _log = logService;
-    }
+    public HistoryViewModel(ILogService logService) : base(logService) { }
 }
