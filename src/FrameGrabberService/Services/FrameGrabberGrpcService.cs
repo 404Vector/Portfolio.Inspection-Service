@@ -21,20 +21,17 @@ namespace FrameGrabberService.Services;
 public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 {
     private readonly IFrameGrabber          _grabber;
-    private readonly SharedMemoryRingBuffer _ringBuffer;
     private readonly FramePump              _pump;
     private readonly ILogger<FrameGrabberGrpcService> _logger;
 
     public FrameGrabberGrpcService(
         IFrameGrabber                    grabber,
-        SharedMemoryRingBuffer           ringBuffer,
         FramePump                        pump,
         ILogger<FrameGrabberGrpcService> logger)
     {
-        _grabber    = grabber;
-        _ringBuffer = ringBuffer;
-        _pump       = pump;
-        _logger     = logger;
+        _grabber = grabber;
+        _pump    = pump;
+        _logger  = logger;
     }
 
     // ── 획득 제어 RPCs ────────────────────────────────────────────────────────
@@ -98,8 +95,8 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
     /// <summary>
     /// 즉시 프레임 1개를 캡처한다.
-    /// TriggerAsync()로 Channel에 프레임을 밀어 넣고,
-    /// FramePump가 링버퍼에 기록 후 발행하는 FrameGrabbed 이벤트를 1회 수신한다.
+    /// TriggerAsync()로 IFrameGrabber 채널에 프레임을 밀어 넣고,
+    /// FramePump가 링버퍼에 기록한 뒤 발행하는 FrameWritten 이벤트를 1회 수신한다.
     /// </summary>
     public override async Task<FrameHandle> TriggerFrame(
         TriggerFrameRequest request, ServerCallContext context)
@@ -109,11 +106,11 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
         void Handler(FrameInfo info)
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             tcs.TrySetResult(info);
         }
 
-        _ringBuffer.FrameGrabbed += Handler;
+        _pump.FrameWritten += Handler;
 
         try
         {
@@ -125,13 +122,13 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         }
         catch
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             throw;
         }
     }
 
     /// <summary>
-    /// 링버퍼에 프레임이 기록될 때마다 FrameHandle을 스트리밍한다.
+    /// FramePump가 링버퍼에 프레임을 기록할 때마다 FrameHandle을 스트리밍한다.
     /// 클라이언트 연결이 끊기면 이벤트 구독을 해제한다.
     /// </summary>
     public override async Task SubscribeFrames(
@@ -150,7 +147,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
             });
 
         void Handler(FrameInfo info) => channel.Writer.TryWrite(info);
-        _ringBuffer.FrameGrabbed += Handler;
+        _pump.FrameWritten += Handler;
 
         try
         {
@@ -163,7 +160,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
         }
         finally
         {
-            _ringBuffer.FrameGrabbed -= Handler;
+            _pump.FrameWritten -= Handler;
             channel.Writer.TryComplete();
             _logger.LogInformation("SubscribeFrames ended");
         }

@@ -29,6 +29,12 @@ public sealed class FramePump : IAsyncDisposable
     public bool IsRunning => _pumpTask is { IsCompleted: false };
 
     /// <summary>
+    /// 프레임이 링버퍼에 기록된 직후 발행된다.
+    /// TriggerFrame RPC 등 단일 프레임 완료를 기다리는 구독자가 사용한다.
+    /// </summary>
+    public event Action<FrameInfo>? FrameWritten;
+
+    /// <summary>
     /// 프레임 펌프를 시작한다. 이미 실행 중이면 무시한다.
     /// </summary>
     public void Start()
@@ -68,7 +74,7 @@ public sealed class FramePump : IAsyncDisposable
         {
             await foreach (var frame in _grabber.GetFramesAsync(ct))
             {
-                _ringBuffer.Write(
+                var info = _ringBuffer.Write(
                     frame.FrameId,
                     frame.PixelData,
                     frame.Width,
@@ -76,6 +82,7 @@ public sealed class FramePump : IAsyncDisposable
                     frame.PixelFormat,
                     frame.Stride,
                     frame.Timestamp);
+                FrameWritten?.Invoke(info);
             }
         }
         catch (OperationCanceledException) { }
