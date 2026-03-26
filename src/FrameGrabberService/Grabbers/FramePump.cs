@@ -6,6 +6,7 @@ namespace FrameGrabberService.Grabbers;
 /// <summary>
 /// IFrameGrabber의 프레임 스트림을 SharedMemoryRingBuffer에 기록하는 단일 프로듀서.
 /// BackgroundService에 의존하지 않는 순수 클래스. 외부에서 lifecycle을 제어한다.
+/// Start/StopAsync는 lock으로 보호하여 SPSC 전제를 보장한다.
 /// </summary>
 public sealed class FramePump : IAsyncDisposable
 {
@@ -13,8 +14,9 @@ public sealed class FramePump : IAsyncDisposable
     private readonly SharedMemoryRingBuffer _ringBuffer;
     private readonly ILogger<FramePump>     _logger;
 
-    private CancellationTokenSource? _cts;
-    private Task?                    _pumpTask;
+    private readonly object               _lock = new();
+    private CancellationTokenSource?      _cts;
+    private Task?                         _pumpTask;
 
     public FramePump(
         IFrameGrabber          grabber,
@@ -26,7 +28,10 @@ public sealed class FramePump : IAsyncDisposable
         _logger     = logger;
     }
 
-    public bool IsRunning => _pumpTask is { IsCompleted: false };
+    public bool IsRunning
+    {
+        get { lock (_lock) return _pumpTask is { IsCompleted: false }; }
+    }
 
     /// <summary>
     /// 프레임이 링버퍼에 기록된 직후 발행된다.
@@ -39,10 +44,13 @@ public sealed class FramePump : IAsyncDisposable
     /// </summary>
     public void Start()
     {
-        if (IsRunning) return;
+        lock (_lock)
+        {
+            if (_pumpTask is { IsCompleted: false }) return;
 
-        _cts      = new CancellationTokenSource();
-        _pumpTask = RunAsync(_cts.Token);
+            _cts      = new CancellationTokenSource();
+            _pumpTask = RunAsync(_cts.Token);
+        }
         _logger.LogInformation("FramePump started");
     }
 
@@ -51,16 +59,25 @@ public sealed class FramePump : IAsyncDisposable
     /// </summary>
     public async Task StopAsync()
     {
-        if (_cts is null) return;
+        CancellationTokenSource? cts;
+        Task?                    pumpTask;
 
-        await _cts.CancelAsync();
+        lock (_lock)
+        {
+            cts      = _cts;
+            pumpTask = _pumpTask;
+            _cts      = null;
+            _pumpTask = null;
+        }
 
-        if (_pumpTask is not null)
-            await _pumpTask.ConfigureAwait(false);
+        if (cts is null) return;
 
-        _cts.Dispose();
-        _cts      = null;
-        _pumpTask = null;
+        await cts.CancelAsync();
+
+        if (pumpTask is not null)
+            await pumpTask.ConfigureAwait(false);
+
+        cts.Dispose();
         _logger.LogInformation("FramePump stopped");
     }
 
