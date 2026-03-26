@@ -1,4 +1,4 @@
-namespace FrameGrabberService.Models;
+namespace Core.FrameGrabber.Models;
 
 public record GrabberStatus(
     Core.Enums.GrabberState    State,
