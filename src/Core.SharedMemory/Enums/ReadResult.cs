@@ -1,4 +1,4 @@
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Enums;
 
 public enum ReadResult
 {

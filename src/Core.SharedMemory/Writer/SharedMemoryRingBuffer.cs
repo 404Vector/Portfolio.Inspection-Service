@@ -1,8 +1,10 @@
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
 using Core.Enums;
+using Core.SharedMemory.Layout;
+using Core.SharedMemory.Models;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Writer;
 
 /// <summary>
 /// 단일 MMF 위에 구현된 고정 크기 링버퍼 (SPSC, OverwriteOldest 정책).

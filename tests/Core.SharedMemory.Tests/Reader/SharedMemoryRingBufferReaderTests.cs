@@ -1,4 +1,8 @@
 using Core.Enums;
+using Core.SharedMemory.Enums;
+using Core.SharedMemory.Models;
+using Core.SharedMemory.Reader;
+using Core.SharedMemory.Writer;
 
 namespace Core.SharedMemory.Tests.Reader;
 

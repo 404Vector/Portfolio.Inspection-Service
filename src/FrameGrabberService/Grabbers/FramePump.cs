@@ -1,5 +1,6 @@
 using Core.FrameGrabber.Interfaces;
-using Core.SharedMemory;
+using Core.SharedMemory.Models;
+using Core.SharedMemory.Writer;
 
 namespace FrameGrabberService.Grabbers;
 

@@ -1,4 +1,4 @@
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Layout;
 
 // enum으로 정의하지 않는 이유:
 // Volatile.Write(ref int, int) 오버로드만 존재하며, 값 타입 제네릭 오버로드가 없다.

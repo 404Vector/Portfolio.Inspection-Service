@@ -1,6 +1,6 @@
 using Core.Enums;
 
-namespace Core.SharedMemory;
+namespace Core.SharedMemory.Models;
 
 public class RingBufferOptions
 {
