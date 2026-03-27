@@ -3,6 +3,7 @@
              xmlns:mi="using:Material.Icons.Avalonia"
              xmlns:models="using:InspectionClient.Models"
              xmlns:conv="using:InspectionClient.Converters"
+             xmlns:enums="using:Core.Logging.Enums"
              x:Class="InspectionClient.Controls.LogControl"
              x:Name="Root">
 
@@ -13,11 +14,11 @@
   <Border Background="{DynamicResource BgLog}"
           BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0"
           Padding="12,8">
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
 
       <!-- ── Header ────────────────────────────────────── -->
       <StackPanel Grid.Row="0"
-                  Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+                  Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
         <mi:MaterialIcon Kind="TextBoxOutline" Width="14" Height="14"
                          Foreground="{DynamicResource TextMuted}" />
         <TextBlock Text="LOG"
@@ -31,21 +32,61 @@
         </Button>
       </StackPanel>
 
+      <!-- ── Level Filter ──────────────────────────────── -->
+      <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
+        <ToggleButton x:Name="FilterTrace"
+                      IsChecked="True" Click="OnFilterClicked"
+                      Tag="Trace"
+                      Padding="6,1" FontSize="10"
+                      Foreground="#FF9E64">
+          Trace
+        </ToggleButton>
+        <ToggleButton x:Name="FilterDebug"
+                      IsChecked="True" Click="OnFilterClicked"
+                      Tag="Debug"
+                      Padding="6,1" FontSize="10"
+                      Foreground="#6B7498">
+          Debug
+        </ToggleButton>
+        <ToggleButton x:Name="FilterInfo"
+                      IsChecked="True" Click="OnFilterClicked"
+                      Tag="Info"
+                      Padding="6,1" FontSize="10"
+                      Foreground="#C0CAF5">
+          Info
+        </ToggleButton>
+        <ToggleButton x:Name="FilterWarning"
+                      IsChecked="True" Click="OnFilterClicked"
+                      Tag="Warning"
+                      Padding="6,1" FontSize="10"
+                      Foreground="#E0AF68">
+          Warning
+        </ToggleButton>
+        <ToggleButton x:Name="FilterError"
+                      IsChecked="True" Click="OnFilterClicked"
+                      Tag="Error"
+                      Padding="6,1" FontSize="10"
+                      Foreground="#F7768E">
+          Error
+        </ToggleButton>
+      </WrapPanel>
+
       <!-- ── Log Entries ───────────────────────────────── -->
-      <Border Grid.Row="1"
+      <Border Grid.Row="2"
               Background="{DynamicResource BgLogInner}"
               CornerRadius="4" Padding="10,8">
         <ScrollViewer x:Name="LogScrollViewer"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-          <ItemsControl ItemsSource="{Binding #Root.Entries}">
+          <ItemsControl x:Name="LogItems" ItemsSource="{Binding #Root.FilteredEntries}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="models:LogEntry">
-                <TextBlock Text="{Binding Display}"
-                           FontFamily="Consolas,Menlo,Monospace"
-                           FontSize="12"
-                           Foreground="{Binding Level,
-                                        Converter={StaticResource LevelToFg}}" />
+                <SelectableTextBlock Text="{Binding Display}"
+                                     FontFamily="Consolas,Menlo,Monospace"
+                                     FontSize="12"
+                                     TextWrapping="Wrap"
+                                     Foreground="{Binding Level,
+                                                  Converter={StaticResource LevelToFg}}" />
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
