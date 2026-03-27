@@ -4,6 +4,7 @@ using Core.Logging.Factories;
 using Core.Logging.Services;
 using InspectionClient.Interfaces;
 using InspectionClient.Services;
+using InspectionClient.Services.Probes;
 using InspectionClient.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +64,13 @@ internal static class Startup
           services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<FrameGrabberControlService>());
         }
 
+        // ── Connection Monitor ────────────────────────────────────────────────
+        services.AddSingleton<IConnectionProbe, GrpcFrameGrabberProbe>();
+        // InspectionService probe 추가 시: services.AddSingleton<IConnectionProbe, GrpcInspectionProbe>();
+        services.AddSingleton<ConnectionMonitor>();
+        services.AddSingleton<IServiceConnectionMonitor>(sp => sp.GetRequiredService<ConnectionMonitor>());
+        services.AddHostedService(sp => sp.GetRequiredService<ConnectionMonitor>());
+
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddTransient<InspectionViewModel>();
         services.AddTransient<HistoryViewModel>();
@@ -70,6 +78,6 @@ internal static class Startup
         services.AddTransient<OpticSettingViewModel>();
         services.AddTransient<AppSettingViewModel>();
         services.AddTransient<EquipmentSpecViewModel>();
-        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainViewModel>();
     }
 }
