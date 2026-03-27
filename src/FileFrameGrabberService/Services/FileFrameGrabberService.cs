@@ -147,6 +147,13 @@ public sealed class FileFrameGrabberService : IFrameGrabber
       return;
     }
 
+    // acquisition_mode 변경은 연속 루프 재시작을 수반할 수 있으므로 별도 처리한다.
+    if (key == "acquisition_mode")
+    {
+      await ApplyAcquisitionModeAsync(value, ct);
+      return;
+    }
+
     lock (_lock)
     {
       if (_state == CE.GrabberState.Acquiring)
@@ -180,6 +187,44 @@ public sealed class FileFrameGrabberService : IFrameGrabber
   }
 
   // ── Internals ────────────────────────────────────────────────────────────
+
+  /// <summary>
+  /// acquisition_mode 파라미터 변경을 적용한다.
+  /// Acquiring 중이면 연속 루프를 중단/재시작하여 모드를 전환한다.
+  /// </summary>
+  private async Task ApplyAcquisitionModeAsync(ParameterValue value, CancellationToken ct)
+  {
+    GrabberConfig newConfig;
+    bool wasAcquiring;
+    CancellationTokenSource? oldCts;
+
+    lock (_lock)
+    {
+      newConfig    = _paramStore.ApplyParameter(_config, "acquisition_mode", value);
+      wasAcquiring = _state == CE.GrabberState.Acquiring;
+      oldCts       = _continuousCts;
+
+      _config        = newConfig;
+      _continuousCts = null;
+    }
+
+    // 실행 중이던 연속 루프를 취소한다.
+    if (oldCts is not null)
+    {
+      await oldCts.CancelAsync();
+      oldCts.Dispose();
+    }
+
+    // Acquiring 상태였다면 새 모드로 루프를 재시작한다.
+    if (wasAcquiring && newConfig.Mode == CE.AcquisitionMode.Continuous)
+    {
+      lock (_lock)
+      {
+        _continuousCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _ = RunContinuousLoopAsync(newConfig, _channel, _continuousCts.Token);
+      }
+    }
+  }
 
   /// <summary>
   /// source_mode 또는 image_path 변경 후 합성기 상태를 반영한다.

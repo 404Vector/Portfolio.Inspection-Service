@@ -46,13 +46,23 @@ internal static class Startup
         // ── Frame Source ──────────────────────────────────────────────────────
         var useMock = context.Configuration.GetValue<bool>("Features:UseMockFrameSource");
         if (useMock)
-          services.AddSingleton<IFrameSource, MockFrameSourceService>();
+        {
+          services.AddSingleton<MockFrameSourceService>();
+          services.AddSingleton<IFrameSource>(sp => sp.GetRequiredService<MockFrameSourceService>());
+          services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<MockFrameSourceService>());
+        }
         else
-          services.AddSingleton<IFrameSource, FrameGrabberClientService>();
+        {
+          services.AddSingleton<FrameSourceService>();
+          services.AddSingleton<IFrameSource>(sp => sp.GetRequiredService<FrameSourceService>());
+          services.AddSingleton<FrameGrabberControlService>();
+          services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<FrameGrabberControlService>());
+        }
 
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddTransient<InspectionViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<FrameGrabberControlViewModel>();
         services.AddTransient<OpticSettingViewModel>();
         services.AddTransient<AppSettingViewModel>();
         services.AddSingleton<MainWindowViewModel>();

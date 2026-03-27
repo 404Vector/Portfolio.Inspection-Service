@@ -1,0 +1,159 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InspectionClient.ViewModels"
+             xmlns:models="using:InspectionClient.Models"
+             xmlns:controls="using:InspectionClient.Controls"
+             x:Class="InspectionClient.Controls.FrameGrabberControl"
+             x:DataType="vm:FrameGrabberControlViewModel">
+
+  <DockPanel>
+
+    <!-- ── 하단: 획득 제어 + Apply / Restore ── -->
+    <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0"
+          ColumnDefinitions="*,Auto">
+
+      <!-- 획득 제어 -->
+      <StackPanel Grid.Column="0"
+                  Orientation="Horizontal"
+                  Spacing="8">
+        <Button Content="Start"   Command="{Binding StartAcquisitionCommand}" />
+        <Button Content="Stop"    Command="{Binding StopAcquisitionCommand}" />
+        <Button Content="Trigger" Command="{Binding TriggerFrameCommand}" />
+      </StackPanel>
+
+      <!-- 파라미터 Apply / Restore -->
+      <StackPanel Grid.Column="1"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  Spacing="8">
+        <Button Content="Restore" Command="{Binding RestoreCommand}" />
+        <Button Content="Apply"   Command="{Binding ApplyCommand}" />
+      </StackPanel>
+
+    </Grid>
+
+    <!-- ── 상태 메시지 ── -->
+    <TextBlock DockPanel.Dock="Top"
+               Text="{Binding StatusMessage}"
+               Foreground="{DynamicResource TextMuted}"
+               FontSize="12"
+               Margin="0,0,0,8"
+               IsVisible="{Binding StatusMessage,
+                 Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="16">
+
+        <!-- ── Parameters ── -->
+        <ItemsControl ItemsSource="{Binding Parameters}">
+          <ItemsControl.ItemTemplate>
+            <controls:ParameterDataTemplateSelector>
+
+              <!-- Int64 -->
+              <controls:ParameterDataTemplateSelector.Int64Template>
+                <DataTemplate DataType="models:GrabberParameterItem">
+                  <Grid ColumnDefinitions="*,*" Margin="0,2">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimary}"
+                               FontSize="13" />
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding CurrentValue}"
+                                   Minimum="{Binding MinValue}"
+                                   Maximum="{Binding MaxValue}"
+                                   Increment="1"
+                                   FormatString="0"
+                                   FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </controls:ParameterDataTemplateSelector.Int64Template>
+
+              <!-- Double -->
+              <controls:ParameterDataTemplateSelector.DoubleTemplate>
+                <DataTemplate DataType="models:GrabberParameterItem">
+                  <Grid ColumnDefinitions="*,*" Margin="0,2">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimary}"
+                               FontSize="13" />
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding CurrentValue}"
+                                   Minimum="{Binding MinValue}"
+                                   Maximum="{Binding MaxValue}"
+                                   Increment="0.01"
+                                   FormatString="0.##"
+                                   FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </controls:ParameterDataTemplateSelector.DoubleTemplate>
+
+              <!-- Bool -->
+              <controls:ParameterDataTemplateSelector.BoolTemplate>
+                <DataTemplate DataType="models:GrabberParameterItem">
+                  <Grid ColumnDefinitions="*,*" Margin="0,2">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimary}"
+                               FontSize="13" />
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding CurrentValue}"
+                                  OffContent="Off" OnContent="On"
+                                  FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </controls:ParameterDataTemplateSelector.BoolTemplate>
+
+              <!-- String (fallback) -->
+              <controls:ParameterDataTemplateSelector.StringTemplate>
+                <DataTemplate DataType="models:GrabberParameterItem">
+                  <Grid ColumnDefinitions="*,*" Margin="0,2">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimary}"
+                               FontSize="13" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding CurrentValue}"
+                             FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </controls:ParameterDataTemplateSelector.StringTemplate>
+
+            </controls:ParameterDataTemplateSelector>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- ── Commands ── -->
+        <StackPanel Spacing="4"
+                    IsVisible="{Binding Commands.Count,
+                      Converter={x:Static ObjectConverters.IsNotNull}}">
+          <TextBlock Text="Commands"
+                     FontSize="11"
+                     Foreground="{DynamicResource TextMuted}"
+                     Margin="0,4,0,2" />
+          <ItemsControl ItemsSource="{Binding Commands}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="models:GrabberCommandItem">
+                <Button Content="{Binding DisplayName}"
+                        ToolTip.Tip="{Binding Description}"
+                        Command="{Binding $parent[UserControl].((vm:FrameGrabberControlViewModel)DataContext).ExecuteCommandCommand}"
+                        CommandParameter="{Binding}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Margin="0,2"
+                        FontSize="13" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
+  </DockPanel>
+
+</UserControl>

@@ -20,25 +20,27 @@ public sealed class GrabberParameterStoreService
 
   private static readonly IReadOnlyList<ParameterDescriptor> SupportedParameters =
   [
-    new("frame_rate_hz", "Frame Rate (Hz)", ParameterValueType.Double, MinValue: 1.0,  MaxValue: 1000.0, DefaultValue: 30.0),
-    new("width",         "Width (px)",      ParameterValueType.Int64,  MinValue: 1L,   MaxValue: 16384L, DefaultValue: 1280L),
-    new("height",        "Height (px)",     ParameterValueType.Int64,  MinValue: 1L,   MaxValue: 16384L, DefaultValue: 1024L),
-    new("pixel_format",  "Pixel Format",    ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Mono8"),
-    new("source_mode",   "Source Mode",     ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "gradient"),
-    new("image_path",    "Image Path",      ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: ""),
+    new("frame_rate_hz",    "Frame Rate (Hz)",    ParameterValueType.Double, MinValue: 1.0,  MaxValue: 1000.0, DefaultValue: 30.0),
+    new("width",            "Width (px)",         ParameterValueType.Int64,  MinValue: 1L,   MaxValue: 16384L, DefaultValue: 1280L),
+    new("height",           "Height (px)",        ParameterValueType.Int64,  MinValue: 1L,   MaxValue: 16384L, DefaultValue: 1024L),
+    new("pixel_format",     "Pixel Format",       ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Mono8"),
+    new("acquisition_mode", "Acquisition Mode",   ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Continuous"),
+    new("source_mode",      "Source Mode",        ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "gradient"),
+    new("image_path",       "Image Path",         ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: ""),
   ];
 
   public IReadOnlyList<ParameterDescriptor> GetParameters() => SupportedParameters;
 
   public ParameterValue GetParameter(GrabberConfig config, string key) => key switch
   {
-    "frame_rate_hz" => new ParameterValue.DoubleValue(config.FrameRateHz),
-    "width"         => new ParameterValue.Int64Value(config.Width),
-    "height"        => new ParameterValue.Int64Value(config.Height),
-    "pixel_format"  => new ParameterValue.StringValue(config.PixelFormat.ToString()),
-    "source_mode"   => new ParameterValue.StringValue(SourceMode),
-    "image_path"    => new ParameterValue.StringValue(ImagePath),
-    _               => throw new KeyNotFoundException($"Unknown parameter: '{key}'")
+    "frame_rate_hz"    => new ParameterValue.DoubleValue(config.FrameRateHz),
+    "width"            => new ParameterValue.Int64Value(config.Width),
+    "height"           => new ParameterValue.Int64Value(config.Height),
+    "pixel_format"     => new ParameterValue.StringValue(config.PixelFormat.ToString()),
+    "acquisition_mode" => new ParameterValue.StringValue(config.Mode.ToString()),
+    "source_mode"      => new ParameterValue.StringValue(SourceMode),
+    "image_path"       => new ParameterValue.StringValue(ImagePath),
+    _                  => throw new KeyNotFoundException($"Unknown parameter: '{key}'")
   };
 
   /// <summary>
@@ -62,6 +64,10 @@ public sealed class GrabberParameterStoreService
 
       "pixel_format" => value is ParameterValue.StringValue s
           ? config with { PixelFormat = ParsePixelFormat(s.Value) }
+          : throw new ArgumentException($"Expected String for '{key}'"),
+
+      "acquisition_mode" => value is ParameterValue.StringValue m
+          ? config with { Mode = ParseAcquisitionMode(m.Value) }
           : throw new ArgumentException($"Expected String for '{key}'"),
 
       _ => throw new KeyNotFoundException($"Unknown parameter: '{key}'")
@@ -108,5 +114,12 @@ public sealed class GrabberParameterStoreService
     "Rgb8"  => CE.PixelFormat.Rgb8,
     "Bgr8"  => CE.PixelFormat.Bgr8,
     _       => throw new ArgumentException($"Unknown pixel format: '{value}'. Valid values: Mono8, Rgb8, Bgr8")
+  };
+
+  private static CE.AcquisitionMode ParseAcquisitionMode(string value) => value switch
+  {
+    "Continuous" => CE.AcquisitionMode.Continuous,
+    "Triggered"  => CE.AcquisitionMode.Triggered,
+    _            => throw new ArgumentException($"Unknown acquisition mode: '{value}'. Valid values: Continuous, Triggered")
   };
 }
