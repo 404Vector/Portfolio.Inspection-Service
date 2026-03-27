@@ -9,9 +9,10 @@ namespace Core.SharedMemory.Writer;
 /// <summary>
 /// 단일 MMF 위에 구현된 고정 크기 링버퍼 (SPSC, OverwriteOldest 정책).
 ///
+/// 슬롯 크기는 RingBufferOptions.SlotDataSize(오버사이즈)로 고정된다.
+/// 실제 프레임 크기가 슬롯보다 작아도 무방하며, 실제 크기는 FrameInfo에 기록된다.
 /// 프로듀서(FramePumpService)만 Write()를 호출하며,
 /// 프레임 기록 완료 시 FrameGrabbed 이벤트를 발행한다.
-/// 컨슈머는 FrameInfo의 SlotIndex로 MMF의 해당 슬롯을 직접 읽는다.
 /// </summary>
 public sealed unsafe class SharedMemoryRingBuffer : IDisposable
 {
@@ -38,7 +39,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
     {
         Name           = options.Name;
         _capacity      = options.SlotCount;
-        _slotDataSize  = options.Width * options.Height * BytesPerPixel(options.PixelFormat);
+        _slotDataSize  = options.ResolvedSlotDataSize;
         _slotTotalSize = RingBufferLayout.SlotHeaderSize + _slotDataSize;
 
         long   totalSize = RingBufferLayout.SlotsOffset + (long)_capacity * _slotTotalSize;
@@ -54,7 +55,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
         _base = ptr;
 
-        InitializeHeader(options);
+        InitializeHeader();
         InitializeSlots();
     }
 
@@ -63,14 +64,15 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
     /// <summary>
     /// 프레임을 다음 슬롯에 기록하고 FrameGrabbed 이벤트를 발행한다.
     /// 버퍼가 가득 찬 경우 가장 오래된 슬롯을 덮어쓴다(OverwriteOldest).
+    /// pixelData.Length는 _slotDataSize 이하여야 한다.
     /// </summary>
     public FrameInfo Write(
-        string      frameId,
-        byte[]      pixelData,
-        int         width,
-        int         height,
-        PixelFormat pixelFormat,
-        int         stride,
+        string         frameId,
+        byte[]         pixelData,
+        int            width,
+        int            height,
+        PixelFormat    pixelFormat,
+        int            stride,
         DateTimeOffset timestamp)
     {
         long seq       = ++_writeSeq;
@@ -81,7 +83,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         // Writing 으로 전환 (Ready 슬롯도 덮어쓸 수 있음 — OverwriteOldest)
         Volatile.Write(ref slot.State, SlotState.Writing);
 
-        // 픽셀 데이터 복사
+        // 픽셀 데이터 복사 (실제 프레임 크기만큼만 복사, 슬롯 나머지는 미사용)
         fixed (byte* src = pixelData)
         {
             Buffer.MemoryCopy(src, SlotDataPtr(slotIndex), _slotDataSize, pixelData.Length);
@@ -103,7 +105,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
             Height:          height,
             PixelFormat:     pixelFormat,
             Stride:          stride,
-            SizeBytes:       _slotDataSize,
+            SizeBytes:       pixelData.Length,
             Sequence:        seq);
 
         FrameGrabbed?.Invoke(info);
@@ -112,15 +114,11 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
 
     // ── 초기화 ───────────────────────────────────────────────────────────────
 
-    private void InitializeHeader(RingBufferOptions options)
+    private void InitializeHeader()
     {
         ref var hdr = ref Unsafe.AsRef<RingBufferHeader>(_base + RingBufferLayout.HeaderOffset);
-        hdr.Capacity         = _capacity;
-        hdr.SlotDataSize     = _slotDataSize;
-        hdr.Width            = options.Width;
-        hdr.Height           = options.Height;
-        hdr.Stride           = options.Width * BytesPerPixel(options.PixelFormat);
-        hdr.PixelFormatValue = (int)options.PixelFormat;
+        hdr.Capacity     = _capacity;
+        hdr.SlotDataSize = _slotDataSize;
     }
 
     private void InitializeSlots()
@@ -148,12 +146,6 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
         + RingBufferLayout.SlotsOffset
         + (long)slotIndex * _slotTotalSize
         + RingBufferLayout.SlotHeaderSize;
-
-    private static int BytesPerPixel(PixelFormat fmt) => fmt switch
-    {
-        PixelFormat.Rgb8 or PixelFormat.Bgr8 => 3,
-        _                                     => 1
-    };
 
     // ── IDisposable ──────────────────────────────────────────────────────────
 

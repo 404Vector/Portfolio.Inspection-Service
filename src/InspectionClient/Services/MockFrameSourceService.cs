@@ -1,14 +1,17 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Core.Logging.Interfaces;
 using InspectionClient.Interfaces;
+using InspectionClient.Models;
 
 namespace InspectionClient.Services;
+
 
 /// <summary>
 /// 합성 프레임을 생성하는 목업 IFrameSource 구현.
@@ -33,7 +36,7 @@ namespace InspectionClient.Services;
 ///                   배경 스레드는 WaitOne() 이후 플래그를 확인하고
 ///                   두 버퍼를 모두 안전하게 재할당한다.
 /// </summary>
-public sealed class MockFrameSourceService : IFrameSource
+public sealed class MockFrameSourceService : IFrameSource, IFrameGrabberController
 {
     public event EventHandler<WriteableBitmap>? FrameSwapped;
 
@@ -153,6 +156,20 @@ public sealed class MockFrameSourceService : IFrameSource
                 break;
         }
     }
+
+  public Task StartAcquisitionAsync(CancellationToken ct = default) => Task.CompletedTask;
+  public Task StopAcquisitionAsync(CancellationToken ct = default)  => Task.CompletedTask;
+  public Task TriggerFrameAsync(CancellationToken ct = default)     => Task.CompletedTask;
+
+  public Task<GrabberCapabilities> GetCapabilitiesAsync(CancellationToken ct = default)
+      => Task.FromResult(GrabberCapabilities.Empty);
+
+  public Task ExecuteCommandAsync(string commandKey, CancellationToken ct = default)
+      => Task.CompletedTask;
+
+  public Task<(bool Success, string Message)> SetParameterAsync(
+      string key, object? value, CancellationToken ct = default)
+      => Task.FromResult((true, string.Empty));
 
     // ── 배경 스레드 루프 ──────────────────────────────────────────────────
 

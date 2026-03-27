@@ -2,6 +2,7 @@ using Core.Enums;
 using Core.SharedMemory.Models;
 using Core.SharedMemory.Writer;
 
+
 namespace Core.SharedMemory.Tests.Writer;
 
 [TestFixture]
@@ -21,11 +22,9 @@ public class SharedMemoryRingBufferTests
 
     private RingBufferOptions Options(int slotCount = 4) => new()
     {
-        Name        = _name,
-        Width       = 4,
-        Height      = 4,
-        SlotCount   = slotCount,
-        PixelFormat = PixelFormat.Mono8   // 4*4*1 = 16 bytes
+        Name         = _name,
+        SlotCount    = slotCount,
+        SlotDataSize = "4 * 4 * 1 * 1"   // Width * Height * 여유배수 * MaxBpp = 16 bytes
     };
 
     // ── FrameInfo 반환값 ─────────────────────────────────────────────────────

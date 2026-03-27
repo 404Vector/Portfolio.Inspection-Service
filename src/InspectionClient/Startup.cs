@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using GrpcFrameGrabber = Core.Grpc.FrameGrabber.FrameGrabber;
+
 namespace InspectionClient;
 
 internal static class Startup
@@ -28,13 +30,13 @@ internal static class Startup
 
         // ── gRPC Clients ──────────────────────────────────────────────────────
         var frameGrabberAddress = context.Configuration
-            .GetValue<string>("GrpcEndpoints:FrameGrabberService")
+            .GetValue<string>("GrpcEndpoints:FileFrameGrabberService")
             ?? "http://localhost:5001";
         var inspectionAddress = context.Configuration
             .GetValue<string>("GrpcEndpoints:InspectionService")
             ?? "http://localhost:5002";
 
-        services.AddGrpcClient<FrameGrabberService.FrameGrabber.FrameGrabberClient>(o =>
+        services.AddGrpcClient<GrpcFrameGrabber.FrameGrabberClient>(o =>
             o.Address = new Uri(frameGrabberAddress));
 
         // TODO: InspectionService proto가 확정되면 아래 주석을 해제하세요.
@@ -42,11 +44,25 @@ internal static class Startup
         //     o.Address = new Uri(inspectionAddress));
 
         // ── Frame Source ──────────────────────────────────────────────────────
-        services.AddSingleton<IFrameSource, MockFrameSourceService>();
+        var useMock = context.Configuration.GetValue<bool>("Features:UseMockFrameSource");
+        if (useMock)
+        {
+          services.AddSingleton<MockFrameSourceService>();
+          services.AddSingleton<IFrameSource>(sp => sp.GetRequiredService<MockFrameSourceService>());
+          services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<MockFrameSourceService>());
+        }
+        else
+        {
+          services.AddSingleton<FrameSourceService>();
+          services.AddSingleton<IFrameSource>(sp => sp.GetRequiredService<FrameSourceService>());
+          services.AddSingleton<FrameGrabberControlService>();
+          services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<FrameGrabberControlService>());
+        }
 
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddTransient<InspectionViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<FrameGrabberControlViewModel>();
         services.AddTransient<OpticSettingViewModel>();
         services.AddTransient<AppSettingViewModel>();
         services.AddSingleton<MainWindowViewModel>();

@@ -23,20 +23,21 @@ gRPC **클라이언트**로서 `FrameGrabberService`, `InspectionService`와 통
 
 ## 제외 대상
 
-- SharedMemory 직접 접근 — **반드시 gRPC 경유**
 - 검사 비즈니스 로직 (InspectionService에서 처리)
 - 프레임 획득 로직 (FrameGrabberService에서 처리)
 
 ## 의존성 규칙
 
 ```
-InspectionClient → Core, Core.Logging
-InspectionClient → Grpc.Net.Client (gRPC 클라이언트, NuGet)
+InspectionClient → Core, Core.Grpc, Core.Logging, Core.SharedMemory
+InspectionClient → Grpc.Net.ClientFactory (gRPC 클라이언트, NuGet)
 InspectionClient → Avalonia (NuGet)
 InspectionClient → CommunityToolkit.Mvvm (NuGet)
 ```
 
-- `Core.SharedMemory`를 참조하지 않는다.
+- `Core.SharedMemory`는 프레임 픽셀 데이터 읽기 전용으로 참조한다.
+  `FrameGrabberService`로부터 `FrameHandle`(gRPC)을 수신한 뒤,
+  `SharedMemoryRingBufferReader`로 해당 슬롯의 픽셀 데이터를 읽어 UI에 표시한다.
 - 서비스 프로젝트(`FrameGrabberService`, `InspectionService`)를 직접 참조하지 않는다.
 
 ## UI 아키텍처 — MVVM
