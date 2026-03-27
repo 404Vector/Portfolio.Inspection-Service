@@ -27,7 +27,14 @@ builder.Services.AddSingleton<SharedMemoryRingBuffer>();
 builder.Services.AddSingleton<FramePumpHostedService>();
 builder.Services.AddHostedService(p => p.GetRequiredService<FramePumpHostedService>());
 
+// ── Active Stream Registry ────────────────────────────────────────────────
+builder.Services.AddSingleton<ActiveStreamRegistry>();
+
 var app = builder.Build();
+
+// 앱 종료 시 활성 gRPC 스트림을 일괄 취소하여 즉시 종료 보장
+var registry = app.Services.GetRequiredService<ActiveStreamRegistry>();
+app.Lifetime.ApplicationStopping.Register(() => registry.CancelAll());
 
 app.MapGrpcService<FrameGrabberGrpcService>();
 app.MapGet("/", () => "FileFrameGrabberService (gRPC). Use a gRPC client to interact with this service.");

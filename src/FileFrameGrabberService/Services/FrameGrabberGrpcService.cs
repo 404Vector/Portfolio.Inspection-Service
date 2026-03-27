@@ -15,16 +15,19 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 {
   private readonly IFrameGrabber          _grabber;
   private readonly FramePumpHostedService _pump;
+  private readonly ActiveStreamRegistry  _registry;
   private readonly ILogger<FrameGrabberGrpcService> _logger;
 
   public FrameGrabberGrpcService(
       IFrameGrabber                    grabber,
       FramePumpHostedService           pump,
+      ActiveStreamRegistry             registry,
       ILogger<FrameGrabberGrpcService> logger)
   {
-    _grabber = grabber;
-    _pump    = pump;
-    _logger  = logger;
+    _grabber  = grabber;
+    _pump     = pump;
+    _registry = registry;
+    _logger   = logger;
   }
 
   // ── 획득 제어 RPCs ────────────────────────────────────────────────────────
@@ -134,6 +137,9 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
   {
     _logger.LogInformation("SubscribeFrames started");
 
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+    using var _registration = _registry.Register(linkedCts);
+
     var channel = Channel.CreateBounded<FrameInfo>(
         new BoundedChannelOptions(32)
         {
@@ -147,16 +153,16 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
     try
     {
-      await foreach (var info in channel.Reader.ReadAllAsync(context.CancellationToken))
+      await foreach (var info in channel.Reader.ReadAllAsync(linkedCts.Token))
       {
-        await responseStream.WriteAsync(FrameGrabberProtoMapper.ToProtoHandle(info), context.CancellationToken);
+        await responseStream.WriteAsync(FrameGrabberProtoMapper.ToProtoHandle(info), linkedCts.Token);
         _logger.LogDebug("SubscribeFrames → {FrameId} slot={Slot} seq={Seq}",
             info.FrameId, info.SlotIndex, info.Sequence);
       }
     }
     catch (OperationCanceledException)
     {
-      // 클라이언트 연결 종료 — 정상 종료 경로
+      // 클라이언트 연결 종료 또는 앱 종료 — 정상 종료 경로
     }
     finally
     {
