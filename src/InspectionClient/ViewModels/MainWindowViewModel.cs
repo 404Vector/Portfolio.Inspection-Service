@@ -9,10 +9,11 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly Dictionary<string, string> DisplayNames = new()
     {
-        ["Inspection"]   = "Inspection",
-        ["History"]      = "History",
-        ["OpticSetting"] = "Optic Setting",
-        ["AppSetting"]   = "App Setting",
+        ["Inspection"]    = "Inspection",
+        ["History"]       = "History",
+        ["OpticSetting"]  = "Optic Setting",
+        ["EquipmentSpec"] = "Equipment Spec",
+        ["AppSetting"]    = "App Setting",
     };
 
     [ObservableProperty] private ViewModelBase _currentViewModel = null!;
@@ -21,23 +22,26 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IObservableLogService Log { get; }
 
-    private readonly InspectionViewModel   _inspectionVm;
-    private readonly HistoryViewModel      _historyVm;
-    private readonly OpticSettingViewModel _opticSettingVm;
-    private readonly AppSettingViewModel   _appSettingVm;
+    private readonly InspectionViewModel    _inspectionVm;
+    private readonly HistoryViewModel       _historyVm;
+    private readonly OpticSettingViewModel  _opticSettingVm;
+    private readonly EquipmentSpecViewModel _equipmentSpecVm;
+    private readonly AppSettingViewModel    _appSettingVm;
 
     public MainWindowViewModel(
-        InspectionViewModel   inspectionVm,
-        HistoryViewModel      historyVm,
-        OpticSettingViewModel opticSettingVm,
-        AppSettingViewModel   appSettingVm,
-        IObservableLogService logService) : base(logService)
+        InspectionViewModel    inspectionVm,
+        HistoryViewModel       historyVm,
+        OpticSettingViewModel  opticSettingVm,
+        EquipmentSpecViewModel equipmentSpecVm,
+        AppSettingViewModel    appSettingVm,
+        IObservableLogService  logService) : base(logService)
     {
-        _inspectionVm   = inspectionVm;
-        _historyVm      = historyVm;
-        _opticSettingVm = opticSettingVm;
-        _appSettingVm   = appSettingVm;
-        Log             = logService;
+        _inspectionVm    = inspectionVm;
+        _historyVm       = historyVm;
+        _opticSettingVm  = opticSettingVm;
+        _equipmentSpecVm = equipmentSpecVm;
+        _appSettingVm    = appSettingVm;
+        Log              = logService;
 
         Navigate("Inspection");
     }
@@ -47,11 +51,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         CurrentViewModel = viewName switch
         {
-            "Inspection"   => _inspectionVm,
-            "History"      => _historyVm,
-            "OpticSetting" => _opticSettingVm,
-            "AppSetting"   => _appSettingVm,
-            _              => CurrentViewModel
+            "Inspection"    => _inspectionVm,
+            "History"       => _historyVm,
+            "OpticSetting"  => _opticSettingVm,
+            "EquipmentSpec" => _equipmentSpecVm,
+            "AppSetting"    => _appSettingVm,
+            _               => CurrentViewModel
         };
         ActiveViewName = viewName;
         TitleText = DisplayNames.GetValueOrDefault(viewName, viewName);
