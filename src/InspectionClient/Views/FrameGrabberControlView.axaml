@@ -3,7 +3,7 @@
              xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:models="using:InspectionClient.Models"
              xmlns:controls="using:InspectionClient.Controls"
-             x:Class="InspectionClient.Controls.FrameGrabberControlView"
+             x:Class="InspectionClient.Views.FrameGrabberControlView"
              x:DataType="vm:FrameGrabberControlViewModel">
 
   <DockPanel>

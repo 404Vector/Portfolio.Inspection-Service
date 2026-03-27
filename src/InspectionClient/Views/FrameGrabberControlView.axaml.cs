@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace InspectionClient.Controls;
+namespace InspectionClient.Views;
 
 public partial class FrameGrabberControlView : UserControl
 {
