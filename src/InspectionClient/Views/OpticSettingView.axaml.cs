@@ -4,8 +4,8 @@ namespace InspectionClient.Views;
 
 public partial class OpticSettingView : UserControl
 {
-    public OpticSettingView()
-    {
-        InitializeComponent();
-    }
+  public OpticSettingView()
+  {
+    InitializeComponent();
+  }
 }

@@ -46,7 +46,7 @@
 
         <!-- ── Fg 탭 ── -->
         <TabItem Header="Fg">
-          <controls:FrameGrabberControl DataContext="{Binding FgViewModel}" />
+          <controls:FrameGrabberControlView DataContext="{Binding FgViewModel}" />
         </TabItem>
 
       </TabControl>

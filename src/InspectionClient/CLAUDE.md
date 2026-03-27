@@ -62,6 +62,12 @@ InspectionClient → CommunityToolkit.Mvvm (NuGet)
 - 이벤트 핸들러가 필요한 경우 ViewModel의 Command로 위임한다.
 - 사용자 정의 컨트롤(`Controls/`)은 재사용 가능한 UI 요소만 포함하며, ViewModel과 결합하지 않는다.
 
+### UserControl 설계 규칙
+
+- **UserControl 전용 ViewModel을 만들지 않는다.** 로직이 필요한 경우 코드 비하인드(`.axaml.cs`)에 직접 구현하고, `DataContext = this`로 바인딩한다.
+- UserControl이 외부 서비스에 의존하는 경우 생성자 주입으로 받는다. Avalonia 디자이너용 기본 생성자(`public Foo() : this(null!, null!) {}`)를 함께 제공한다.
+- `x:DataType`은 해당 컨트롤 클래스 자신으로 지정한다 (예: `x:DataType="controls:FrameGrabberControl"`).
+
 ### 서비스 / DI
 
 - 모든 의존성은 생성자 주입(Constructor Injection)으로 제공한다.
