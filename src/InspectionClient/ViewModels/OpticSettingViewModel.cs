@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,7 +15,7 @@ public partial class OpticSettingViewModel : ViewModelBase
 
   // ── Spec 탭 ──────────────────────────────────────────────
 
-  public OpticSpec Spec { get; } = new();
+  public EquipmentConfig Spec { get; } = new();
 
   // ── Fg 탭 ────────────────────────────────────────────────
 
