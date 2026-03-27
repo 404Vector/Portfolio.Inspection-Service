@@ -43,6 +43,10 @@ internal static class Startup
         // services.AddGrpcClient<InspectionService.Greeter.GreeterClient>(o =>
         //     o.Address = new Uri(inspectionAddress));
 
+        // ── Equipment Config ──────────────────────────────────────────────────
+        services.AddSingleton<EquipmentConfigService>();
+        services.AddSingleton<IEquipmentConfigService>(sp => sp.GetRequiredService<EquipmentConfigService>());
+
         // ── Frame Source ──────────────────────────────────────────────────────
         var useMock = context.Configuration.GetValue<bool>("Features:UseMockFrameSource");
         if (useMock)
@@ -65,6 +69,7 @@ internal static class Startup
         services.AddTransient<FrameGrabberControlViewModel>();
         services.AddTransient<OpticSettingViewModel>();
         services.AddTransient<AppSettingViewModel>();
+        services.AddTransient<EquipmentSpecViewModel>();
         services.AddSingleton<MainWindowViewModel>();
     }
 }

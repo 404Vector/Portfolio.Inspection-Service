@@ -1,0 +1,145 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:InspectionClient.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="InspectionClient.Views.EquipmentSpecView"
+             x:DataType="vm:EquipmentSpecViewModel"
+             Focusable="False">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="16" Spacing="16">
+
+      <!-- Identity -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Identity"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Equipment ID"    Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.EquipmentId}"   Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Model Name"      Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.ModelName}"     Classes="spec-value" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Serial Number"   Classes="spec-label" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Spec.SerialNumber}"  Classes="spec-value" />
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="Location"        Classes="spec-label" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Spec.Location}"      Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+      <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- Sensor -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Sensor"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Sensor Width (px)"    Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.SensorWidth}"        Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Sensor Height (px)"   Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.SensorHeight}"       Classes="spec-value" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Pixel Pitch (μm)"     Classes="spec-label" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Spec.PixelPitchUm}"       Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+      <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- Objective -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Objective"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Magnification (×)"          Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.Magnification}"           Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Effective Pixel Size (μm/px)" Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.EffectivePixelSizeUm}"    Classes="spec-value" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Illumination Type"           Classes="spec-label" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Spec.IlluminationType}"        Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+      <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- Stage -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Stage"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Travel X (mm)"          Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.TravelXMm}"           Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Travel Y (mm)"          Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.TravelYMm}"           Classes="spec-value" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Travel Z (mm)"          Classes="spec-label" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Spec.TravelZMm}"           Classes="spec-value" />
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Speed (mm/s)"       Classes="spec-label" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Spec.MaxSpeedMmPerSec}"    Classes="spec-value" />
+          <TextBlock Grid.Row="4" Grid.Column="0" Text="Max Acceleration (mm/s²)" Classes="spec-label" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Spec.MaxAccelMmPerSec2}"   Classes="spec-value" />
+          <TextBlock Grid.Row="5" Grid.Column="0" Text="Repeatability (μm)"     Classes="spec-label" />
+          <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Spec.RepeatabilityUm}"     Classes="spec-value" />
+          <TextBlock Grid.Row="6" Grid.Column="0" Text="Accuracy (μm)"          Classes="spec-label" />
+          <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Spec.AccuracyUm}"          Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+      <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- Illumination Controller -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Illumination Controller"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Channels"           Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.LightControllerChannels}"      Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Max Current (mA)"   Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.LightControllerMaxCurrentMa}"  Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+      <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- Communication -->
+      <StackPanel Spacing="4">
+        <TextBlock Text="Communication"
+                   FontSize="11" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   Margin="0,0,0,4" />
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="FrameGrabber Address"  Classes="spec-label" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Spec.FrameGrabberServiceAddress}"  Classes="spec-value" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Inspection Address"    Classes="spec-label" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Spec.InspectionServiceAddress}"    Classes="spec-value" />
+        </Grid>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.spec-label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style Selector="TextBlock.spec-value">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+  </UserControl.Styles>
+
+</UserControl>

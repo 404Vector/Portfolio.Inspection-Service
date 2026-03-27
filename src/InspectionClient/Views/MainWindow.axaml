@@ -107,6 +107,17 @@
             </Grid>
           </Button>
 
+          <!-- Equipment Spec -->
+          <Button Name="NavEquipmentSpec" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="EquipmentSpec"
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Equipment Spec" ToolTip.Placement="Right">
+            <Grid Width="48" Height="48">
+              <Rectangle Classes="nav-accent" />
+              <mi:MaterialIcon Kind="InformationOutline" />
+            </Grid>
+          </Button>
+
           <!-- App Setting -->
           <Button Name="NavAppSetting" Classes="nav-item"
                   Command="{Binding NavigateCommand}" CommandParameter="AppSetting"
@@ -132,6 +143,9 @@
           </DataTemplate>
           <DataTemplate DataType="vm:OpticSettingViewModel">
             <views:OpticSettingView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:EquipmentSpecViewModel">
+            <views:EquipmentSpecView />
           </DataTemplate>
           <DataTemplate DataType="vm:AppSettingViewModel">
             <views:AppSettingView />
