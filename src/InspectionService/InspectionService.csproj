@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\greet.proto" GrpcServices="Server" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.Grpc\Core.Grpc.csproj" />
+    <ProjectReference Include="..\InspectionRecipe\InspectionRecipe.csproj" />
   </ItemGroup>
 
   <ItemGroup>

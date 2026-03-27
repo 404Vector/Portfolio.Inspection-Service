@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\framegrabber.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\inspection.proto"   GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>
