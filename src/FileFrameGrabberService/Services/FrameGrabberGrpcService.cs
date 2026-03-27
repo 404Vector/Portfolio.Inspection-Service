@@ -57,6 +57,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
   {
     try
     {
+      _logger.LogInformation("StartAcquisition requested");
       await _grabber.StartAsync(context.CancellationToken);
       _pump.StartPump();
       _logger.LogInformation("Acquisition started");
@@ -74,6 +75,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
   {
     try
     {
+      _logger.LogInformation("StopAcquisition requested");
       await _pump.StopPumpAsync();
       await _grabber.StopAsync(context.CancellationToken);
       _logger.LogInformation("Acquisition stopped");
@@ -107,9 +109,10 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 
     try
     {
+      _logger.LogInformation("TriggerFrame requested");
       await _grabber.TriggerAsync(context.CancellationToken);
       var info = await tcs.Task.WaitAsync(context.CancellationToken);
-      _logger.LogDebug("TriggerFrame → {FrameId} slot={Slot} seq={Seq}",
+      _logger.LogInformation("TriggerFrame completed: frameId={FrameId} slot={Slot} seq={Seq}",
           info.FrameId, info.SlotIndex, info.Sequence);
       return FrameGrabberProtoMapper.ToProtoHandle(info);
     }
@@ -235,7 +238,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     {
       var value = FrameGrabberProtoMapper.ToDomainValue(request.Value);
       await _grabber.SetParameterAsync(request.Key, value, context.CancellationToken);
-      _logger.LogInformation("SetParameter: {Key}", request.Key);
+      _logger.LogInformation("SetParameter: key={Key} value={Value}", request.Key, value);
       return new SetParameterResponse { Success = true };
     }
     catch (KeyNotFoundException ex)

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Core.Grpc.FrameGrabber;
 using Core.Logging.Interfaces;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
@@ -131,8 +132,18 @@ public partial class FrameGrabberControlViewModel : ViewModelBase
     {
       foreach (var p in modified)
       {
-        _controller.SetProperty(p.Key, p.CurrentValue);
-        p.OriginalValue = p.CurrentValue;
+        var (success, message) = await _controller.SetParameterAsync(
+            p.Key, CoerceToValueType(p.CurrentValue, p.ValueType));
+
+        if (success)
+        {
+          p.OriginalValue = p.CurrentValue;
+        }
+        else
+        {
+          p.CurrentValue = p.OriginalValue;
+          _log.Warning(this, $"SetParameter '{p.Key}' rejected: {message}");
+        }
       }
     });
   }
@@ -196,6 +207,18 @@ public partial class FrameGrabberControlViewModel : ViewModelBase
   }
 
   // ── 유틸리티 ─────────────────────────────────────────────
+
+  /// <summary>
+  /// NumericUpDown은 decimal을 바인딩하므로, ValueType에 맞는 CLR 타입으로 변환한다.
+  /// ToParameterValue()가 long/double 분기를 탈 수 있도록 미리 캐스팅한다.
+  /// </summary>
+  private static object? CoerceToValueType(object? value, ParameterValueType valueType) =>
+      (value, valueType) switch
+      {
+        (decimal m, ParameterValueType.Int64)  => (long)m,
+        (decimal m, ParameterValueType.Double) => (double)m,
+        _                                      => value,
+      };
 
   private void Execute(System.Action action) => base.Execute(action);
 

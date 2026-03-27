@@ -38,13 +38,18 @@ internal static class GrabberProtoMapper
     _                     => DomainPixelFormat.Mono8,
   };
 
-  internal static ParameterValue ToParameterValue(object? value) => value switch
-  {
-    long   l => new ParameterValue { IntVal    = l },
-    int    i => new ParameterValue { IntVal    = i },
-    double d => new ParameterValue { DoubleVal = d },
-    bool   b => new ParameterValue { BoolVal   = b },
-    Enum   e => new ParameterValue { StringVal = e.ToString() },
-    _        => new ParameterValue { StringVal = value?.ToString() ?? string.Empty },
-  };
+  internal static ParameterValue ToParameterValue(object? value, ParameterValueType hint = ParameterValueType.String) =>
+      value switch
+      {
+        long    l => new ParameterValue { IntVal    = l },
+        int     i => new ParameterValue { IntVal    = i },
+        double  d => new ParameterValue { DoubleVal = d },
+        float   f => new ParameterValue { DoubleVal = f },
+        bool    b => new ParameterValue { BoolVal   = b },
+        decimal m => hint == ParameterValueType.Int64
+            ? new ParameterValue { IntVal    = (long)m }
+            : new ParameterValue { DoubleVal = (double)m },
+        Enum    e => new ParameterValue { StringVal = e.ToString() },
+        _         => new ParameterValue { StringVal = value?.ToString() ?? string.Empty },
+      };
 }

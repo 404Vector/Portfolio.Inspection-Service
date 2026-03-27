@@ -167,6 +167,10 @@ public sealed class MockFrameSourceService : IFrameSource, IFrameGrabberControll
   public Task ExecuteCommandAsync(string commandKey, CancellationToken ct = default)
       => Task.CompletedTask;
 
+  public Task<(bool Success, string Message)> SetParameterAsync(
+      string key, object? value, CancellationToken ct = default)
+      => Task.FromResult((true, string.Empty));
+
     // ── 배경 스레드 루프 ──────────────────────────────────────────────────
 
     private void ThreadLoop()

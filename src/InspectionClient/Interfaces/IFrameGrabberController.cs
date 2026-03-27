@@ -30,6 +30,12 @@ public interface IFrameGrabberController
   /// </summary>
   void SetProperty(string key, object? value);
 
+  /// <summary>
+  /// 파라미터를 설정하고 성공 여부를 반환한다.
+  /// 실패 시 (Success=false, Message) 를 반환하며 예외는 던지지 않는다.
+  /// </summary>
+  Task<(bool Success, string Message)> SetParameterAsync(string key, object? value, CancellationToken ct = default);
+
   // ── 동적 파라미터 / 커맨드 ──────────────────────────────
 
   /// <summary>
