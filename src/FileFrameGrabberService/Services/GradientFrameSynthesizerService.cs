@@ -1,4 +1,5 @@
 using Core.FrameGrabber.Models;
+using FileFrameGrabberService.Interfaces;
 using CE = Core.Enums;
 
 namespace FileFrameGrabberService.Services;

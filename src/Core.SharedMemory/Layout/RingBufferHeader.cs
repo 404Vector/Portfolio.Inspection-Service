@@ -9,11 +9,7 @@ namespace Core.SharedMemory.Layout;
 [StructLayout(LayoutKind.Explicit, Size = 64)]
 internal struct RingBufferHeader
 {
-    [FieldOffset( 0)] public int Capacity;         // 슬롯 총 개수
-    [FieldOffset( 4)] public int SlotDataSize;     // 슬롯당 픽셀 데이터 바이트 수
-    [FieldOffset( 8)] public int Width;
-    [FieldOffset(12)] public int Height;
-    [FieldOffset(16)] public int Stride;
-    [FieldOffset(20)] public int PixelFormatValue; // Core.Enums.PixelFormat as int
-    // [24..63] reserved
+    [FieldOffset(0)] public int Capacity;     // 슬롯 총 개수
+    [FieldOffset(4)] public int SlotDataSize; // 슬롯당 최대 픽셀 데이터 바이트 수 (오버사이즈)
+    // [8..63] reserved
 }

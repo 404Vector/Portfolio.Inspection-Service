@@ -11,12 +11,16 @@ namespace Core.SharedMemory.Reader;
 ///
 /// FrameInfo(gRPC로 수신)를 키로 슬롯 주소를 계산하고,
 /// Sequence 검증으로 OverwriteOldest 정책에서의 덮어쓰기를 감지한다.
+///
+/// 슬롯 간격은 MMF 헤더의 SlotDataSize(오버사이즈 고정값)를 기준으로 계산한다.
+/// 실제 프레임 크기는 FrameInfo.SizeBytes를 사용한다.
 /// </summary>
 public sealed unsafe class SharedMemoryRingBufferReader : IDisposable
 {
     private readonly MemoryMappedFile         _mmf;
     private readonly MemoryMappedViewAccessor _accessor;
     private readonly byte*                    _base;
+    private readonly int                      _slotTotalSize;
 
     // ── 생성 / 소멸 ──────────────────────────────────────────────────────────
 
@@ -33,6 +37,9 @@ public sealed unsafe class SharedMemoryRingBufferReader : IDisposable
         byte* ptr = null;
         _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
         _base = ptr;
+
+        ref var hdr    = ref Unsafe.AsRef<RingBufferHeader>(_base + RingBufferLayout.HeaderOffset);
+        _slotTotalSize = RingBufferLayout.SlotHeaderSize + hdr.SlotDataSize;
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -44,7 +51,7 @@ public sealed unsafe class SharedMemoryRingBufferReader : IDisposable
     /// <param name="dest">픽셀 데이터를 받을 버퍼. 크기는 info.SizeBytes 이상이어야 한다.</param>
     public ReadResult TryRead(FrameInfo info, Span<byte> dest)
     {
-        ref SlotHeader slot = ref GetSlotHeader(info);
+        ref SlotHeader slot = ref GetSlotHeader(info.SlotIndex);
 
         // ① 읽기 전 Sequence 스냅샷 — 이후 변경되면 덮어쓰기로 판정
         long seqBefore = Volatile.Read(ref slot.Sequence);
@@ -57,8 +64,8 @@ public sealed unsafe class SharedMemoryRingBufferReader : IDisposable
         if (Volatile.Read(ref slot.State) != SlotState.Ready)
             return ReadResult.NotReady;
 
-        // ④ 픽셀 데이터 복사
-        new ReadOnlySpan<byte>(SlotDataPtr(info), (int)info.SizeBytes).CopyTo(dest);
+        // ④ 픽셀 데이터 복사 (실제 프레임 크기만큼만)
+        new ReadOnlySpan<byte>(SlotDataPtr(info.SlotIndex), (int)info.SizeBytes).CopyTo(dest);
 
         // ⑤ 복사 도중 덮어써졌는지 확인
         long seqAfter = Volatile.Read(ref slot.Sequence);
@@ -70,22 +77,19 @@ public sealed unsafe class SharedMemoryRingBufferReader : IDisposable
 
     // ── 포인터 헬퍼 ──────────────────────────────────────────────────────────
 
-    private ref SlotHeader GetSlotHeader(FrameInfo info)
+    private ref SlotHeader GetSlotHeader(int slotIndex)
     {
         byte* ptr = _base
                   + RingBufferLayout.SlotsOffset
-                  + (long)info.SlotIndex * SlotTotalSize(info);
+                  + (long)slotIndex * _slotTotalSize;
         return ref Unsafe.AsRef<SlotHeader>(ptr);
     }
 
-    private byte* SlotDataPtr(FrameInfo info) =>
+    private byte* SlotDataPtr(int slotIndex) =>
         _base
         + RingBufferLayout.SlotsOffset
-        + (long)info.SlotIndex * SlotTotalSize(info)
+        + (long)slotIndex * _slotTotalSize
         + RingBufferLayout.SlotHeaderSize;
-
-    private static long SlotTotalSize(FrameInfo info) =>
-        RingBufferLayout.SlotHeaderSize + info.SizeBytes;
 
     // ── IDisposable ──────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 using Core.FrameGrabber.Models;
 
-namespace FileFrameGrabberService.Services;
+namespace FileFrameGrabberService.Interfaces;
 
 /// <summary>
 /// GrabberConfig와 프레임 인덱스를 받아 GrabbedFrame을 합성하는 계약.

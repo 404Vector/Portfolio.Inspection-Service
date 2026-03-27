@@ -1,22 +1,13 @@
 using System.Threading.Channels;
 using Core.Grpc.FrameGrabber;
-using Grpc.Core;
 using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
-using Core.SharedMemory.Writer;
+using FileFrameGrabberService.Utils;
+using Grpc.Core;
 
-using DomainAcquisitionMode   = Core.Enums.AcquisitionMode;
-using DomainPixelFormat        = Core.Enums.PixelFormat;
-using DomainGrabberState       = Core.Enums.GrabberState;
-using DomainParameterValue     = Core.FrameGrabber.Models.ParameterValue;
-using DomainParameterValueType = Core.FrameGrabber.Models.ParameterValueType;
-using DomainCommandResult      = Core.FrameGrabber.Models.CommandResult;
-
-using ProtoParameterValue      = Core.Grpc.FrameGrabber.ParameterValue;
 using ProtoCommandResult       = Core.Grpc.FrameGrabber.CommandResult;
-using ProtoParameterDescriptor = Core.Grpc.FrameGrabber.ParameterDescriptor;
 using ProtoCommandDescriptor   = Core.Grpc.FrameGrabber.CommandDescriptor;
-using ProtoParameterValueType  = Core.Grpc.FrameGrabber.ParameterValueType;
+using ProtoParameterDescriptor = Core.Grpc.FrameGrabber.ParameterDescriptor;
 
 namespace FileFrameGrabberService.Services;
 
@@ -44,8 +35,8 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     try
     {
       var config = new Core.FrameGrabber.Models.GrabberConfig(
-          Mode:        ToMode(request.Mode),
-          PixelFormat: ToPixelFormat(request.PixelFormat),
+          Mode:        FrameGrabberProtoMapper.ToMode(request.Mode),
+          PixelFormat: FrameGrabberProtoMapper.ToPixelFormat(request.PixelFormat),
           Width:       request.Width       > 0 ? request.Width       : Core.FrameGrabber.Models.GrabberConfig.Default.Width,
           Height:      request.Height      > 0 ? request.Height      : Core.FrameGrabber.Models.GrabberConfig.Default.Height,
           FrameRateHz: request.FrameRateHz > 0 ? request.FrameRateHz : Core.FrameGrabber.Models.GrabberConfig.Default.FrameRateHz);
@@ -120,7 +111,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
       var info = await tcs.Task.WaitAsync(context.CancellationToken);
       _logger.LogDebug("TriggerFrame → {FrameId} slot={Slot} seq={Seq}",
           info.FrameId, info.SlotIndex, info.Sequence);
-      return ToProtoHandle(info);
+      return FrameGrabberProtoMapper.ToProtoHandle(info);
     }
     catch
     {
@@ -155,7 +146,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     {
       await foreach (var info in channel.Reader.ReadAllAsync(context.CancellationToken))
       {
-        await responseStream.WriteAsync(ToProtoHandle(info), context.CancellationToken);
+        await responseStream.WriteAsync(FrameGrabberProtoMapper.ToProtoHandle(info), context.CancellationToken);
         _logger.LogDebug("SubscribeFrames → {FrameId} slot={Slot} seq={Seq}",
             info.FrameId, info.SlotIndex, info.Sequence);
       }
@@ -178,8 +169,8 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     var s = _grabber.GetStatus();
     return Task.FromResult(new StatusResponse
     {
-      State         = ToProtoState(s.State),
-      Mode          = ToProtoMode(s.Mode),
+      State         = FrameGrabberProtoMapper.ToProtoState(s.State),
+      Mode          = FrameGrabberProtoMapper.ToProtoMode(s.Mode),
       FramesGrabbed = s.FramesGrabbed,
       Message       = s.Message ?? string.Empty
     });
@@ -198,11 +189,11 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
       {
         Key         = p.Key,
         DisplayName = p.DisplayName,
-        ValueType   = ToProtoParameterValueType(p.ValueType),
+        ValueType   = FrameGrabberProtoMapper.ToProtoParameterValueType(p.ValueType),
       };
-      if (p.MinValue     is not null) descriptor.MinValue     = ToProtoParameterValueFromRaw(p.MinValue, p.ValueType);
-      if (p.MaxValue     is not null) descriptor.MaxValue     = ToProtoParameterValueFromRaw(p.MaxValue, p.ValueType);
-      if (p.DefaultValue is not null) descriptor.DefaultValue = ToProtoParameterValueFromRaw(p.DefaultValue, p.ValueType);
+      if (p.MinValue     is not null) descriptor.MinValue     = FrameGrabberProtoMapper.ToProtoParameterValueFromRaw(p.MinValue, p.ValueType);
+      if (p.MaxValue     is not null) descriptor.MaxValue     = FrameGrabberProtoMapper.ToProtoParameterValueFromRaw(p.MaxValue, p.ValueType);
+      if (p.DefaultValue is not null) descriptor.DefaultValue = FrameGrabberProtoMapper.ToProtoParameterValueFromRaw(p.DefaultValue, p.ValueType);
       response.Parameters.Add(descriptor);
     }
 
@@ -228,7 +219,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
       return Task.FromResult(new GetParameterResponse
       {
         Key   = request.Key,
-        Value = ToProtoValue(value)
+        Value = FrameGrabberProtoMapper.ToProtoValue(value)
       });
     }
     catch (KeyNotFoundException ex)
@@ -242,7 +233,7 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
   {
     try
     {
-      var value = ToDomainValue(request.Value);
+      var value = FrameGrabberProtoMapper.ToDomainValue(request.Value);
       await _grabber.SetParameterAsync(request.Key, value, context.CancellationToken);
       _logger.LogInformation("SetParameter: {Key}", request.Key);
       return new SetParameterResponse { Success = true };
@@ -268,117 +259,11 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     {
       var result = await _grabber.ExecuteCommandAsync(request.Command, context.CancellationToken);
       _logger.LogInformation("ExecuteCommand: {Command} success={Success}", request.Command, result.Success);
-      return ToProtoCommandResult(result);
+      return FrameGrabberProtoMapper.ToProtoCommandResult(result);
     }
     catch (KeyNotFoundException ex)
     {
       throw new RpcException(new Status(StatusCode.NotFound, ex.Message));
     }
-  }
-
-  // ── 매핑 ─────────────────────────────────────────────────────────────────
-
-  private static FrameHandle ToProtoHandle(FrameInfo info) => new()
-  {
-    FrameId         = info.FrameId,
-    SharedMemoryKey = info.SharedMemoryKey,
-    TimestampUs     = info.TimestampUs,
-    Width           = info.Width,
-    Height          = info.Height,
-    PixelFormat     = ToProtoPixelFormat(info.PixelFormat),
-    Stride          = info.Stride,
-    SizeBytes       = info.SizeBytes,
-    SlotIndex       = info.SlotIndex,
-    Sequence        = info.Sequence
-  };
-
-  private static DomainAcquisitionMode ToMode(AcquisitionMode proto) => proto switch
-  {
-    AcquisitionMode.Triggered => DomainAcquisitionMode.Triggered,
-    _                         => DomainAcquisitionMode.Continuous
-  };
-
-  private static DomainPixelFormat ToPixelFormat(PixelFormat proto) => proto switch
-  {
-    PixelFormat.Rgb8 => DomainPixelFormat.Rgb8,
-    PixelFormat.Bgr8 => DomainPixelFormat.Bgr8,
-    _                => DomainPixelFormat.Mono8
-  };
-
-  private static AcquisitionMode ToProtoMode(DomainAcquisitionMode mode) => mode switch
-  {
-    DomainAcquisitionMode.Triggered => AcquisitionMode.Triggered,
-    _                               => AcquisitionMode.Continuous
-  };
-
-  private static PixelFormat ToProtoPixelFormat(DomainPixelFormat fmt) => fmt switch
-  {
-    DomainPixelFormat.Rgb8 => PixelFormat.Rgb8,
-    DomainPixelFormat.Bgr8 => PixelFormat.Bgr8,
-    _                      => PixelFormat.Mono8
-  };
-
-  private static GrabberState ToProtoState(DomainGrabberState state) => state switch
-  {
-    DomainGrabberState.Acquiring => GrabberState.Acquiring,
-    DomainGrabberState.Error     => GrabberState.Error,
-    _                            => GrabberState.Idle
-  };
-
-  private static ProtoParameterValueType ToProtoParameterValueType(DomainParameterValueType t) => t switch
-  {
-    DomainParameterValueType.Int64  => ProtoParameterValueType.Int64,
-    DomainParameterValueType.Double => ProtoParameterValueType.Double,
-    DomainParameterValueType.Bool   => ProtoParameterValueType.Bool,
-    DomainParameterValueType.String => ProtoParameterValueType.String,
-    _                               => ProtoParameterValueType.Unspecified
-  };
-
-  /// <summary>
-  /// ParameterDescriptor의 MinValue/MaxValue/DefaultValue(object?)를 proto ParameterValue로 변환.
-  /// </summary>
-  private static ProtoParameterValue ToProtoParameterValueFromRaw(object rawValue, DomainParameterValueType type)
-  {
-    var proto = new ProtoParameterValue();
-    switch (type)
-    {
-      case DomainParameterValueType.Int64:  proto.IntVal    = Convert.ToInt64(rawValue);   break;
-      case DomainParameterValueType.Double: proto.DoubleVal = Convert.ToDouble(rawValue);  break;
-      case DomainParameterValueType.Bool:   proto.BoolVal   = Convert.ToBoolean(rawValue); break;
-      case DomainParameterValueType.String: proto.StringVal = rawValue.ToString() ?? string.Empty; break;
-    }
-    return proto;
-  }
-
-  private static ProtoParameterValue ToProtoValue(DomainParameterValue v) => v switch
-  {
-    DomainParameterValue.Int64Value  i => new ProtoParameterValue { IntVal    = i.Value },
-    DomainParameterValue.DoubleValue d => new ProtoParameterValue { DoubleVal = d.Value },
-    DomainParameterValue.BoolValue   b => new ProtoParameterValue { BoolVal   = b.Value },
-    DomainParameterValue.StringValue s => new ProtoParameterValue { StringVal = s.Value },
-    _                                  => new ProtoParameterValue()
-  };
-
-  private static DomainParameterValue ToDomainValue(ProtoParameterValue proto) =>
-      proto.ValueCase switch
-      {
-        ProtoParameterValue.ValueOneofCase.IntVal    => new DomainParameterValue.Int64Value(proto.IntVal),
-        ProtoParameterValue.ValueOneofCase.DoubleVal => new DomainParameterValue.DoubleValue(proto.DoubleVal),
-        ProtoParameterValue.ValueOneofCase.BoolVal   => new DomainParameterValue.BoolValue(proto.BoolVal),
-        ProtoParameterValue.ValueOneofCase.StringVal => new DomainParameterValue.StringValue(proto.StringVal),
-        _ => throw new ArgumentException("ParameterValue has no value set")
-      };
-
-  private static ProtoCommandResult ToProtoCommandResult(DomainCommandResult result)
-  {
-    var proto = new ProtoCommandResult { Success = result.Success };
-    switch (result.ReturnValue)
-    {
-      case DomainParameterValue.Int64Value  i: proto.IntVal    = i.Value; break;
-      case DomainParameterValue.DoubleValue d: proto.DoubleVal = d.Value; break;
-      case DomainParameterValue.BoolValue   b: proto.BoolVal   = b.Value; break;
-      case DomainParameterValue.StringValue s: proto.StringVal = s.Value; break;
-    }
-    return proto;
   }
 }
