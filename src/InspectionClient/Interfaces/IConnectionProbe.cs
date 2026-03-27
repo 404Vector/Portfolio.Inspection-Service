@@ -4,6 +4,15 @@ using System.Threading.Tasks;
 namespace InspectionClient.Interfaces;
 
 /// <summary>
+/// 알려진 서비스 키 상수. probe 구현체와 ViewModel이 동일한 키를 참조한다.
+/// probe 구현체가 없는 서비스(미구현)의 키는 여기에 정의한다.
+/// </summary>
+public static class ServiceKeys
+{
+  public const string Inspection = "Inspection";
+}
+
+/// <summary>
 /// 단일 엔드포인트의 연결 가능 여부를 확인하는 probe.
 /// k8s의 livenessProbe / readinessProbe에 대응한다.
 /// </summary>

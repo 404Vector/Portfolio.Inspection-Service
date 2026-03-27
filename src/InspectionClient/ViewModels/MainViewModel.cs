@@ -10,7 +10,7 @@ public partial class MainViewModel : ViewModelBase
 {
   private static readonly Dictionary<string, string> DisplayNames = new()
   {
-    ["Inspection"]    = "Inspection",
+    [ServiceKeys.Inspection]    = ServiceKeys.Inspection,
     ["History"]       = "History",
     ["OpticSetting"]  = "Optic Setting",
     ["EquipmentSpec"] = "Equipment Spec",
@@ -49,17 +49,17 @@ public partial class MainViewModel : ViewModelBase
 
     // 초기 상태 반영
     IsFrameGrabberConnected = connectionMonitor.States.GetValueOrDefault(GrpcFrameGrabberProbe.Key);
-    IsInspectionConnected   = connectionMonitor.States.GetValueOrDefault("Inspection");
+    IsInspectionConnected   = connectionMonitor.States.GetValueOrDefault(ServiceKeys.Inspection);
 
     connectionMonitor.StateChanged += (_, e) =>
     {
       if (e.ServiceKey == GrpcFrameGrabberProbe.Key)
         IsFrameGrabberConnected = e.IsConnected;
-      else if (e.ServiceKey == "Inspection")
+      else if (e.ServiceKey == ServiceKeys.Inspection)
         IsInspectionConnected = e.IsConnected;
     };
 
-    Navigate("Inspection");
+    Navigate(ServiceKeys.Inspection);
   }
 
   [RelayCommand]
@@ -67,7 +67,7 @@ public partial class MainViewModel : ViewModelBase
   {
     CurrentViewModel = viewName switch
     {
-      "Inspection"    => _inspectionVm,
+      ServiceKeys.Inspection    => _inspectionVm,
       "History"       => _historyVm,
       "OpticSetting"  => _opticSettingVm,
       "EquipmentSpec" => _equipmentSpecVm,
