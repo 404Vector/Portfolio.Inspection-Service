@@ -22,11 +22,21 @@ public sealed class ActiveStreamRegistry : IDisposable
 
   /// <summary>
   /// 등록된 모든 스트림을 취소한다. 앱 종료 시 호출한다.
+  /// 요청 스레드가 동시에 정리 중인 경우 ObjectDisposedException을 무시한다.
   /// </summary>
   public void CancelAll()
   {
     foreach (var cts in _streams.Values)
-      cts.Cancel();
+    {
+      try
+      {
+        cts.Cancel();
+      }
+      catch (ObjectDisposedException)
+      {
+        // 이미 요청 스레드가 정리함, 안전하게 무시
+      }
+    }
   }
 
   public void Dispose() => CancelAll();
