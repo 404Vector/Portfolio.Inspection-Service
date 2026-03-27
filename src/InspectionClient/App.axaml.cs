@@ -25,7 +25,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var vm = Host.Services.GetRequiredService<MainWindowViewModel>();
+            var vm = Host.Services.GetRequiredService<MainViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = vm };
             desktop.Exit += (_, _) =>
             {
