@@ -13,7 +13,7 @@ public partial class MainView : UserControl
   {
     [nameof(NavInspection)]    = "Inspection",
     [nameof(NavHistory)]       = "History",
-    [nameof(NavOpticSetting)]  = "OpticSetting",
+    [nameof(NavFrameGrabber)]  = "FrameGrabber",
     [nameof(NavEquipmentSpec)] = "EquipmentSpec",
     [nameof(NavAppSetting)]    = "AppSetting",
   };
@@ -43,11 +43,11 @@ public partial class MainView : UserControl
   {
     var buttons = new Dictionary<string, Button?>
     {
-      ["Inspection"]   = NavInspection,
-      ["History"]      = NavHistory,
-      ["OpticSetting"] = NavOpticSetting,
+      ["Inspection"]    = NavInspection,
+      ["History"]       = NavHistory,
+      ["FrameGrabber"]  = NavFrameGrabber,
       ["EquipmentSpec"] = NavEquipmentSpec,
-      ["AppSetting"]   = NavAppSetting,
+      ["AppSetting"]    = NavAppSetting,
     };
 
     foreach (var (name, btn) in buttons)

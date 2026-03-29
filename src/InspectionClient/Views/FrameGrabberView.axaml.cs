@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace InspectionClient.Views;
 
-public partial class OpticSettingView : UserControl
+public partial class FrameGrabberView : UserControl
 {
-  public OpticSettingView()
+  public FrameGrabberView()
   {
     InitializeComponent();
   }

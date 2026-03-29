@@ -96,11 +96,11 @@
           <!-- Divider -->
           <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="10,4" />
 
-          <!-- Optic Setting -->
-          <Button Name="NavOpticSetting" Classes="nav-item"
-                  Command="{Binding NavigateCommand}" CommandParameter="OpticSetting"
+          <!-- Frame Grabber -->
+          <Button Name="NavFrameGrabber" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="FrameGrabber"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
-                  ToolTip.Tip="Optic Setting" ToolTip.Placement="Right">
+                  ToolTip.Tip="Frame Grabber" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
               <mi:MaterialIcon Kind="Tune" />
@@ -141,8 +141,8 @@
           <DataTemplate DataType="vm:HistoryViewModel">
             <views:HistoryView />
           </DataTemplate>
-          <DataTemplate DataType="vm:OpticSettingViewModel">
-            <views:OpticSettingView />
+          <DataTemplate DataType="vm:FrameGrabberViewModelBase">
+            <views:FrameGrabberView />
           </DataTemplate>
           <DataTemplate DataType="vm:EquipmentSpecViewModel">
             <views:EquipmentSpecView />

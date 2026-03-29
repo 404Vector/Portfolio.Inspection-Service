@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Core.Logging.Interfaces;
 
@@ -22,6 +23,23 @@ public abstract partial class ViewModelBase : ObservableObject
         try
         {
             action();
+        }
+        catch (Exception ex)
+        {
+            _log.Error(this, $"{method} failed: {ex.Message}");
+            throw;
+        }
+        _log.Debug(this, $"← {method}");
+    }
+
+    protected async Task Execute(
+        Func<Task> action,
+        [CallerMemberName] string method = "")
+    {
+        _log.Debug(this, $"→ {method}");
+        try
+        {
+            await action();
         }
         catch (Exception ex)
         {

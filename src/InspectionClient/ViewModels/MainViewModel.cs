@@ -11,10 +11,10 @@ public partial class MainViewModel : ViewModelBase
   private static readonly Dictionary<string, string> DisplayNames = new()
   {
     [ServiceKeys.Inspection]    = ServiceKeys.Inspection,
-    ["History"]       = "History",
-    ["OpticSetting"]  = "Optic Setting",
-    ["EquipmentSpec"] = "Equipment Spec",
-    ["AppSetting"]    = "App Setting",
+    ["History"]        = "History",
+    ["FrameGrabber"]   = "Frame Grabber",
+    ["EquipmentSpec"]  = "Equipment Spec",
+    ["AppSetting"]     = "App Setting",
   };
 
   [ObservableProperty] private ViewModelBase _currentViewModel = null!;
@@ -25,24 +25,24 @@ public partial class MainViewModel : ViewModelBase
 
   public IObservableLogService Log { get; }
 
-  private readonly InspectionViewModel    _inspectionVm;
-  private readonly HistoryViewModel       _historyVm;
-  private readonly OpticSettingViewModel  _opticSettingVm;
-  private readonly EquipmentSpecViewModel _equipmentSpecVm;
-  private readonly AppSettingViewModel    _appSettingVm;
+  private readonly InspectionViewModel      _inspectionVm;
+  private readonly HistoryViewModel         _historyVm;
+  private readonly FrameGrabberViewModelBase _fgVm;
+  private readonly EquipmentSpecViewModel   _equipmentSpecVm;
+  private readonly AppSettingViewModel      _appSettingVm;
 
   public MainViewModel(
-      InspectionViewModel        inspectionVm,
-      HistoryViewModel           historyVm,
-      OpticSettingViewModel      opticSettingVm,
-      EquipmentSpecViewModel     equipmentSpecVm,
-      AppSettingViewModel        appSettingVm,
-      IObservableLogService      logService,
-      IServiceConnectionMonitor  connectionMonitor) : base(logService)
+      InspectionViewModel         inspectionVm,
+      HistoryViewModel            historyVm,
+      FrameGrabberViewModelBase   fgVm,
+      EquipmentSpecViewModel      equipmentSpecVm,
+      AppSettingViewModel         appSettingVm,
+      IObservableLogService       logService,
+      IServiceConnectionMonitor   connectionMonitor) : base(logService)
   {
     _inspectionVm    = inspectionVm;
     _historyVm       = historyVm;
-    _opticSettingVm  = opticSettingVm;
+    _fgVm            = fgVm;
     _equipmentSpecVm = equipmentSpecVm;
     _appSettingVm    = appSettingVm;
     Log              = logService;
@@ -69,7 +69,7 @@ public partial class MainViewModel : ViewModelBase
     {
       ServiceKeys.Inspection    => _inspectionVm,
       "History"       => _historyVm,
-      "OpticSetting"  => _opticSettingVm,
+      "FrameGrabber"  => _fgVm,
       "EquipmentSpec" => _equipmentSpecVm,
       "AppSetting"    => _appSettingVm,
       _               => CurrentViewModel
