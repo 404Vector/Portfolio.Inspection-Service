@@ -74,8 +74,8 @@ internal static class Startup
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddTransient<InspectionViewModel>();
         services.AddTransient<HistoryViewModel>();
-        services.AddTransient<FrameGrabberControlViewModel>();
-        services.AddTransient<OpticSettingViewModel>();
+        services.AddTransient<FileFrameGrabberViewModel>();
+        services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<FileFrameGrabberViewModel>());
         services.AddTransient<AppSettingViewModel>();
         services.AddTransient<EquipmentSpecViewModel>();
         services.AddSingleton<MainViewModel>();

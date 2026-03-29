@@ -44,6 +44,12 @@ public interface IFrameGrabberController
   /// </summary>
   Task<GrabberCapabilities> GetCapabilitiesAsync(CancellationToken ct = default);
 
+  /// <summary>
+  /// 지정된 키의 현재 파라미터 값을 조회한다.
+  /// 파라미터가 존재하지 않거나 조회에 실패하면 null을 반환한다.
+  /// </summary>
+  Task<object?> GetParameterAsync(string key, CancellationToken ct = default);
+
   /// <summary>FrameGrabber 커맨드를 실행한다.</summary>
   Task ExecuteCommandAsync(string commandKey, CancellationToken ct = default);
 }

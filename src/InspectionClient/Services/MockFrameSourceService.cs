@@ -164,6 +164,9 @@ public sealed class MockFrameSourceService : IFrameSource, IFrameGrabberControll
   public Task<GrabberCapabilities> GetCapabilitiesAsync(CancellationToken ct = default)
       => Task.FromResult(GrabberCapabilities.Empty);
 
+  public Task<object?> GetParameterAsync(string key, CancellationToken ct = default)
+      => Task.FromResult<object?>(null);
+
   public Task ExecuteCommandAsync(string commandKey, CancellationToken ct = default)
       => Task.CompletedTask;
 

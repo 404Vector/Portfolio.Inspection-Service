@@ -77,6 +77,11 @@ public sealed class ConnectionMonitor : IServiceConnectionMonitor, IHostedServic
 
     _states[key] = connected;
 
+    if (connected)
+      _log.Info(this, $"[{key}] connected");
+    else
+      _log.Warning(this, $"[{key}] disconnected");
+
     Dispatcher.UIThread.Post(
         () => StateChanged?.Invoke(this, new ServiceConnectionChangedEventArgs(key, connected)),
         DispatcherPriority.Normal);

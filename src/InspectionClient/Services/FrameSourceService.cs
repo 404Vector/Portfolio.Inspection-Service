@@ -213,7 +213,6 @@ public sealed class FrameSourceService : IFrameSource, IDisposable
       }
       catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
       {
-        _log.Warning(this, "FileFrameGrabberService unavailable. Retrying in 2s...");
         try { await Task.Delay(2000, ct); }
         catch (OperationCanceledException) { break; }
       }
