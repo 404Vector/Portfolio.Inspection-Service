@@ -118,6 +118,29 @@ public sealed class FrameGrabberControlService : IFrameGrabberController
     }
   }
 
+  public async Task<object?> GetParameterAsync(string key, CancellationToken ct = default)
+  {
+    try
+    {
+      var response = await _grpcClient.GetParameterAsync(
+          new GetParameterRequest { Key = key },
+          cancellationToken: ct);
+
+      return response.Value is { ValueCase: not ParameterValue.ValueOneofCase.None }
+          ? GrabberProtoMapper.ToObject(response.Value)
+          : null;
+    }
+    catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+    {
+      return null;
+    }
+    catch (Exception ex)
+    {
+      _log.Warning(this, $"GetParameter '{key}' error: {ex.Message}");
+      return null;
+    }
+  }
+
   public async Task<GrabberCapabilities> GetCapabilitiesAsync(CancellationToken ct = default)
   {
     try

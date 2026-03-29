@@ -92,8 +92,11 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
         var serverParam = caps.Parameters.FirstOrDefault(p => p.Key == item.Key);
         if (serverParam is null) continue;
 
-        item.CurrentValue  = serverParam.CurrentValue;
-        item.OriginalValue = serverParam.CurrentValue;
+        var current = await _controller.GetParameterAsync(item.Key, ct)
+            ?? serverParam.CurrentValue;
+
+        item.CurrentValue  = current;
+        item.OriginalValue = current;
       }
 
       RefreshTriggerMode();
