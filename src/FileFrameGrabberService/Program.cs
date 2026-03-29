@@ -7,6 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddGrpc();
 
+// ── Shutdown ─────────────────────────────────────────────────────────────────
+// Kestrel은 GOAWAY 후 HTTP/2 연결이 닫힐 때까지 대기한다.
+// 클라이언트가 long-lived gRPC 채널을 유지하면 무한정 블록되므로 명시적 타임아웃을 설정한다.
+builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(5));
+
 // ── Frame Grabber ────────────────────────────────────────────────────────────
 // IFrameGrabber 구현체를 교체하는 것으로 실제 카메라로 전환 가능
 builder.Services.AddSingleton<GradientFrameSynthesizerService>();

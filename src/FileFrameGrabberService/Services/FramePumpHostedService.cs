@@ -47,8 +47,13 @@ public sealed class FramePumpHostedService : IHostedService, IAsyncDisposable
 
   /// <summary>
   /// IHostedService.StopAsync — 앱 종료 시 Hosting이 호출.
+  /// 펌프를 중단한 뒤 Grabber도 함께 중단하여 연속 루프 누수를 방지한다.
   /// </summary>
-  public async Task StopAsync(CancellationToken cancellationToken) => await StopPumpAsync();
+  public async Task StopAsync(CancellationToken cancellationToken)
+  {
+    await StopPumpAsync();
+    await _grabber.StopAsync(cancellationToken);
+  }
 
   /// <summary>
   /// 프레임 펌프를 시작한다. 이미 실행 중이면 무시한다.
