@@ -10,6 +10,7 @@ public class ParameterDataTemplateSelector : IDataTemplate
   public IDataTemplate? Int64Template  { get; set; }
   public IDataTemplate? DoubleTemplate { get; set; }
   public IDataTemplate? BoolTemplate   { get; set; }
+  public IDataTemplate? EnumTemplate   { get; set; }
   public IDataTemplate? StringTemplate { get; set; }
 
   public Control? Build(object? param)
@@ -21,6 +22,7 @@ public class ParameterDataTemplateSelector : IDataTemplate
       ParameterValueType.Int64  => Int64Template,
       ParameterValueType.Double => DoubleTemplate,
       ParameterValueType.Bool   => BoolTemplate,
+      ParameterValueType.String when item.AllowedValues is { Count: > 0 } => EnumTemplate,
       _                         => StringTemplate,
     };
 

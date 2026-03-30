@@ -119,6 +119,23 @@
                 </DataTemplate>
               </controls:ParameterDataTemplateSelector.BoolTemplate>
 
+              <!-- Enum (AllowedValues가 있는 String) -->
+              <controls:ParameterDataTemplateSelector.EnumTemplate>
+                <DataTemplate DataType="models:GrabberParameterItem">
+                  <Grid ColumnDefinitions="*,*" Margin="0,2">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimary}"
+                               FontSize="13" />
+                    <controls:EnumPickerControl Grid.Column="1"
+                                               ItemsSource="{Binding AllowedValues}"
+                                               SelectedItem="{Binding CurrentValue}"
+                                               FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </controls:ParameterDataTemplateSelector.EnumTemplate>
+
               <!-- String (fallback) -->
               <controls:ParameterDataTemplateSelector.StringTemplate>
                 <DataTemplate DataType="models:GrabberParameterItem">
