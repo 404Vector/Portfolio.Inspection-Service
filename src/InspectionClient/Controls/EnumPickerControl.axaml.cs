@@ -83,7 +83,7 @@ public partial class EnumPickerControl : UserControl
 
     // 클릭 위치에서 ListBoxItem을 찾음
     var clickPos = e.GetPosition(ItemList);
-    var hitControl = ItemList.InputHitTest(clickPos);
+    var hitControl = ItemList.InputHitTest(clickPos) as Control;
 
     // 클릭한 컨트롤이 ListBoxItem 또는 그 자식이라면, 해당 항목을 선택
     var listBoxItem = FindAncestorOfType<ListBoxItem>(hitControl);
@@ -104,7 +104,7 @@ public partial class EnumPickerControl : UserControl
     while (current is not null)
     {
       if (current is T ancestor) return ancestor;
-      current = current.Parent;
+      current = current.Parent as Control;
     }
     return null;
   }
