@@ -40,6 +40,9 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
   [ObservableProperty]
   private bool _isConnected;
 
+  [ObservableProperty]
+  private bool _isAcquisitionRunning;
+
   protected FrameGrabberViewModelBase(
       ILogService logService,
       IFrameGrabberController controller,
@@ -85,6 +88,9 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
 
     try
     {
+      var status = await _controller.GetStatusAsync(ct);
+      IsAcquisitionRunning = status.State == GrabberState.Acquiring;
+
       var caps = await _controller.GetCapabilitiesAsync(ct);
 
       foreach (var item in Parameters)
@@ -116,11 +122,14 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
 
   // ── 획득 제어 ───────────────────────────────────────────────
 
+  public bool CanTrigger => IsAcquisitionRunning && IsTriggerMode;
+
   [RelayCommand]
   private async Task StartAcquisition() =>
       await Execute(async () =>
       {
         await _controller.StartAcquisitionAsync();
+        IsAcquisitionRunning = true;
         _log.Info(this, "StartAcquisition");
       });
 
@@ -129,10 +138,11 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
       await Execute(async () =>
       {
         await _controller.StopAcquisitionAsync();
+        IsAcquisitionRunning = false;
         _log.Info(this, "StopAcquisition");
       });
 
-  [RelayCommand(CanExecute = nameof(IsTriggerMode))]
+  [RelayCommand(CanExecute = nameof(CanTrigger))]
   private async Task TriggerFrame() =>
       await Execute(async () =>
       {
@@ -180,6 +190,9 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
       _controller.SetProperty(key, value);
 
   // ── acquisition_mode 감지 ──────────────────────────────────
+
+  partial void OnIsAcquisitionRunningChanged(bool value) =>
+      TriggerFrameCommand.NotifyCanExecuteChanged();
 
   partial void OnIsTriggerModeChanged(bool value) =>
       TriggerFrameCommand.NotifyCanExecuteChanged();

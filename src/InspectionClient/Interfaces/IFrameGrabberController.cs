@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Core.Grpc.FrameGrabber;
 using InspectionClient.Models;
 
 namespace InspectionClient.Interfaces;
@@ -11,6 +12,9 @@ namespace InspectionClient.Interfaces;
 public interface IFrameGrabberController
 {
   // ── 획득 제어 ────────────────────────────────────────────
+
+  /// <summary>FrameGrabber의 현재 상태를 조회한다.</summary>
+  Task<StatusResponse> GetStatusAsync(CancellationToken ct = default);
 
   /// <summary>FrameGrabber 획득을 시작한다.</summary>
   Task StartAcquisitionAsync(CancellationToken ct = default);

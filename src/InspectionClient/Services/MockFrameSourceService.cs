@@ -174,6 +174,12 @@ public sealed class MockFrameSourceService : IFrameSource, IFrameGrabberControll
       string key, object? value, CancellationToken ct = default)
       => Task.FromResult((true, string.Empty));
 
+  public Task<Core.Grpc.FrameGrabber.StatusResponse> GetStatusAsync(CancellationToken ct = default)
+      => Task.FromResult(new Core.Grpc.FrameGrabber.StatusResponse
+      {
+        State = Core.Grpc.FrameGrabber.GrabberState.Idle
+      });
+
     // ── 배경 스레드 루프 ──────────────────────────────────────────────────
 
     private void ThreadLoop()
