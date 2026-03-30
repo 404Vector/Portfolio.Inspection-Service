@@ -73,41 +73,65 @@ public partial class EnumPickerControl : UserControl
   }
 
   // ── 항목 포인터 이벤트 ───────────────────────────────────────────────
-  // SelectionChanged 대신 PointerPressed를 사용해서 항목 클릭 즉시 닫힘
-  // (이미 선택된 항목을 다시 클릭해도 닫힘)
+  // PointerPressed를 사용해서 항목 클릭 즉시 닫힘 (선택 여부와 무관)
 
   private void OnItemPointerPressed(object? sender, PointerPressedEventArgs e)
   {
-    // ListBox 항목을 클릭한 경우만 처리
+    // 좌클릭만 처리
     var point = e.GetCurrentPoint(ItemList);
     if (!point.Properties.IsLeftButtonPressed) return;
 
-    // 클릭한 항목 추출
-    var listBox = (ListBox)sender!;
+    // 클릭 위치에서 ListBoxItem을 찾음
     var clickPos = e.GetPosition(ItemList);
-    var hitItem = listBox.GetItemAtPoint(clickPos);
+    var hitControl = ItemList.InputHitTest(clickPos);
 
-    if (hitItem?.Item is not null)
+    // 클릭한 컨트롤이 ListBoxItem 또는 그 자식이라면, 해당 항목을 선택
+    var listBoxItem = FindAncestorOfType<ListBoxItem>(hitControl);
+    if (listBoxItem?.DataContext is not null)
     {
-      SelectedItem            = hitItem.Item;
+      SelectedItem            = listBoxItem.DataContext;
       DropDownPanel.IsVisible = false;
       e.Handled               = true;
     }
   }
 
-  // ── 항목 선택 (일관성 유지용, SelectionChanged는 키보드 네비게이션 등에 대비) ─
+  /// <summary>
+  /// 시각적 트리를 따라 부모로 이동하며 지정된 타입의 첫 번째 조상을 찾는다.
+  /// </summary>
+  private static T? FindAncestorOfType<T>(IControl? control) where T : class
+  {
+    var current = control;
+    while (current is not null)
+    {
+      if (current is T ancestor) return ancestor;
+      current = current.Parent;
+    }
+    return null;
+  }
+
+  // ── 항목 선택 (키보드 네비게이션에서 Enter로 선택한 경우 패널 닫힘) ─────
 
   private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
   {
     if (ItemList.SelectedItem is null) return;
 
     SelectedItem = ItemList.SelectedItem;
+    // 포커스가 있으면 (키보드 네비게이션) 패널 닫힘
+    if (ItemList.IsFocused)
+    {
+      DropDownPanel.IsVisible = false;
+    }
   }
 
-  // ── LostFocus: 다른 영역 클릭 시 드롭다운 닫힘 ──────────────────────
+  // ── LostFocus: 다른 영역으로 포커스 이동 시 패널 닫힘 ──────────────────
+  // EnumPickerControl 내부로의 포커스 이동은 무시 (ItemList로 이동할 때)
 
   private void OnLostFocus(object? sender, RoutedEventArgs e)
   {
-    DropDownPanel.IsVisible = false;
+    // e.Source가 현재 control인 경우만 반응 (자식 컨트롤에서의 포커스 이동은 무시)
+    if (e.Source == this)
+    {
+      DropDownPanel.IsVisible = false;
+    }
   }
 }
