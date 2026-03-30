@@ -98,7 +98,7 @@ public partial class EnumPickerControl : UserControl
   /// <summary>
   /// 시각적 트리를 따라 부모로 이동하며 지정된 타입의 첫 번째 조상을 찾는다.
   /// </summary>
-  private static T? FindAncestorOfType<T>(IControl? control) where T : class
+  private static T? FindAncestorOfType<T>(Control? control) where T : class
   {
     var current = control;
     while (current is not null)
@@ -123,13 +123,13 @@ public partial class EnumPickerControl : UserControl
     }
   }
 
-  // ── LostFocus: 다른 영역으로 포커스 이동 시 패널 닫힘 ──────────────────
-  // EnumPickerControl 내부로의 포커스 이동은 무시 (ItemList로 이동할 때)
+  // ── LostFocus: EnumPickerControl 외부로 포커스 이동 시 패널 닫힘 ──────
+  // IsKeyboardFocusWithin으로 전체 컨트롤 트리 내 포커스 상태를 확인
 
   private void OnLostFocus(object? sender, RoutedEventArgs e)
   {
-    // e.Source가 현재 control인 경우만 반응 (자식 컨트롤에서의 포커스 이동은 무시)
-    if (e.Source == this)
+    // 포커스가 이 컨트롤의 자식에서 완전히 떠났을 때만 패널을 닫음
+    if (!IsKeyboardFocusWithin)
     {
       DropDownPanel.IsVisible = false;
     }
