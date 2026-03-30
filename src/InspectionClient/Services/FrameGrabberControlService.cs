@@ -26,6 +26,11 @@ public sealed class FrameGrabberControlService : IFrameGrabberController
     _log        = logService;
   }
 
+  public async Task<StatusResponse> GetStatusAsync(CancellationToken ct = default)
+  {
+    return await _grpcClient.GetStatusAsync(new GetStatusRequest(), cancellationToken: ct);
+  }
+
   public void SetProperty(string key, object? value)
   {
     var proto = GrabberProtoMapper.ToParameterValue(value);

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Core.Grpc.FrameGrabber;
 
@@ -14,6 +15,9 @@ public partial class GrabberParameterItem : ObservableObject
   public ParameterValueType ValueType   { get; init; }
   public object?            MinValue    { get; init; }
   public object?            MaxValue    { get; init; }
+
+  /// <summary>enum 타입의 경우, 허용되는 값 목록.</summary>
+  public List<string>? AllowedValues { get; set; }
 
   [ObservableProperty]
   private object? _currentValue;
