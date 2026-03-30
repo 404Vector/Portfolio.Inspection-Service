@@ -15,6 +15,7 @@ public partial class MainViewModel : ViewModelBase
     ["FrameGrabber"]   = "Frame Grabber",
     ["EquipmentSpec"]  = "Equipment Spec",
     ["AppSetting"]     = "App Setting",
+    ["DieRendering"]   = "Die Rendering",
   };
 
   [ObservableProperty] private ViewModelBase _currentViewModel = null!;
@@ -30,6 +31,7 @@ public partial class MainViewModel : ViewModelBase
   private readonly FrameGrabberViewModelBase _fgVm;
   private readonly EquipmentSpecViewModel   _equipmentSpecVm;
   private readonly AppSettingViewModel      _appSettingVm;
+  private readonly DieRenderingViewModel    _dieRenderingVm;
 
   public MainViewModel(
       InspectionViewModel         inspectionVm,
@@ -37,6 +39,7 @@ public partial class MainViewModel : ViewModelBase
       FrameGrabberViewModelBase   fgVm,
       EquipmentSpecViewModel      equipmentSpecVm,
       AppSettingViewModel         appSettingVm,
+      DieRenderingViewModel       dieRenderingVm,
       IObservableLogService       logService,
       IServiceConnectionMonitor   connectionMonitor) : base(logService)
   {
@@ -45,6 +48,7 @@ public partial class MainViewModel : ViewModelBase
     _fgVm            = fgVm;
     _equipmentSpecVm = equipmentSpecVm;
     _appSettingVm    = appSettingVm;
+    _dieRenderingVm  = dieRenderingVm;
     Log              = logService;
 
     // 초기 상태 반영
@@ -72,6 +76,7 @@ public partial class MainViewModel : ViewModelBase
       "FrameGrabber"  => _fgVm,
       "EquipmentSpec" => _equipmentSpecVm,
       "AppSetting"    => _appSettingVm,
+      "DieRendering"  => _dieRenderingVm,
       _               => CurrentViewModel
     };
     ActiveViewName = viewName;

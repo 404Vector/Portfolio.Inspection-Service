@@ -16,6 +16,7 @@ public partial class MainView : UserControl
     [nameof(NavFrameGrabber)]  = "FrameGrabber",
     [nameof(NavEquipmentSpec)] = "EquipmentSpec",
     [nameof(NavAppSetting)]    = "AppSetting",
+    [nameof(NavDieRendering)]  = "DieRendering",
   };
 
   private MainViewModel ViewModel => (MainViewModel)DataContext!;
@@ -48,6 +49,7 @@ public partial class MainView : UserControl
       ["FrameGrabber"]  = NavFrameGrabber,
       ["EquipmentSpec"] = NavEquipmentSpec,
       ["AppSetting"]    = NavAppSetting,
+      ["DieRendering"]  = NavDieRendering,
     };
 
     foreach (var (name, btn) in buttons)

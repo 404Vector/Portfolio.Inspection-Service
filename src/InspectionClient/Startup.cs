@@ -71,6 +71,9 @@ internal static class Startup
         services.AddSingleton<IServiceConnectionMonitor>(sp => sp.GetRequiredService<ConnectionMonitor>());
         services.AddHostedService(sp => sp.GetRequiredService<ConnectionMonitor>());
 
+        // ── Die Rendering ─────────────────────────────────────────────────────
+        services.AddSingleton<IDieImageRenderer, DieImageRenderer>();
+
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddTransient<InspectionViewModel>();
         services.AddTransient<HistoryViewModel>();
@@ -78,6 +81,7 @@ internal static class Startup
         services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<FileFrameGrabberViewModel>());
         services.AddTransient<AppSettingViewModel>();
         services.AddTransient<EquipmentSpecViewModel>();
+        services.AddTransient<DieRenderingViewModel>();
         services.AddSingleton<MainViewModel>();
     }
 }

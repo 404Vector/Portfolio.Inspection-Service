@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:InspectionClient.Controls"
+             x:Class="InspectionClient.Controls.DieRenderingControl"
+             Background="{DynamicResource BgBase}"
+             ClipToBounds="True">
+
+  <!-- Viewport: 포인터/휠 이벤트 수신 -->
+  <Grid x:Name="Viewport"
+        Background="Transparent"
+        PointerPressed="OnPointerPressed"
+        PointerMoved="OnPointerMoved"
+        PointerReleased="OnPointerReleased"
+        PointerWheelChanged="OnPointerWheelChanged"
+        PointerExited="OnPointerExited">
+
+    <!-- Canvas: Width/Height=0 고정으로 레이아웃 원점을 Viewport (0,0)에 고정 -->
+    <Canvas x:Name="Canvas"
+            Width="0" Height="0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top">
+
+      <!-- DieCanvas: OnRender에서 IDieImageRenderer를 호출 -->
+      <controls:DieCanvas x:Name="DieCanvas"
+                          Canvas.Left="0"
+                          Canvas.Top="0" />
+    </Canvas>
+
+    <!-- 좌상단: 편의 버튼 -->
+    <StackPanel Orientation="Horizontal" Spacing="4"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Margin="6,6,0,0">
+      <Button Content="Fit"
+              FontSize="11" Padding="6,2"
+              Click="OnFitClicked" />
+      <Button Content="+"
+              FontSize="11" Padding="6,2"
+              Click="OnZoomInClicked" />
+      <Button Content="-"
+              FontSize="11" Padding="6,2"
+              Click="OnZoomOutClicked" />
+    </StackPanel>
+
+    <!-- 우하단: 배율 표시 -->
+    <StackPanel Orientation="Horizontal" Spacing="12"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="0,0,8,6"
+                IsHitTestVisible="False">
+      <TextBlock x:Name="ZoomLabel"
+                 Text="100%"
+                 FontSize="11"
+                 FontFamily="Consolas,Menlo,Monospace"
+                 Foreground="{DynamicResource TextMuted}" />
+    </StackPanel>
+
+  </Grid>
+</UserControl>
