@@ -18,11 +18,11 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
     _db = db;
   }
 
-  public Task SaveAsync(string name, DieRenderingParameters parameters, CancellationToken ct = default)
+  public async Task SaveAsync(string name, DieRenderingParameters parameters, CancellationToken ct = default)
   {
     var json = JsonSerializer.Serialize(ParametersDto.From(parameters), RepositoryJsonOptions.Default);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       INSERT INTO DieRenderingParameters (Name, Json)
       VALUES ($name, $json)
@@ -30,50 +30,46 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
       """;
     cmd.Parameters.AddWithValue("$name", name);
     cmd.Parameters.AddWithValue("$json", json);
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 
-  public Task<DieRenderingParameters?> FindAsync(string name, CancellationToken ct = default)
+  public async Task<DieRenderingParameters?> FindAsync(string name, CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Json FROM DieRenderingParameters WHERE Name = $name";
     cmd.Parameters.AddWithValue("$name", name);
 
-    var json = cmd.ExecuteScalar() as string;
+    var json = await cmd.ExecuteScalarAsync(ct) as string;
     if (json is null)
-      return Task.FromResult<DieRenderingParameters?>(null);
+      return null;
 
     var dto = JsonSerializer.Deserialize<ParametersDto>(json, RepositoryJsonOptions.Default);
-    return Task.FromResult(dto?.ToParameters());
+    return dto?.ToParameters();
   }
 
-  public Task<IReadOnlyList<DieParametersEntry>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<DieParametersEntry>> ListAsync(CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Name, Json FROM DieRenderingParameters ORDER BY Name ASC";
 
     var list = new List<DieParametersEntry>();
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read())
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
     {
       var dto = JsonSerializer.Deserialize<ParametersDto>(reader.GetString(1), RepositoryJsonOptions.Default);
       if (dto is not null)
         list.Add(new DieParametersEntry(reader.GetString(0), dto.ToParameters()));
     }
 
-    return Task.FromResult<IReadOnlyList<DieParametersEntry>>(list);
+    return list;
   }
 
-  public Task DeleteAsync(string name, CancellationToken ct = default)
+  public async Task DeleteAsync(string name, CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "DELETE FROM DieRenderingParameters WHERE Name = $name";
     cmd.Parameters.AddWithValue("$name", name);
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 
   // ── 직렬화 전용 DTO ───────────────────────────────────────────────────

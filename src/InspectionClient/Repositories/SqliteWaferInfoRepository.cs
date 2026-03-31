@@ -19,11 +19,11 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
     _db = db;
   }
 
-  public Task SaveAsync(WaferInfo waferInfo, CancellationToken ct = default)
+  public async Task SaveAsync(WaferInfo waferInfo, CancellationToken ct = default)
   {
     ArgumentNullException.ThrowIfNull(waferInfo);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       INSERT INTO WaferInfo (WaferId, LotId, WaferType, CreatedAt, Json)
       VALUES ($waferId, $lotId, $waferType, $createdAt, $json)
@@ -38,53 +38,48 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
     cmd.Parameters.AddWithValue("$waferType", waferInfo.WaferType.ToString());
     cmd.Parameters.AddWithValue("$createdAt", waferInfo.CreatedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$json",      JsonSerializer.Serialize(waferInfo, RepositoryJsonOptions.Default));
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 
-  public Task<WaferInfo?> FindAsync(string waferId, CancellationToken ct = default)
+  public async Task<WaferInfo?> FindAsync(string waferId, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Json FROM WaferInfo WHERE WaferId = $waferId";
     cmd.Parameters.AddWithValue("$waferId", waferId);
 
-    var json = cmd.ExecuteScalar() as string;
+    var json = await cmd.ExecuteScalarAsync(ct) as string;
     if (json is null)
-      return Task.FromResult<WaferInfo?>(null);
+      return null;
 
-    var result = JsonSerializer.Deserialize<WaferInfo>(json, RepositoryJsonOptions.Default);
-    return Task.FromResult(result);
+    return JsonSerializer.Deserialize<WaferInfo>(json, RepositoryJsonOptions.Default);
   }
 
-  public Task<IReadOnlyList<WaferInfo>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<WaferInfo>> ListAsync(CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Json FROM WaferInfo ORDER BY CreatedAt DESC";
 
     var list = new List<WaferInfo>();
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read())
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
     {
       var item = JsonSerializer.Deserialize<WaferInfo>(reader.GetString(0), RepositoryJsonOptions.Default);
       if (item is not null)
         list.Add(item);
     }
 
-    return Task.FromResult<IReadOnlyList<WaferInfo>>(list);
+    return list;
   }
 
-  public Task DeleteAsync(string waferId, CancellationToken ct = default)
+  public async Task DeleteAsync(string waferId, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "DELETE FROM WaferInfo WHERE WaferId = $waferId";
     cmd.Parameters.AddWithValue("$waferId", waferId);
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 }

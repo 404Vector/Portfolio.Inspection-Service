@@ -19,12 +19,12 @@ public sealed class SqliteInspectionResultRepository : IInspectionResultReposito
     _db = db;
   }
 
-  public Task<string> SaveAsync(WaferSurfaceInspectionResult result, CancellationToken ct = default)
+  public async Task<string> SaveAsync(WaferSurfaceInspectionResult result, CancellationToken ct = default)
   {
     ArgumentNullException.ThrowIfNull(result);
 
     var resultId = Guid.NewGuid().ToString();
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       INSERT INTO InspectionResult
         (ResultId, RecipeName, WaferId, Status, StartedAt, CompletedAt, Json)
@@ -38,52 +38,51 @@ public sealed class SqliteInspectionResultRepository : IInspectionResultReposito
     cmd.Parameters.AddWithValue("$startedAt",   result.StartedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$completedAt", result.CompletedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$json",        JsonSerializer.Serialize(result, RepositoryJsonOptions.Default));
-    cmd.ExecuteNonQuery();
+    await cmd.ExecuteNonQueryAsync(ct);
 
-    return Task.FromResult(resultId);
+    return resultId;
   }
 
-  public Task<WaferSurfaceInspectionResult?> FindAsync(string resultId, CancellationToken ct = default)
+  public async Task<WaferSurfaceInspectionResult?> FindAsync(string resultId, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(resultId);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Json FROM InspectionResult WHERE ResultId = $resultId";
     cmd.Parameters.AddWithValue("$resultId", resultId);
 
-    var json = cmd.ExecuteScalar() as string;
+    var json = await cmd.ExecuteScalarAsync(ct) as string;
     if (json is null)
-      return Task.FromResult<WaferSurfaceInspectionResult?>(null);
+      return null;
 
-    var result = JsonSerializer.Deserialize<WaferSurfaceInspectionResult>(json, RepositoryJsonOptions.Default);
-    return Task.FromResult(result);
+    return JsonSerializer.Deserialize<WaferSurfaceInspectionResult>(json, RepositoryJsonOptions.Default);
   }
 
-  public Task<IReadOnlyList<WaferSurfaceInspectionResult>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<WaferSurfaceInspectionResult>> ListAsync(CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT Json FROM InspectionResult ORDER BY StartedAt DESC";
 
     var list = new List<WaferSurfaceInspectionResult>();
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read())
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
     {
       var item = JsonSerializer.Deserialize<WaferSurfaceInspectionResult>(reader.GetString(0), RepositoryJsonOptions.Default);
       if (item is not null)
         list.Add(item);
     }
 
-    return Task.FromResult<IReadOnlyList<WaferSurfaceInspectionResult>>(list);
+    return list;
   }
 
-  public Task<IReadOnlyList<InspectionResultEntry>> ListEntriesAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<InspectionResultEntry>> ListEntriesAsync(CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "SELECT ResultId, Json FROM InspectionResult ORDER BY StartedAt DESC";
 
     var list = new List<InspectionResultEntry>();
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read())
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
     {
       var resultId = reader.GetString(0);
       var item = JsonSerializer.Deserialize<WaferSurfaceInspectionResult>(reader.GetString(1), RepositoryJsonOptions.Default);
@@ -91,18 +90,16 @@ public sealed class SqliteInspectionResultRepository : IInspectionResultReposito
         list.Add(new InspectionResultEntry(resultId, item));
     }
 
-    return Task.FromResult<IReadOnlyList<InspectionResultEntry>>(list);
+    return list;
   }
 
-  public Task DeleteAsync(string resultId, CancellationToken ct = default)
+  public async Task DeleteAsync(string resultId, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(resultId);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "DELETE FROM InspectionResult WHERE ResultId = $resultId";
     cmd.Parameters.AddWithValue("$resultId", resultId);
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 }

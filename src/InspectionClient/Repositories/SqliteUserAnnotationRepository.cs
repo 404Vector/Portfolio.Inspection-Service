@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Core.Models;
 using InspectionClient.Interfaces;
 using InspectionClient.Services;
-using Microsoft.Data.Sqlite;
 
 namespace InspectionClient.Repositories;
 
@@ -18,11 +17,11 @@ public sealed class SqliteUserAnnotationRepository : IUserAnnotationRepository
     _db = db;
   }
 
-  public Task SaveAsync(UserAnnotation annotation, CancellationToken ct = default)
+  public async Task SaveAsync(UserAnnotation annotation, CancellationToken ct = default)
   {
     ArgumentNullException.ThrowIfNull(annotation);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       INSERT INTO UserAnnotation (EntityId, EntityKind, Operator, Comment, Tags, CreatedAt)
       VALUES ($entityId, $entityKind, $operator, $comment, $tags, $createdAt)
@@ -33,21 +32,19 @@ public sealed class SqliteUserAnnotationRepository : IUserAnnotationRepository
     cmd.Parameters.AddWithValue("$comment",    annotation.Comment);
     cmd.Parameters.AddWithValue("$tags",       string.Join(",", annotation.Tags));
     cmd.Parameters.AddWithValue("$createdAt",  annotation.CreatedAt.ToString("O"));
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 
-  public Task<IReadOnlyList<UserAnnotation>> ListAsync(
+  public async Task<IReadOnlyList<UserAnnotationEntry>> ListAsync(
       string entityId,
       EntityKind kind,
       CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
 
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      SELECT EntityId, EntityKind, Operator, Comment, Tags, CreatedAt
+      SELECT Id, EntityId, EntityKind, Operator, Comment, Tags, CreatedAt
       FROM UserAnnotation
       WHERE EntityId = $entityId AND EntityKind = $entityKind
       ORDER BY CreatedAt DESC
@@ -55,33 +52,33 @@ public sealed class SqliteUserAnnotationRepository : IUserAnnotationRepository
     cmd.Parameters.AddWithValue("$entityId",   entityId);
     cmd.Parameters.AddWithValue("$entityKind", kind.ToString());
 
-    var list = new List<UserAnnotation>();
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read())
+    var list = new List<UserAnnotationEntry>();
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
     {
-      var tags = reader.GetString(4)
+      var id   = reader.GetInt64(0);
+      var tags = reader.GetString(5)
           .Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-      list.Add(new UserAnnotation(
-        EntityId:   reader.GetString(0),
-        EntityKind: Enum.Parse<EntityKind>(reader.GetString(1)),
-        Operator:   reader.GetString(2),
-        Comment:    reader.GetString(3),
+      var annotation = new UserAnnotation(
+        EntityId:   reader.GetString(1),
+        EntityKind: Enum.Parse<EntityKind>(reader.GetString(2)),
+        Operator:   reader.GetString(3),
+        Comment:    reader.GetString(4),
         Tags:       tags,
-        CreatedAt:  DateTimeOffset.Parse(reader.GetString(5))
-      ));
+        CreatedAt:  DateTimeOffset.Parse(reader.GetString(6))
+      );
+      list.Add(new UserAnnotationEntry(id, annotation));
     }
 
-    return Task.FromResult<IReadOnlyList<UserAnnotation>>(list);
+    return list;
   }
 
-  public Task DeleteAsync(long id, CancellationToken ct = default)
+  public async Task DeleteAsync(long id, CancellationToken ct = default)
   {
-    using var cmd = _db.Connection.CreateCommand();
+    await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = "DELETE FROM UserAnnotation WHERE Id = $id";
     cmd.Parameters.AddWithValue("$id", id);
-    cmd.ExecuteNonQuery();
-
-    return Task.CompletedTask;
+    await cmd.ExecuteNonQueryAsync(ct);
   }
 }
