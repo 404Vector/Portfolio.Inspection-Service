@@ -4,58 +4,140 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:controls="using:InspectionClient.Controls"
+             xmlns:ifaces="using:InspectionClient.Interfaces"
              xmlns:mi="using:Material.Icons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="InspectionClient.Views.DieRenderingView"
-             x:DataType="vm:DieRenderingViewModel">
+             x:Class="InspectionClient.Views.DieSetupWorkflowView"
+             x:DataType="vm:DieSetupWorkflowViewModel">
 
-  <Grid ColumnDefinitions="*,280">
+  <Grid ColumnDefinitions="240,1,*,280">
 
-    <!-- ── 좌측: Die Image 뷰어 ─────────────────────────────────────── -->
-    <controls:DieRenderingControl Grid.Column="0"
+    <!-- ── 1열: Parameters 목록 패널 ──────────────────────────────────── -->
+    <DockPanel Grid.Column="0">
+
+      <!-- 목록 헤더 -->
+      <Border DockPanel.Dock="Top"
+              Padding="12,10"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0"
+                     Text="SAVED PARAMETERS"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     VerticalAlignment="Center" />
+          <Button Grid.Column="1"
+                  Command="{Binding RefreshListCommand}"
+                  Padding="4" ToolTip.Tip="새로고침">
+            <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- 목록 액션 버튼 -->
+      <Border DockPanel.Dock="Bottom"
+              Padding="8,8"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,1,0,0">
+        <Grid ColumnDefinitions="*,4,*">
+          <Button Grid.Column="0"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding LoadSelectedCommand}"
+                  ToolTip.Tip="선택 항목을 폼에 불러오기">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <mi:MaterialIcon Kind="Import" Width="12" Height="12" />
+              <TextBlock Text="Load" FontSize="11" />
+            </StackPanel>
+          </Button>
+          <Button Grid.Column="2"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding DeleteSelectedCommand}"
+                  ToolTip.Tip="선택 항목 삭제">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
+              <TextBlock Text="Delete" FontSize="11" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- 파라미터 목록 -->
+      <ListBox ItemsSource="{Binding ParameterList}"
+               SelectedItem="{Binding SelectedEntry}"
+               Padding="4">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="ifaces:DieParametersEntry">
+            <StackPanel Spacing="2" Margin="4,4">
+              <TextBlock Text="{Binding Name}"
+                         FontSize="12" FontWeight="SemiBold" />
+              <TextBlock FontSize="10"
+                         Foreground="{DynamicResource TextMuted}">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0:0} × {1:0} μm">
+                    <Binding Path="Parameters.CanvasWidth" />
+                    <Binding Path="Parameters.CanvasHeight" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+    </DockPanel>
+
+    <!-- 구분선 -->
+    <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
+
+    <!-- ── 2열: Die Image 뷰어 ─────────────────────────────────────────── -->
+    <controls:DieRenderingControl Grid.Column="2"
                                   Renderer="{Binding Renderer}"
                                   Parameters="{Binding Parameters}" />
 
-    <!-- ── 우측: 파라미터 패널 ──────────────────────────────────────── -->
-    <Border Grid.Column="1"
+    <!-- ── 3열: 파라미터 패널 ──────────────────────────────────────────── -->
+    <Border Grid.Column="3"
             Background="{DynamicResource BgSurface}"
             BorderBrush="{DynamicResource BorderSubtle}"
             BorderThickness="1,0,0,0">
 
       <DockPanel>
 
-        <!-- ── 하단 고정: Reset / Apply 버튼 ─────────────────────── -->
+        <!-- ── 하단 고정: Save / Reset / Apply 버튼 ──────────────────── -->
         <Border DockPanel.Dock="Bottom"
                 Padding="16,10"
                 BorderBrush="{DynamicResource BorderSubtle}"
                 BorderThickness="0,1,0,0">
-          <Grid ColumnDefinitions="*,8,*">
+          <StackPanel Spacing="8">
 
-            <Button Grid.Column="0"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Command="{Binding ResetCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <mi:MaterialIcon Kind="Restore" Width="14" Height="14" />
-                <TextBlock Text="Reset" />
-              </StackPanel>
-            </Button>
+            <!-- DB 저장 영역 -->
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Grid.Column="0"
+                       Text="{Binding SaveName}"
+                       Watermark="저장 이름"
+                       FontSize="12" />
+              <Button Grid.Column="2"
+                      Classes="accent"
+                      Command="{Binding SaveCommand}"
+                      ToolTip.Tip="현재 파라미터를 DB에 저장">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <mi:MaterialIcon Kind="ContentSave" Width="14" Height="14" />
+                  <TextBlock Text="Save" />
+                </StackPanel>
+              </Button>
+            </Grid>
 
-            <Button Grid.Column="2"
-                    Classes="accent"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Command="{Binding ApplyCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <mi:MaterialIcon Kind="Check" Width="14" Height="14" />
-                <TextBlock Text="Apply" />
-              </StackPanel>
-            </Button>
+            <!-- DB 저장 상태 -->
+            <TextBlock Text="{Binding SavedDbName}"
+                       FontSize="10"
+                       Foreground="{DynamicResource TextMuted}" />
 
-          </Grid>
+
+          </StackPanel>
         </Border>
 
-        <!-- ── 스크롤 영역: 파라미터 폼 ──────────────────────────── -->
+        <!-- ── 스크롤 영역: 파라미터 폼 ──────────────────────────────── -->
         <ScrollViewer Padding="16,12"
                       VerticalScrollBarVisibility="Auto">
           <StackPanel Spacing="12">

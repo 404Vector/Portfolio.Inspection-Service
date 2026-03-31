@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace InspectionClient.Views;
 
-public partial class DieRenderingView : UserControl
+public partial class InspectionWorkflowView : UserControl
 {
-  public DieRenderingView()
+  public InspectionWorkflowView()
   {
     InitializeComponent();
   }
