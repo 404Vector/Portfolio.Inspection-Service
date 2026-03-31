@@ -1,0 +1,218 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:InspectionClient.ViewModels"
+             xmlns:controls="using:InspectionClient.Controls"
+             xmlns:models="using:Core.Models"
+             xmlns:recipe="using:InspectionRecipe.Models"
+             xmlns:ifaces="using:InspectionClient.Interfaces"
+             xmlns:mi="using:Material.Icons.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="InspectionClient.Views.InspectionWorkflowView"
+             x:DataType="vm:InspectionWorkflowViewModel">
+
+  <Grid ColumnDefinitions="240,1,*">
+
+    <!-- ── 좌측: 목록 패널 ────────────────────────────────────────────── -->
+    <DockPanel Grid.Column="0">
+
+      <!-- ── Recipe 목록 (상단 절반) ─────────────────────────────────── -->
+      <Grid DockPanel.Dock="Top" RowDefinitions="Auto,1,*,Auto" Height="280">
+
+        <Border Grid.Row="0"
+                Padding="12,10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0"
+                       Text="RECIPE LIST"
+                       FontSize="10" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextMuted}"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
+                    Command="{Binding RefreshRecipeListCommand}"
+                    Padding="4" ToolTip.Tip="새로고침">
+              <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+            </Button>
+          </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource BorderSubtle}" />
+
+        <ListBox Grid.Row="2"
+                 ItemsSource="{Binding RecipeList}"
+                 SelectedItem="{Binding SelectedRecipe}"
+                 Padding="4">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="recipe:WaferSurfaceInspectionRecipe">
+              <StackPanel Spacing="2" Margin="4,4">
+                <TextBlock Text="{Binding RecipeName}"
+                           FontSize="12" FontWeight="SemiBold" />
+                <TextBlock FontSize="10"
+                           Foreground="{DynamicResource TextMuted}">
+                  <TextBlock.Text>
+                    <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
+                      <Binding Path="Fov.WidthUm" />
+                      <Binding Path="Fov.HeightUm" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="3"
+                Padding="8,8"
+                BorderBrush="{DynamicResource BorderSubtle}"
+                BorderThickness="0,1,0,0">
+          <Button HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding LoadSelectedRecipeCommand}"
+                  ToolTip.Tip="선택한 Recipe로 검사 준비">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <mi:MaterialIcon Kind="Import" Width="12" Height="12" />
+              <TextBlock Text="Recipe 선택" FontSize="11" />
+            </StackPanel>
+          </Button>
+        </Border>
+
+      </Grid>
+
+      <!-- 구분선 -->
+      <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource BorderSubtle}" />
+
+      <!-- ── 검사 결과 목록 (하단) ──────────────────────────────────── -->
+
+      <Border DockPanel.Dock="Top"
+              Padding="12,10"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0"
+                     Text="RESULT LIST"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     VerticalAlignment="Center" />
+          <Button Grid.Column="1"
+                  Command="{Binding RefreshResultListCommand}"
+                  Padding="4" ToolTip.Tip="새로고침">
+            <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <Border DockPanel.Dock="Bottom"
+              Padding="8,8"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,1,0,0">
+        <Button HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Command="{Binding DeleteSelectedResultCommand}"
+                ToolTip.Tip="선택 결과 삭제">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
+            <TextBlock Text="Delete" FontSize="11" />
+          </StackPanel>
+        </Button>
+      </Border>
+
+      <ListBox ItemsSource="{Binding ResultList}"
+               SelectedItem="{Binding SelectedResult}"
+               Padding="4">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="ifaces:InspectionResultEntry">
+            <StackPanel Spacing="2" Margin="4,4">
+              <TextBlock FontSize="12" FontWeight="SemiBold">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0} | {1}">
+                    <Binding Path="Result.RecipeName" />
+                    <Binding Path="Result.Status" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+              <TextBlock FontSize="10"
+                         Foreground="{DynamicResource TextMuted}">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0:yyyy-MM-dd HH:mm}">
+                    <Binding Path="Result.StartedAt" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+    </DockPanel>
+
+    <!-- 구분선 -->
+    <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
+
+    <!-- ── 우측: 검사 메인 영역 ─────────────────────────────────────── -->
+    <DockPanel Grid.Column="2">
+
+      <!-- ── 상단 툴바 ──────────────────────────────────────────────────── -->
+      <Border DockPanel.Dock="Top"
+              Padding="16,10"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+
+          <!-- Recipe 요약 -->
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <mi:MaterialIcon Kind="FileDocumentOutline" Width="16" Height="16"
+                             Foreground="{DynamicResource TextMuted}" />
+            <TextBlock Text="{Binding RecipeSummary}"
+                       FontSize="12"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- 버튼 -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding StopCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <mi:MaterialIcon Kind="Stop" Width="14" Height="14" />
+                <TextBlock Text="Stop" />
+              </StackPanel>
+            </Button>
+            <Button Classes="accent" Command="{Binding StartCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <mi:MaterialIcon Kind="Play" Width="14" Height="14" />
+                <TextBlock Text="Start" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+        </Grid>
+      </Border>
+
+      <!-- ── 하단: 진행 바 ──────────────────────────────────────────────── -->
+      <Border DockPanel.Dock="Bottom"
+              Padding="16,8"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,1,0,0">
+        <Grid ColumnDefinitions="*,12,120">
+          <ProgressBar Grid.Column="0"
+                       Value="{Binding ProgressRatio}"
+                       Minimum="0" Maximum="1"
+                       Height="6" />
+          <TextBlock Grid.Column="2"
+                     Text="{Binding ProgressText}"
+                     FontSize="11"
+                     Foreground="{DynamicResource TextMuted}"
+                     VerticalAlignment="Center"
+                     HorizontalAlignment="Right" />
+        </Grid>
+      </Border>
+
+      <!-- ── 중앙: WaferMap ─────────────────────────────────────────────── -->
+      <controls:WaferMapControl
+          DieMap="{Binding DieMap}"
+          DieStatuses="{Binding DieStatuses}" />
+
+    </DockPanel>
+
+  </Grid>
+
+</UserControl>

@@ -10,48 +10,55 @@ public partial class MainViewModel : ViewModelBase
 {
   private static readonly Dictionary<string, string> DisplayNames = new()
   {
-    [ServiceKeys.Inspection]    = ServiceKeys.Inspection,
-    ["History"]        = "History",
-    ["FrameGrabber"]   = "Frame Grabber",
-    ["EquipmentSpec"]  = "Equipment Spec",
-    ["AppSetting"]     = "App Setting",
-    ["DieRendering"]   = "Die Rendering",
+    [ServiceKeys.Inspection]  = ServiceKeys.Inspection,
+    ["DieSetup"]              = "Die Setup",
+    ["WaferSetup"]            = "Wafer Setup",
+    ["RecipeSetup"]           = "Recipe Setup",
+    ["History"]               = "History",
+    ["FrameGrabber"]          = "Frame Grabber",
+    ["EquipmentSpec"]         = "Equipment Spec",
+    ["AppSetting"]            = "App Setting",
   };
 
   [ObservableProperty] private ViewModelBase _currentViewModel = null!;
   [ObservableProperty] private string _activeViewName = string.Empty;
-  [ObservableProperty] private string _titleText = string.Empty;
-  [ObservableProperty] private bool _isFrameGrabberConnected;
-  [ObservableProperty] private bool _isInspectionConnected;
+  [ObservableProperty] private string _titleText      = string.Empty;
+  [ObservableProperty] private bool   _isFrameGrabberConnected;
+  [ObservableProperty] private bool   _isInspectionConnected;
 
   public IObservableLogService Log { get; }
 
-  private readonly InspectionViewModel      _inspectionVm;
-  private readonly HistoryViewModel         _historyVm;
-  private readonly FrameGrabberViewModelBase _fgVm;
-  private readonly EquipmentSpecViewModel   _equipmentSpecVm;
-  private readonly AppSettingViewModel      _appSettingVm;
-  private readonly DieRenderingViewModel    _dieRenderingVm;
+  private readonly InspectionWorkflowViewModel   _inspectionVm;
+  private readonly DieSetupWorkflowViewModel     _dieSetupVm;
+  private readonly WaferSetupWorkflowViewModel   _waferSetupVm;
+  private readonly RecipeSetupWorkflowViewModel  _recipeSetupVm;
+  private readonly HistoryViewModel              _historyVm;
+  private readonly FrameGrabberViewModelBase     _fgVm;
+  private readonly EquipmentSpecViewModel        _equipmentSpecVm;
+  private readonly AppSettingViewModel           _appSettingVm;
 
   public MainViewModel(
-      InspectionViewModel         inspectionVm,
-      HistoryViewModel            historyVm,
-      FrameGrabberViewModelBase   fgVm,
-      EquipmentSpecViewModel      equipmentSpecVm,
-      AppSettingViewModel         appSettingVm,
-      DieRenderingViewModel       dieRenderingVm,
-      IObservableLogService       logService,
-      IServiceConnectionMonitor   connectionMonitor) : base(logService)
+      InspectionWorkflowViewModel   inspectionVm,
+      DieSetupWorkflowViewModel     dieSetupVm,
+      WaferSetupWorkflowViewModel   waferSetupVm,
+      RecipeSetupWorkflowViewModel  recipeSetupVm,
+      HistoryViewModel              historyVm,
+      FrameGrabberViewModelBase     fgVm,
+      EquipmentSpecViewModel        equipmentSpecVm,
+      AppSettingViewModel           appSettingVm,
+      IObservableLogService         logService,
+      IServiceConnectionMonitor     connectionMonitor) : base(logService)
   {
     _inspectionVm    = inspectionVm;
+    _dieSetupVm      = dieSetupVm;
+    _waferSetupVm    = waferSetupVm;
+    _recipeSetupVm   = recipeSetupVm;
     _historyVm       = historyVm;
     _fgVm            = fgVm;
     _equipmentSpecVm = equipmentSpecVm;
     _appSettingVm    = appSettingVm;
-    _dieRenderingVm  = dieRenderingVm;
     Log              = logService;
 
-    // 초기 상태 반영
     IsFrameGrabberConnected = connectionMonitor.States.GetValueOrDefault(GrpcFrameGrabberProbe.Key);
     IsInspectionConnected   = connectionMonitor.States.GetValueOrDefault(ServiceKeys.Inspection);
 
@@ -63,21 +70,25 @@ public partial class MainViewModel : ViewModelBase
         IsInspectionConnected = e.IsConnected;
     };
 
-    Navigate(ServiceKeys.Inspection);
+    Navigate("DieSetup");
   }
+
+  // ── 커맨드 ───────────────────────────────────────────────────────────
 
   [RelayCommand]
   private void Navigate(string viewName) => Execute(() =>
   {
     CurrentViewModel = viewName switch
     {
-      ServiceKeys.Inspection    => _inspectionVm,
-      "History"       => _historyVm,
-      "FrameGrabber"  => _fgVm,
-      "EquipmentSpec" => _equipmentSpecVm,
-      "AppSetting"    => _appSettingVm,
-      "DieRendering"  => _dieRenderingVm,
-      _               => CurrentViewModel
+      ServiceKeys.Inspection => _inspectionVm,
+      "DieSetup"             => _dieSetupVm,
+      "WaferSetup"           => _waferSetupVm,
+      "RecipeSetup"          => _recipeSetupVm,
+      "History"              => _historyVm,
+      "FrameGrabber"         => _fgVm,
+      "EquipmentSpec"        => _equipmentSpecVm,
+      "AppSetting"           => _appSettingVm,
+      _                      => CurrentViewModel
     };
     ActiveViewName = viewName;
     TitleText = DisplayNames.GetValueOrDefault(viewName, viewName);

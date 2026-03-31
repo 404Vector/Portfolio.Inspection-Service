@@ -1,8 +1,11 @@
-using System.IO;
 using System;
+using System.IO;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Core.Logging.Factories;
 using Core.Logging.Services;
 using InspectionClient.Interfaces;
+using InspectionClient.Repositories;
 using InspectionClient.Services;
 using InspectionClient.Services.Probes;
 using InspectionClient.ViewModels;
@@ -33,9 +36,6 @@ internal static class Startup
         var frameGrabberAddress = context.Configuration
             .GetValue<string>("GrpcEndpoints:FileFrameGrabberService")
             ?? "http://localhost:5001";
-        var inspectionAddress = context.Configuration
-            .GetValue<string>("GrpcEndpoints:InspectionService")
-            ?? "http://localhost:5002";
 
         services.AddGrpcClient<GrpcFrameGrabber.FrameGrabberClient>(o =>
             o.Address = new Uri(frameGrabberAddress));
@@ -49,8 +49,8 @@ internal static class Startup
         services.AddSingleton<IEquipmentConfigService>(sp => sp.GetRequiredService<EquipmentConfigService>());
 
         // ── Frame Source ──────────────────────────────────────────────────────
-        var useMock = context.Configuration.GetValue<bool>("Features:UseMockFrameSource");
-        if (useMock)
+        var useMockFrame = context.Configuration.GetValue<bool>("Features:UseMockFrameSource");
+        if (useMockFrame)
         {
           services.AddSingleton<MockFrameSourceService>();
           services.AddSingleton<IFrameSource>(sp => sp.GetRequiredService<MockFrameSourceService>());
@@ -64,24 +64,39 @@ internal static class Startup
           services.AddSingleton<IFrameGrabberController>(sp => sp.GetRequiredService<FrameGrabberControlService>());
         }
 
+        // ── Inspection Service ────────────────────────────────────────────────
+        services.AddSingleton<MockInspectionService>();
+        services.AddSingleton<IInspectionService>(sp => sp.GetRequiredService<MockInspectionService>());
+
         // ── Connection Monitor ────────────────────────────────────────────────
         services.AddSingleton<IConnectionProbe, GrpcFrameGrabberProbe>();
-        // InspectionService probe 추가 시: services.AddSingleton<IConnectionProbe, GrpcInspectionProbe>();
         services.AddSingleton<ConnectionMonitor>();
         services.AddSingleton<IServiceConnectionMonitor>(sp => sp.GetRequiredService<ConnectionMonitor>());
         services.AddHostedService(sp => sp.GetRequiredService<ConnectionMonitor>());
 
+        // ── Database ──────────────────────────────────────────────────────────
+        services.AddSingleton<InspectionDatabase>();
+
         // ── Die Rendering ─────────────────────────────────────────────────────
         services.AddSingleton<IDieImageRenderer, DieImageRenderer>();
 
+        // ── Repositories ──────────────────────────────────────────────────────
+        services.AddSingleton<IDieRenderingParametersRepository, SqliteDieRenderingParametersRepository>();
+        services.AddSingleton<IWaferInfoRepository, SqliteWaferInfoRepository>();
+        services.AddSingleton<IRecipeRepository, SqliteRecipeRepository>();
+        services.AddSingleton<IInspectionResultRepository, SqliteInspectionResultRepository>();
+        services.AddSingleton<IUserAnnotationRepository, SqliteUserAnnotationRepository>();
+
         // ── ViewModels ────────────────────────────────────────────────────────
-        services.AddTransient<InspectionViewModel>();
+        services.AddSingleton<DieSetupWorkflowViewModel>();
+        services.AddSingleton<WaferSetupWorkflowViewModel>();
+        services.AddSingleton<RecipeSetupWorkflowViewModel>();
+        services.AddSingleton<InspectionWorkflowViewModel>();
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<FileFrameGrabberViewModel>();
         services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<FileFrameGrabberViewModel>());
         services.AddTransient<AppSettingViewModel>();
         services.AddTransient<EquipmentSpecViewModel>();
-        services.AddTransient<DieRenderingViewModel>();
         services.AddSingleton<MainViewModel>();
     }
 }

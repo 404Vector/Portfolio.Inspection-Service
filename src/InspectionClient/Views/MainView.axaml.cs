@@ -12,11 +12,13 @@ public partial class MainView : UserControl
   private static readonly Dictionary<string, string> ButtonToViewName = new()
   {
     [nameof(NavInspection)]    = "Inspection",
+    [nameof(NavDieSetup)]      = "DieSetup",
+    [nameof(NavWaferSetup)]    = "WaferSetup",
+    [nameof(NavRecipeSetup)]   = "RecipeSetup",
     [nameof(NavHistory)]       = "History",
     [nameof(NavFrameGrabber)]  = "FrameGrabber",
     [nameof(NavEquipmentSpec)] = "EquipmentSpec",
     [nameof(NavAppSetting)]    = "AppSetting",
-    [nameof(NavDieRendering)]  = "DieRendering",
   };
 
   private MainViewModel ViewModel => (MainViewModel)DataContext!;
@@ -45,11 +47,13 @@ public partial class MainView : UserControl
     var buttons = new Dictionary<string, Button?>
     {
       ["Inspection"]    = NavInspection,
+      ["DieSetup"]      = NavDieSetup,
+      ["WaferSetup"]    = NavWaferSetup,
+      ["RecipeSetup"]   = NavRecipeSetup,
       ["History"]       = NavHistory,
       ["FrameGrabber"]  = NavFrameGrabber,
       ["EquipmentSpec"] = NavEquipmentSpec,
       ["AppSetting"]    = NavAppSetting,
-      ["DieRendering"]  = NavDieRendering,
     };
 
     foreach (var (name, btn) in buttons)

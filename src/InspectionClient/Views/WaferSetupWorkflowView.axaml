@@ -1,0 +1,343 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:InspectionClient.ViewModels"
+             xmlns:models="using:Core.Models"
+             xmlns:enums="using:Core.Enums"
+             xmlns:ifaces="using:InspectionClient.Interfaces"
+             xmlns:mi="using:Material.Icons.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
+             x:Class="InspectionClient.Views.WaferSetupWorkflowView"
+             x:DataType="vm:WaferSetupWorkflowViewModel">
+
+  <Grid ColumnDefinitions="240,1,*">
+
+    <!-- ── 좌측: WaferInfo 목록 패널 ────────────────────────────────────── -->
+    <DockPanel Grid.Column="0">
+
+      <!-- 목록 헤더 -->
+      <Border DockPanel.Dock="Top"
+              Padding="12,10"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0"
+                     Text="WAFER LIST"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     VerticalAlignment="Center" />
+          <Button Grid.Column="1"
+                  Command="{Binding RefreshListCommand}"
+                  Padding="4" ToolTip.Tip="새로고침">
+            <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- 목록 액션 버튼 -->
+      <Border DockPanel.Dock="Bottom"
+              Padding="8,8"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,1,0,0">
+        <Grid ColumnDefinitions="*,4,*">
+          <Button Grid.Column="0"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding LoadSelectedCommand}"
+                  ToolTip.Tip="선택 항목을 폼에 불러오기">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <mi:MaterialIcon Kind="Import" Width="12" Height="12" />
+              <TextBlock Text="Load" FontSize="11" />
+            </StackPanel>
+          </Button>
+          <Button Grid.Column="2"
+                  HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding DeleteSelectedCommand}"
+                  ToolTip.Tip="선택 항목 삭제">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
+              <TextBlock Text="Delete" FontSize="11" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- 목록 -->
+      <ListBox ItemsSource="{Binding WaferInfoList}"
+               SelectedItem="{Binding SelectedWaferInfo}"
+               Padding="4">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="models:WaferInfo">
+            <StackPanel Spacing="2" Margin="4,4">
+              <TextBlock Text="{Binding WaferId}"
+                         FontSize="12" FontWeight="SemiBold" />
+              <TextBlock FontSize="10"
+                         Foreground="{DynamicResource TextMuted}">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0} | {1}">
+                    <Binding Path="WaferType" />
+                    <Binding Path="LotId" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+    </DockPanel>
+
+    <!-- 구분선 -->
+    <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
+
+    <!-- ── 우측: 파라미터 폼 ──────────────────────────────────────────── -->
+    <DockPanel Grid.Column="2">
+
+      <!-- ── 상단: 저장/로드 버튼 ──────────────────────────────────────────── -->
+      <Border DockPanel.Dock="Top"
+              Padding="16,10"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+
+          <!-- 저장 상태 요약 -->
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <mi:MaterialIcon Kind="CheckCircleOutline" Width="16" Height="16"
+                             Foreground="{DynamicResource TextMuted}" />
+            <TextBlock Text="{Binding SavedSummary}"
+                       FontSize="12"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- 저장 버튼 -->
+          <Button Grid.Column="1" Classes="accent" Command="{Binding SaveCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <mi:MaterialIcon Kind="ContentSave" Width="14" Height="14" />
+              <TextBlock Text="Save" />
+            </StackPanel>
+          </Button>
+
+        </Grid>
+      </Border>
+
+      <!-- ── 본문: 파라미터 폼 ───────────────────────────────────────────── -->
+      <ScrollViewer Padding="24,16"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="640" Spacing="20">
+
+          <!-- 섹션: Identity -->
+          <TextBlock Text="IDENTITY"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}" />
+
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Wafer ID"
+                       Classes="form-label" />
+            <TextBox   Grid.Row="0" Grid.Column="1"
+                       Text="{Binding WaferId}"
+                       Classes="form-input" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Lot ID"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <TextBox   Grid.Row="1" Grid.Column="1"
+                       Text="{Binding LotId}"
+                       Classes="form-input" Margin="0,8,0,0" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Slot Index"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                           Value="{Binding SlotIndex}"
+                           Minimum="1" Maximum="25" Increment="1"
+                           FormatString="0"
+                           Classes="form-input" Margin="0,8,0,0" />
+          </Grid>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+          <!-- 섹션: Wafer -->
+          <TextBlock Text="WAFER"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}" />
+
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Wafer Type"
+                       Classes="form-label" />
+            <ComboBox  Grid.Row="0" Grid.Column="1"
+                       SelectedItem="{Binding WaferType}"
+                       HorizontalAlignment="Stretch">
+              <enums:WaferType>Wafer200mm</enums:WaferType>
+              <enums:WaferType>Wafer300mm</enums:WaferType>
+            </ComboBox>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Grade"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <ComboBox  Grid.Row="1" Grid.Column="1"
+                       SelectedItem="{Binding WaferGrade}"
+                       HorizontalAlignment="Stretch" Margin="0,8,0,0">
+              <enums:WaferGrade>Prime</enums:WaferGrade>
+              <enums:WaferGrade>Dummy</enums:WaferGrade>
+            </ComboBox>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Notch"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <ComboBox  Grid.Row="2" Grid.Column="1"
+                       SelectedItem="{Binding NotchOrientation}"
+                       HorizontalAlignment="Stretch" Margin="0,8,0,0">
+              <enums:NotchOrientation>Up</enums:NotchOrientation>
+              <enums:NotchOrientation>Down</enums:NotchOrientation>
+              <enums:NotchOrientation>Left</enums:NotchOrientation>
+              <enums:NotchOrientation>Right</enums:NotchOrientation>
+            </ComboBox>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Thickness (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1"
+                           Value="{Binding ThicknessUm}"
+                           Minimum="100" Maximum="2000" Increment="25"
+                           FormatString="0.#"
+                           Classes="form-input" Margin="0,8,0,0" />
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Process Step"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <TextBox   Grid.Row="4" Grid.Column="1"
+                       Text="{Binding ProcessStep}"
+                       Classes="form-input" Margin="0,8,0,0" />
+          </Grid>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+          <!-- 섹션: Die Size -->
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Text="DIE SIZE"
+                         FontSize="10" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextMuted}"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="1"
+                      Command="{Binding RefreshDieListCommand}"
+                      Padding="4" ToolTip.Tip="Die 파라미터 목록 새로고침">
+                <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+              </Button>
+            </Grid>
+
+            <!-- Die 파라미터 선택 목록 -->
+            <ListBox ItemsSource="{Binding DieParameterList}"
+                     SelectedItem="{Binding SelectedDieEntry}"
+                     MaxHeight="120">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="ifaces:DieParametersEntry">
+                  <StackPanel Spacing="2" Margin="4,4">
+                    <TextBlock Text="{Binding Name}"
+                               FontSize="12" FontWeight="SemiBold" />
+                    <TextBlock FontSize="10"
+                               Foreground="{DynamicResource TextMuted}">
+                      <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0:0} × {1:0} μm">
+                          <Binding Path="Parameters.CanvasWidth" />
+                          <Binding Path="Parameters.CanvasHeight" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                    </TextBlock>
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Import 버튼 -->
+            <Button HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Command="{Binding ImportDieSizeCommand}"
+                    ToolTip.Tip="선택한 Die 파라미터의 크기를 적용">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <mi:MaterialIcon Kind="Import" Width="14" Height="14" />
+                <TextBlock Text="선택 항목으로 적용" FontSize="12" />
+              </StackPanel>
+            </Button>
+
+            <!-- 직접 입력 -->
+            <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)"
+                         Classes="form-label" />
+              <NumericUpDown Grid.Row="0" Grid.Column="1"
+                             Value="{Binding DieSizeWidthUm}"
+                             Minimum="1000" Maximum="70000" Increment="500"
+                             FormatString="0"
+                             Classes="form-input" />
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
+                         Classes="form-label" Margin="0,8,0,0" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1"
+                             Value="{Binding DieSizeHeightUm}"
+                             Minimum="1000" Maximum="70000" Increment="500"
+                             FormatString="0"
+                             Classes="form-input" Margin="0,8,0,0" />
+            </Grid>
+          </StackPanel>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+          <!-- 섹션: Offsets -->
+          <TextBlock Text="OFFSETS"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}" />
+
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Die Offset X (μm)"
+                       Classes="form-label" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                           Value="{Binding DieOffsetXum}"
+                           Minimum="-100000" Maximum="100000" Increment="100"
+                           FormatString="0.##"
+                           Classes="form-input" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Die Offset Y (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                           Value="{Binding DieOffsetYum}"
+                           Minimum="-100000" Maximum="100000" Increment="100"
+                           FormatString="0.##"
+                           Classes="form-input" Margin="0,8,0,0" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Wafer Offset X (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                           Value="{Binding WaferOffsetXum}"
+                           Minimum="-10000" Maximum="10000" Increment="10"
+                           FormatString="0.##"
+                           Classes="form-input" Margin="0,8,0,0" />
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Wafer Offset Y (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1"
+                           Value="{Binding WaferOffsetYum}"
+                           Minimum="-10000" Maximum="10000" Increment="10"
+                           FormatString="0.##"
+                           Classes="form-input" Margin="0,8,0,0" />
+          </Grid>
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </DockPanel>
+
+  </Grid>
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.form-label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.form-input, NumericUpDown.form-input">
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+  </UserControl.Styles>
+
+</UserControl>

@@ -71,8 +71,41 @@
 
         <StackPanel VerticalAlignment="Top" Spacing="2" Margin="0,8,0,0">
 
+          <!-- Die Setup -->
+          <Button Name="NavDieSetup" Classes="nav-item active"
+                  Command="{Binding NavigateCommand}" CommandParameter="DieSetup"
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Die Setup" ToolTip.Placement="Right">
+            <Grid Width="48" Height="48">
+              <Rectangle Classes="nav-accent" />
+              <mi:MaterialIcon Kind="ImageOutline" />
+            </Grid>
+          </Button>
+
+          <!-- Wafer Setup -->
+          <Button Name="NavWaferSetup" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="WaferSetup"
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Wafer Setup" ToolTip.Placement="Right">
+            <Grid Width="48" Height="48">
+              <Rectangle Classes="nav-accent" />
+              <mi:MaterialIcon Kind="CircleOutline" />
+            </Grid>
+          </Button>
+
+          <!-- Recipe Setup -->
+          <Button Name="NavRecipeSetup" Classes="nav-item"
+                  Command="{Binding NavigateCommand}" CommandParameter="RecipeSetup"
+                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
+                  ToolTip.Tip="Recipe Setup" ToolTip.Placement="Right">
+            <Grid Width="48" Height="48">
+              <Rectangle Classes="nav-accent" />
+              <mi:MaterialIcon Kind="FileDocumentOutline" />
+            </Grid>
+          </Button>
+
           <!-- Inspection -->
-          <Button Name="NavInspection" Classes="nav-item active"
+          <Button Name="NavInspection" Classes="nav-item"
                   Command="{Binding NavigateCommand}" CommandParameter="Inspection"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
                   ToolTip.Tip="Inspection" ToolTip.Placement="Right">
@@ -129,28 +162,23 @@
             </Grid>
           </Button>
 
-          <!-- Divider -->
-          <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="10,4" />
-
-          <!-- Die Rendering -->
-          <Button Name="NavDieRendering" Classes="nav-item"
-                  Command="{Binding NavigateCommand}" CommandParameter="DieRendering"
-                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
-                  ToolTip.Tip="Die Rendering" ToolTip.Placement="Right">
-            <Grid Width="48" Height="48">
-              <Rectangle Classes="nav-accent" />
-              <mi:MaterialIcon Kind="ImageOutline" />
-            </Grid>
-          </Button>
-
         </StackPanel>
       </Border>
 
       <!-- View Content Area -->
       <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}">
         <ContentControl.DataTemplates>
-          <DataTemplate DataType="vm:InspectionViewModel">
-            <views:InspectionView />
+          <DataTemplate DataType="vm:InspectionWorkflowViewModel">
+            <views:InspectionWorkflowView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:DieSetupWorkflowViewModel">
+            <views:DieSetupWorkflowView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:WaferSetupWorkflowViewModel">
+            <views:WaferSetupWorkflowView />
+          </DataTemplate>
+          <DataTemplate DataType="vm:RecipeSetupWorkflowViewModel">
+            <views:RecipeSetupWorkflowView />
           </DataTemplate>
           <DataTemplate DataType="vm:HistoryViewModel">
             <views:HistoryView />
@@ -163,9 +191,6 @@
           </DataTemplate>
           <DataTemplate DataType="vm:AppSettingViewModel">
             <views:AppSettingView />
-          </DataTemplate>
-          <DataTemplate DataType="vm:DieRenderingViewModel">
-            <views:DieRenderingView />
           </DataTemplate>
         </ContentControl.DataTemplates>
       </ContentControl>
