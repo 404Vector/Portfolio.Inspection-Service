@@ -33,6 +33,9 @@ public sealed class DieImageRenderer : IDieImageRenderer
   /// <inheritdoc />
   public void Save(DieRenderingParameters parameters)
   {
+    // 호출 시점의 값을 snapshot으로 복사한다.
+    // 원본 인스턴스를 그대로 저장하면 ViewModel이 이후 파라미터를 수정할 때
+    // CurrentParameters도 함께 바뀌어 CanApply() 비교가 항상 false가 된다.
     if (CurrentParameters is null)
       CurrentParameters = new DieRenderingParameters();
 
