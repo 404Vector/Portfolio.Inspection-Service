@@ -69,7 +69,7 @@
             <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto">
 
               <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="Width (px)"
+                         Text="Width (μm)"
                          VerticalAlignment="Center"
                          Foreground="{DynamicResource TextSecondary}"
                          FontSize="12" />
@@ -77,12 +77,12 @@
                              Value="{Binding Parameters.CanvasWidth}"
                              Minimum="{Binding CanvasWidthMin}"
                              Maximum="{Binding CanvasWidthMax}"
-                             Increment="100"
+                             Increment="500"
                              FormatString="0"
                              FontSize="12" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="Height (px)"
+                         Text="Height (μm)"
                          VerticalAlignment="Center"
                          Margin="0,8,0,0"
                          Foreground="{DynamicResource TextSecondary}"
@@ -91,7 +91,7 @@
                              Value="{Binding Parameters.CanvasHeight}"
                              Minimum="{Binding CanvasHeightMin}"
                              Maximum="{Binding CanvasHeightMax}"
-                             Increment="100"
+                             Increment="500"
                              FormatString="0"
                              Margin="0,8,0,0"
                              FontSize="12" />
