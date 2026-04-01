@@ -171,8 +171,8 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   {
     var list = await _recipeRepository.ListAsync();
     RecipeList.Clear();
-    foreach (var item in list)
-      RecipeList.Add(item);
+    foreach (var row in list)
+      RecipeList.Add(row.Recipe);
   }, nameof(RefreshRecipeListAsync));
 
   /// <summary>선택된 Recipe를 검사에 연결한다.</summary>

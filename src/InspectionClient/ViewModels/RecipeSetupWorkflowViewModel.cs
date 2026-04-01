@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Core.Logging.Interfaces;
 using Core.Models;
 using InspectionClient.Interfaces;
+using InspectionClient.Models;
 using InspectionRecipe.Models;
 
 namespace InspectionClient.ViewModels;
@@ -14,61 +15,52 @@ namespace InspectionClient.ViewModels;
 /// Recipe Setup 워크플로 ViewModel.
 ///
 /// 책임:
-///   - WaferInfo를 IWaferInfoRepository에서 로드
-///   - EquipmentConfig 기반 FOV 자동 계산
-///   - Recipe 파라미터 편집
-///   - Save: IRecipeRepository에 저장
-///   - Load: DB 목록에서 선택하여 폼에 채우기
-///   - Delete: 선택된 Recipe를 DB에서 삭제
+///   - Recipe CRUD (목록 로드, 생성, 저장, 삭제)
+///   - WaferInfo 목록에서 Recipe에 연결할 WaferInfo 선택
+///   - Recipe 파라미터 편집 (편집 버퍼)
+///   - Load 시 편집 버퍼를 채움
+///   - Save 시 편집 버퍼에서 새 RecipeRow를 조립하여 저장
 /// </summary>
 public partial class RecipeSetupWorkflowViewModel : ViewModelBase
 {
-  private readonly IRecipeRepository       _recipeRepository;
-  private readonly IWaferInfoRepository    _waferRepository;
+  private readonly IRecipeRepository      _repository;
   private readonly IEquipmentConfigService _equipmentConfig;
 
-  // ── WaferInfo (로드된 것) ────────────────────────────────────────────
+  // ── Recipe 목록 ───────────────────────────────────────────────────────
+
+  public ObservableCollection<RecipeRow> Items { get; } = new();
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
+  [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+  private RecipeRow? _selectedItem;
+
+  /// <summary>
+  /// 현재 편집 중인 항목. DbTableControl.LoadedItem과 양방향 바인딩.
+  /// null이면 Browse 상태, non-null이면 Edit 상태.
+  /// </summary>
+  [ObservableProperty] private RecipeRow? _loadedItem;
+
+  // ── WaferInfo 목록 (선택 전용) ────────────────────────────────────────
+
+  public WaferInfoListViewModel WaferTableVm { get; }
+
+  // ── 로드된 WaferInfo ──────────────────────────────────────────────────
 
   private WaferInfo? _loadedWaferInfo;
 
-  /// <summary>현재 연결된 WaferInfo 요약. 없으면 "(없음)".</summary>
   [ObservableProperty] private string _waferSummary = "(없음)";
 
-  /// <summary>WaferInfo가 로드되었는지 여부 (Save/Confirm 버튼 CanExecute 기준).</summary>
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-  private bool _hasWaferInfo;
+  // ── Recipe 파라미터 편집 버퍼 ─────────────────────────────────────────
 
-  // ── Recipe 파라미터 ────────────────────────────────────────────────────
-
-  [ObservableProperty] private string  _recipeName      = "NewRecipe";
-  [ObservableProperty] private string  _description     = string.Empty;
-  [ObservableProperty] private double  _fovWidthUm      = 1413.0;
-  [ObservableProperty] private double  _fovHeightUm     = 1035.0;
-  [ObservableProperty] private double  _overlapXum      = 0.0;
-  [ObservableProperty] private double  _overlapYum      = 0.0;
-  [ObservableProperty] private bool    _stopOnFirstFail = false;
-  [ObservableProperty] private int     _maxFrameCount   = 0;
-
-  /// <summary>마지막으로 저장된 Recipe 이름. 저장 전에는 "(미저장)".</summary>
-  [ObservableProperty] private string _savedRecipeName = "(미저장)";
-
-  // ── 목록 패널 ───────────────────────────────────────────────────────────
-
-  public ObservableCollection<WaferSurfaceInspectionRecipe> RecipeList { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(LoadSelectedCommand))]
-  [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
-  private WaferSurfaceInspectionRecipe? _selectedRecipe;
-
-  // ── WaferInfo 목록 패널 ─────────────────────────────────────────────────
-
-  public ObservableCollection<WaferInfo> WaferInfoList { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(SelectWaferInfoCommand))]
-  private WaferInfo? _selectedWaferInfo;
+  [ObservableProperty] private string _recipeName      = "NewRecipe";
+  [ObservableProperty] private string _description     = string.Empty;
+  [ObservableProperty] private double _fovWidthUm      = 1413.0;
+  [ObservableProperty] private double _fovHeightUm     = 1035.0;
+  [ObservableProperty] private double _overlapXum      = 0.0;
+  [ObservableProperty] private double _overlapYum      = 0.0;
+  [ObservableProperty] private bool   _stopOnFirstFail = false;
+  [ObservableProperty] private int    _maxFrameCount   = 0;
 
   public RecipeSetupWorkflowViewModel(
       IRecipeRepository       recipeRepository,
@@ -77,100 +69,128 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
       ILogService             logService)
       : base(logService)
   {
-    _recipeRepository = recipeRepository;
-    _waferRepository  = waferRepository;
-    _equipmentConfig  = equipmentConfig;
-
+    _repository      = recipeRepository;
+    _equipmentConfig = equipmentConfig;
+    WaferTableVm     = new WaferInfoListViewModel(waferRepository, logService);
+    WaferTableVm.WaferSelected += OnWaferSelected;
+    _ = RefreshAsync();
     RecalculateFovFromEquipment();
   }
 
-  // ── 커맨드 ─────────────────────────────────────────────────────────────
+  // ── CRUD 커맨드 ──────────────────────────────────────────────────────
 
-  /// <summary>장비 설정에서 FOV를 재계산하여 필드에 반영한다.</summary>
+  [RelayCommand]
+  private async Task RefreshAsync() => await Execute(async () =>
+  {
+    var list = await _repository.ListAsync();
+    Items.Clear();
+    foreach (var item in list)
+      Items.Add(item);
+  }, nameof(RefreshAsync));
+
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private void Load(object? item) => Execute(() =>
+  {
+    if (SelectedItem is not RecipeRow row)
+      return;
+    SetLoadedWafer(row.Recipe.Wafer);
+    ApplyToForm(row.Recipe);
+    // DbTableControl이 LoadedItem을 SelectedItem으로 set한다.
+    // ViewModel은 TwoWay 바인딩으로 동기화만 수행한다.
+  }, nameof(Load));
+
+  [RelayCommand]
+  private async Task CreateAsync() => await Execute(async () =>
+  {
+    var name = $"New-{DateTime.Now:yyMMdd-HHmmss}";
+    var row  = await _repository.CreateAsync(name);
+    await RefreshAsync();
+    SelectedItem = FindById(row.Id);
+  }, nameof(CreateAsync));
+
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private async Task DeleteAsync() => await Execute(async () =>
+  {
+    if (SelectedItem is not RecipeRow current)
+      return;
+    await _repository.DeleteAsync(current.Id);
+    Items.Remove(current);
+    SelectedItem = null;
+  }, nameof(DeleteAsync));
+
+  [RelayCommand]
+  private async Task SaveAsync() => await Execute(async () =>
+  {
+    if (LoadedItem is not RecipeRow current)
+      return;
+    var updated = current with { Recipe = BuildRecipe() };
+    await _repository.UpdateAsync(updated);
+    var idx = Items.IndexOf(current);
+    if (idx >= 0)
+      Items[idx] = updated;
+    SelectedItem = updated;
+    // DbTableControl이 Save 클릭 시 LoadedItem을 null로 초기화한다.
+  }, nameof(SaveAsync));
+
+  [RelayCommand]
+  private async Task CancelAsync() => await Execute(async () =>
+  {
+    if (LoadedItem is not RecipeRow current)
+      return;
+    var restored = await _repository.FindByIdAsync(current.Id);
+    if (restored is not null)
+    {
+      var idx = Items.IndexOf(current);
+      if (idx >= 0)
+        Items[idx] = restored;
+      SelectedItem = restored;
+    }
+    // DbTableControl이 Cancel 클릭 시 LoadedItem을 null로 초기화한다.
+  }, nameof(CancelAsync));
+
+  // ── Wafer 선택 커맨드 ────────────────────────────────────────────────
+
+  [RelayCommand(CanExecute = nameof(HasSelectedWaferRow))]
+  private void SelectWaferInfo() => Execute(() =>
+  {
+    if (WaferTableVm.SelectedItem is WaferInfoRow row)
+      SetLoadedWafer(row.Info);
+  }, nameof(SelectWaferInfo));
+
+  private bool HasSelectedWaferRow => WaferTableVm.SelectedItem is not null;
+
+  // ── FOV 계산 커맨드 ──────────────────────────────────────────────────
+
   [RelayCommand]
   private void RecalculateFovFromEquipment() => Execute(() =>
   {
-    var cfg          = _equipmentConfig.Config;
-    double effective = cfg.EffectivePixelSizeUm;
-    FovWidthUm  = cfg.SensorWidth  * effective;
-    FovHeightUm = cfg.SensorHeight * effective;
+    var cfg     = _equipmentConfig.Config;
+    double eff  = cfg.EffectivePixelSizeUm;
+    FovWidthUm  = cfg.SensorWidth  * eff;
+    FovHeightUm = cfg.SensorHeight * eff;
   }, nameof(RecalculateFovFromEquipment));
 
-  /// <summary>WaferInfo DB 목록을 새로고침한다.</summary>
-  [RelayCommand]
-  private async Task RefreshWaferListAsync() => await Execute(async () =>
-  {
-    var list = await _waferRepository.ListAsync();
-    WaferInfoList.Clear();
-    foreach (var item in list)
-      WaferInfoList.Add(item);
-  }, nameof(RefreshWaferListAsync));
+  // ── 이벤트 핸들러 ────────────────────────────────────────────────────
 
-  /// <summary>선택된 WaferInfo를 Recipe에 연결한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedWaferInfo))]
-  private void SelectWaferInfo() => Execute(() =>
-  {
-    SetWaferInfo(SelectedWaferInfo!);
-  }, nameof(SelectWaferInfo));
+  private void OnWaferSelected(object? sender, WaferInfoRow row) =>
+      SetLoadedWafer(row.Info);
 
-  /// <summary>현재 편집 값으로 Recipe를 생성하고 Repository에 저장한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasWaferInfo))]
-  private async Task SaveAsync() => await Execute(async () =>
-  {
-    var recipe = BuildRecipe();
-    await _recipeRepository.SaveAsync(recipe);
-    SavedRecipeName = recipe.RecipeName;
-    await RefreshRecipeListAsync();
-  }, nameof(SaveAsync));
+  // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
 
-  /// <summary>Recipe DB 목록을 새로고침한다.</summary>
-  [RelayCommand]
-  private async Task RefreshRecipeListAsync() => await Execute(async () =>
-  {
-    var list = await _recipeRepository.ListAsync();
-    RecipeList.Clear();
-    foreach (var item in list)
-      RecipeList.Add(item);
-  }, nameof(RefreshRecipeListAsync));
-
-  /// <summary>선택된 Recipe를 폼에 채운다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedRecipe))]
-  private void LoadSelected() => Execute(() =>
-  {
-    var recipe = SelectedRecipe!;
-    SetWaferInfo(recipe.Wafer);
-    ApplyToForm(recipe);
-    SavedRecipeName = recipe.RecipeName;
-  }, nameof(LoadSelected));
-
-  /// <summary>선택된 Recipe를 DB에서 삭제한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedRecipe))]
-  private async Task DeleteSelectedAsync() => await Execute(async () =>
-  {
-    var toDelete = SelectedRecipe!;
-    await _recipeRepository.DeleteAsync(toDelete.RecipeName);
-    SelectedRecipe = null;
-    await RefreshRecipeListAsync();
-  }, nameof(DeleteSelectedAsync));
-
-  // ── CanExecute 헬퍼 ───────────────────────────────────────────────────
-
-  private bool HasSelectedRecipe    => SelectedRecipe is not null;
-  private bool HasSelectedWaferInfo => SelectedWaferInfo is not null;
+  private bool HasSelectedItem => SelectedItem is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
-  private void SetWaferInfo(WaferInfo info)
+  private void SetLoadedWafer(WaferInfo info)
   {
     _loadedWaferInfo = info;
-    HasWaferInfo     = true;
-    WaferSummary     = $"{info.WaferId} | {info.WaferType} | Die {info.DieSize.WidthUm:0}×{info.DieSize.HeightUm:0} µm";
+    WaferSummary = $"{info.WaferId} | {info.WaferType} | Die {info.DieSize.WidthUm:0}×{info.DieSize.HeightUm:0} µm";
   }
 
   private WaferSurfaceInspectionRecipe BuildRecipe() => new(
     RecipeName:      RecipeName,
     Description:     Description,
-    Wafer:           _loadedWaferInfo!,
+    Wafer:           _loadedWaferInfo ?? WaferInfo.CreateDummy(),
     Fov:             new FovSize(FovWidthUm, FovHeightUm),
     OverlapXum:      OverlapXum,
     OverlapYum:      OverlapYum,
@@ -188,5 +208,13 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
     OverlapYum      = recipe.OverlapYum;
     StopOnFirstFail = recipe.StopOnFirstFail;
     MaxFrameCount   = recipe.MaxFrameCount;
+  }
+
+  private RecipeRow? FindById(long id)
+  {
+    foreach (var item in Items)
+      if (item.Id == id)
+        return item;
+    return null;
   }
 }

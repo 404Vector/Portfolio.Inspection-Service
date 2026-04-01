@@ -3,8 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:InspectionClient.ViewModels"
-             xmlns:models="using:Core.Models"
-             xmlns:recipe="using:InspectionRecipe.Models"
+             xmlns:models="using:InspectionClient.Models"
+             xmlns:controls="using:InspectionClient.Controls"
              xmlns:mi="using:Material.Icons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
              x:Class="InspectionClient.Views.RecipeSetupWorkflowView"
@@ -15,141 +15,78 @@
     <!-- ── 좌측: 목록 패널 ────────────────────────────────────────────── -->
     <DockPanel Grid.Column="0">
 
-      <!-- ── WaferInfo 목록 (상단 절반) ──────────────────────────────── -->
-      <Grid DockPanel.Dock="Top" RowDefinitions="Auto,1,*,Auto" Height="280">
-
-        <Border Grid.Row="0"
-                Padding="12,10"
-                BorderBrush="{DynamicResource BorderSubtle}"
-                BorderThickness="0,0,0,0">
-          <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Grid.Column="0"
-                       Text="WAFER LIST"
-                       FontSize="10" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextMuted}"
-                       VerticalAlignment="Center" />
-            <Button Grid.Column="1"
-                    Command="{Binding RefreshWaferListCommand}"
-                    Padding="4" ToolTip.Tip="새로고침">
-              <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
-            </Button>
-          </Grid>
-        </Border>
-
-        <Border Grid.Row="1" Background="{DynamicResource BorderSubtle}" />
-
-        <ListBox Grid.Row="2"
-                 ItemsSource="{Binding WaferInfoList}"
-                 SelectedItem="{Binding SelectedWaferInfo}"
-                 Padding="4">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="models:WaferInfo">
-              <StackPanel Spacing="2" Margin="4,4">
-                <TextBlock Text="{Binding WaferId}"
-                           FontSize="12" FontWeight="SemiBold" />
-                <TextBlock FontSize="10"
-                           Foreground="{DynamicResource TextMuted}">
-                  <TextBlock.Text>
-                    <MultiBinding StringFormat="{}{0} | {1}">
-                      <Binding Path="WaferType" />
-                      <Binding Path="LotId" />
-                    </MultiBinding>
-                  </TextBlock.Text>
-                </TextBlock>
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-
-        <Border Grid.Row="3"
-                Padding="8,8"
-                BorderBrush="{DynamicResource BorderSubtle}"
-                BorderThickness="0,1,0,0">
-          <Button HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center"
-                  Command="{Binding SelectWaferInfoCommand}"
-                  ToolTip.Tip="선택한 Wafer를 Recipe에 연결">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <mi:MaterialIcon Kind="LinkVariant" Width="12" Height="12" />
-              <TextBlock Text="Wafer 선택" FontSize="11" />
-            </StackPanel>
-          </Button>
-        </Border>
-
-      </Grid>
-
-      <!-- 구분선 -->
-      <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource BorderSubtle}" />
-
-      <!-- ── Recipe 목록 (하단) ──────────────────────────────────────── -->
-
-      <Border DockPanel.Dock="Top"
-              Padding="12,10"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,0,0,1">
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Grid.Column="0"
-                     Text="RECIPE LIST"
-                     FontSize="10" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextMuted}"
-                     VerticalAlignment="Center" />
-          <Button Grid.Column="1"
-                  Command="{Binding RefreshRecipeListCommand}"
-                  Padding="4" ToolTip.Tip="새로고침">
-            <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
-          </Button>
-        </Grid>
-      </Border>
-
-      <Border DockPanel.Dock="Bottom"
-              Padding="8,8"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,1,0,0">
-        <Grid ColumnDefinitions="*,4,*">
-          <Button Grid.Column="0"
-                  HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center"
-                  Command="{Binding LoadSelectedCommand}"
-                  ToolTip.Tip="선택 Recipe를 폼에 불러오기">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <mi:MaterialIcon Kind="Import" Width="12" Height="12" />
-              <TextBlock Text="Load" FontSize="11" />
-            </StackPanel>
-          </Button>
-          <Button Grid.Column="2"
-                  HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center"
-                  Command="{Binding DeleteSelectedCommand}"
-                  ToolTip.Tip="선택 Recipe 삭제">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
-              <TextBlock Text="Delete" FontSize="11" />
-            </StackPanel>
-          </Button>
-        </Grid>
-      </Border>
-
-      <ListBox ItemsSource="{Binding RecipeList}"
-               SelectedItem="{Binding SelectedRecipe}"
-               Padding="4">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="recipe:WaferSurfaceInspectionRecipe">
+      <!-- WaferInfo 목록 (선택 전용) -->
+      <controls:DbTableControl DockPanel.Dock="Top"
+                               Height="240"
+                               Header="WAFER LIST"
+                               ItemsSource="{Binding WaferTableVm.Items}"
+                               SelectedItem="{Binding WaferTableVm.SelectedItem}"
+                               LoadCommand="{Binding WaferTableVm.LoadCommand}"
+                               RefreshCommand="{Binding WaferTableVm.RefreshCommand}">
+        <controls:DbTableControl.ItemTemplate>
+          <DataTemplate x:DataType="models:WaferInfoRow">
             <StackPanel Spacing="2" Margin="4,4">
-              <TextBlock Text="{Binding RecipeName}"
+              <TextBlock Text="{Binding Name}"
                          FontSize="12" FontWeight="SemiBold" />
               <TextBlock FontSize="10"
                          Foreground="{DynamicResource TextMuted}">
                 <TextBlock.Text>
-                  <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
-                    <Binding Path="Fov.WidthUm" />
-                    <Binding Path="Fov.HeightUm" />
+                  <MultiBinding StringFormat="{}{0} | {1}">
+                    <Binding Path="Info.WaferType" />
+                    <Binding Path="Info.LotId" />
                   </MultiBinding>
                 </TextBlock.Text>
               </TextBlock>
             </StackPanel>
           </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+        </controls:DbTableControl.ItemTemplate>
+      </controls:DbTableControl>
+
+      <!-- Wafer 선택 버튼 -->
+      <Border DockPanel.Dock="Top"
+              Padding="8,8"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="0,1,0,1">
+        <Button HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Command="{Binding SelectWaferInfoCommand}"
+                ToolTip.Tip="선택한 Wafer를 Recipe에 연결">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="LinkVariant" Width="12" Height="12" />
+            <TextBlock Text="Wafer 선택" FontSize="11" />
+          </StackPanel>
+        </Button>
+      </Border>
+
+      <!-- Recipe 목록 -->
+      <controls:DbTableControl Header="RECIPE LIST"
+                               ItemsSource="{Binding Items}"
+                               SelectedItem="{Binding SelectedItem}"
+                               LoadedItem="{Binding LoadedItem, Mode=TwoWay}"
+                               LoadCommand="{Binding LoadCommand}"
+                               CreateCommand="{Binding CreateCommand}"
+                               DeleteCommand="{Binding DeleteCommand}"
+                               SaveCommand="{Binding SaveCommand}"
+                               CancelCommand="{Binding CancelCommand}"
+                               RefreshCommand="{Binding RefreshCommand}">
+        <controls:DbTableControl.ItemTemplate>
+          <DataTemplate x:DataType="models:RecipeRow">
+            <StackPanel Spacing="2" Margin="4,4">
+              <TextBlock Text="{Binding Name}"
+                         FontSize="12" FontWeight="SemiBold" />
+              <TextBlock FontSize="10"
+                         Foreground="{DynamicResource TextMuted}">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
+                    <Binding Path="Recipe.Fov.WidthUm" />
+                    <Binding Path="Recipe.Fov.HeightUm" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </StackPanel>
+          </DataTemplate>
+        </controls:DbTableControl.ItemTemplate>
+      </controls:DbTableControl>
 
     </DockPanel>
 
@@ -157,156 +94,116 @@
     <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
 
     <!-- ── 우측: 파라미터 폼 ──────────────────────────────────────────── -->
-    <DockPanel Grid.Column="2">
+    <ScrollViewer Grid.Column="2"
+                  IsEnabled="{Binding LoadedItem, Converter={x:Static ObjectConverters.IsNotNull}}"
+                  Padding="24,16"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel MaxWidth="640" Spacing="20">
 
-      <!-- ── 상단 툴바 ──────────────────────────────────────────────────── -->
-      <Border DockPanel.Dock="Top"
-              Padding="16,10"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,0,0,1">
-        <Grid ColumnDefinitions="*,Auto">
-
-          <!-- 저장 상태 -->
-          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <mi:MaterialIcon Kind="FileDocumentOutline" Width="16" Height="16"
-                             Foreground="{DynamicResource TextMuted}" />
-            <TextBlock Text="{Binding SavedRecipeName}"
-                       FontSize="12"
-                       Foreground="{DynamicResource TextSecondary}"
-                       VerticalAlignment="Center" />
-          </StackPanel>
-
-          <!-- 저장 버튼 -->
-          <Button Grid.Column="1" Classes="accent" Command="{Binding SaveCommand}">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <mi:MaterialIcon Kind="ContentSave" Width="14" Height="14" />
-              <TextBlock Text="Save" />
-            </StackPanel>
-          </Button>
-
-        </Grid>
-      </Border>
-
-      <!-- ── 본문 ────────────────────────────────────────────────────────── -->
-      <ScrollViewer Padding="24,16"
-                    HorizontalScrollBarVisibility="Disabled"
-                    VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="640" Spacing="20">
-
-          <!-- 섹션: Wafer Info -->
-          <StackPanel Spacing="8">
-            <TextBlock Text="WAFER INFO"
-                       FontSize="10" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextMuted}" />
-
-            <Border Background="{DynamicResource BgSurface}"
-                    BorderBrush="{DynamicResource BorderSubtle}"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="12,8">
-              <TextBlock Text="{Binding WaferSummary}"
-                         FontSize="12"
-                         Foreground="{DynamicResource TextSecondary}" />
-            </Border>
-          </StackPanel>
-
-          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
-
-          <!-- 섹션: Recipe Identity -->
-          <TextBlock Text="RECIPE"
+        <!-- 섹션: Wafer Info -->
+        <StackPanel Spacing="8">
+          <TextBlock Text="WAFER INFO"
                      FontSize="10" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextMuted}" />
+          <Border Background="{DynamicResource BgSurface}"
+                  BorderBrush="{DynamicResource BorderSubtle}"
+                  BorderThickness="1" CornerRadius="4" Padding="12,8">
+            <TextBlock Text="{Binding WaferSummary}"
+                       FontSize="12"
+                       Foreground="{DynamicResource TextSecondary}" />
+          </Border>
+        </StackPanel>
+
+        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+        <!-- 섹션: Recipe Identity -->
+        <TextBlock Text="RECIPE"
+                   FontSize="10" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}" />
+
+        <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Recipe Name" Classes="form-label" />
+          <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding RecipeName}" FontSize="12" />
+
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Description"
+                     Classes="form-label" Margin="0,8,0,0" />
+          <TextBox   Grid.Row="1" Grid.Column="1"
+                     Text="{Binding Description}" FontSize="12" Margin="0,8,0,0" />
+        </Grid>
+
+        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+        <!-- 섹션: FOV -->
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="FOV"
+                       FontSize="10" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextMuted}"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
+                    Command="{Binding RecalculateFovFromEquipmentCommand}"
+                    FontSize="11">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <mi:MaterialIcon Kind="Calculator" Width="12" Height="12" />
+                <TextBlock Text="장비 설정에서 계산" />
+              </StackPanel>
+            </Button>
+          </Grid>
 
           <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Recipe Name" Classes="form-label" />
-            <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding RecipeName}" FontSize="12" />
-
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Description"
-                       Classes="form-label" Margin="0,8,0,0" />
-            <TextBox   Grid.Row="1" Grid.Column="1"
-                       Text="{Binding Description}"
-                       FontSize="12" Margin="0,8,0,0" />
-          </Grid>
-
-          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
-
-          <!-- 섹션: FOV -->
-          <StackPanel Spacing="8">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Text="FOV"
-                         FontSize="10" FontWeight="SemiBold"
-                         Foreground="{DynamicResource TextMuted}"
-                         VerticalAlignment="Center" />
-              <Button Grid.Column="1" Command="{Binding RecalculateFovFromEquipmentCommand}" FontSize="11">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                  <mi:MaterialIcon Kind="Calculator" Width="12" Height="12" />
-                  <TextBlock Text="장비 설정에서 계산" />
-                </StackPanel>
-              </Button>
-            </Grid>
-
-            <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
-              <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)" Classes="form-label" />
-              <NumericUpDown Grid.Row="0" Grid.Column="1"
-                             Value="{Binding FovWidthUm}"
-                             Minimum="1" Maximum="100000" Increment="10"
-                             FormatString="0.##"
-                             FontSize="12" />
-
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
-                         Classes="form-label" Margin="0,8,0,0" />
-              <NumericUpDown Grid.Row="1" Grid.Column="1"
-                             Value="{Binding FovHeightUm}"
-                             Minimum="1" Maximum="100000" Increment="10"
-                             FormatString="0.##"
-                             FontSize="12" Margin="0,8,0,0" />
-            </Grid>
-          </StackPanel>
-
-          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
-
-          <!-- 섹션: Scan Options -->
-          <TextBlock Text="SCAN OPTIONS"
-                     FontSize="10" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextMuted}" />
-
-          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
-
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Overlap X (μm)" Classes="form-label" />
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)" Classes="form-label" />
             <NumericUpDown Grid.Row="0" Grid.Column="1"
-                           Value="{Binding OverlapXum}"
-                           Minimum="0" Maximum="10000" Increment="10"
-                           FormatString="0.#"
+                           Value="{Binding FovWidthUm}"
+                           Minimum="1" Maximum="100000" Increment="10" FormatString="0.##"
                            FontSize="12" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Overlap Y (μm)"
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
                        Classes="form-label" Margin="0,8,0,0" />
             <NumericUpDown Grid.Row="1" Grid.Column="1"
-                           Value="{Binding OverlapYum}"
-                           Minimum="0" Maximum="10000" Increment="10"
-                           FormatString="0.#"
-                           FontSize="12" Margin="0,8,0,0" />
-
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Stop on First Fail"
-                       Classes="form-label" Margin="0,8,0,0" />
-            <ToggleSwitch Grid.Row="2" Grid.Column="1"
-                          IsChecked="{Binding StopOnFirstFail}"
-                          OnContent="" OffContent=""
-                          Margin="0,8,0,0" />
-
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Frames (0=∞)"
-                       Classes="form-label" Margin="0,8,0,0" />
-            <NumericUpDown Grid.Row="3" Grid.Column="1"
-                           Value="{Binding MaxFrameCount}"
-                           Minimum="0" Maximum="100000" Increment="100"
-                           FormatString="0"
+                           Value="{Binding FovHeightUm}"
+                           Minimum="1" Maximum="100000" Increment="10" FormatString="0.##"
                            FontSize="12" Margin="0,8,0,0" />
           </Grid>
-
         </StackPanel>
-      </ScrollViewer>
 
-    </DockPanel>
+        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+        <!-- 섹션: Scan Options -->
+        <TextBlock Text="SCAN OPTIONS"
+                   FontSize="10" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}" />
+
+        <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Overlap X (μm)" Classes="form-label" />
+          <NumericUpDown Grid.Row="0" Grid.Column="1"
+                         Value="{Binding OverlapXum}"
+                         Minimum="0" Maximum="10000" Increment="10" FormatString="0.#"
+                         FontSize="12" />
+
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Overlap Y (μm)"
+                     Classes="form-label" Margin="0,8,0,0" />
+          <NumericUpDown Grid.Row="1" Grid.Column="1"
+                         Value="{Binding OverlapYum}"
+                         Minimum="0" Maximum="10000" Increment="10" FormatString="0.#"
+                         FontSize="12" Margin="0,8,0,0" />
+
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Stop on First Fail"
+                     Classes="form-label" Margin="0,8,0,0" />
+          <ToggleSwitch Grid.Row="2" Grid.Column="1"
+                        IsChecked="{Binding StopOnFirstFail}"
+                        OnContent="" OffContent="" Margin="0,8,0,0" />
+
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Frames (0=∞)"
+                     Classes="form-label" Margin="0,8,0,0" />
+          <NumericUpDown Grid.Row="3" Grid.Column="1"
+                         Value="{Binding MaxFrameCount}"
+                         Minimum="0" Maximum="100000" Increment="100" FormatString="0"
+                         FontSize="12" Margin="0,8,0,0" />
+        </Grid>
+
+      </StackPanel>
+    </ScrollViewer>
 
   </Grid>
 

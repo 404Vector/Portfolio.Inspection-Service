@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mi="using:Material.Icons.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="240" d:DesignHeight="400"
+             x:Class="InspectionClient.Controls.DbTableControl">
+
+  <DockPanel>
+
+    <!-- ── 헤더: 제목 + Refresh ──────────────────────────────────────────── -->
+    <Border DockPanel.Dock="Top"
+            Padding="12,10"
+            BorderBrush="{DynamicResource BorderSubtle}"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0"
+                   x:Name="HeaderTextBlock"
+                   FontSize="10" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextMuted}"
+                   VerticalAlignment="Center" />
+        <Button Grid.Column="1"
+                x:Name="RefreshButton"
+                Padding="4" ToolTip.Tip="새로고침">
+          <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- ── 하단 액션 버튼 바 ────────────────────────────────────────────── -->
+    <Border DockPanel.Dock="Bottom"
+            Padding="8,8"
+            BorderBrush="{DynamicResource BorderSubtle}"
+            BorderThickness="0,1,0,0">
+      <Panel>
+
+      <!-- IsLoaded=false: Load(1행 전체) / Create+Delete(2행 2열) -->
+      <Grid x:Name="BrowsePanel"
+            RowDefinitions="Auto,Auto"
+            ColumnDefinitions="*,*">
+        <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                x:Name="LoadButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Margin="0,0,0,4"
+                ToolTip.Tip="선택 항목 불러오기">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="FolderOpen" Width="12" Height="12" />
+            <TextBlock Text="Load" FontSize="11" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Row="1" Grid.Column="0"
+                x:Name="CreateButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Margin="0,0,2,0"
+                ToolTip.Tip="새 항목 생성">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="Plus" Width="12" Height="12" />
+            <TextBlock Text="New" FontSize="11" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Row="1" Grid.Column="1"
+                x:Name="DeleteButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Margin="2,0,0,0"
+                ToolTip.Tip="선택 항목 삭제">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
+            <TextBlock Text="Delete" FontSize="11" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <!-- IsLoaded=true: Save(1행 전체) / Cancel(2행 전체) -->
+      <Grid x:Name="EditPanel"
+            IsVisible="False"
+            RowDefinitions="Auto,Auto"
+            ColumnDefinitions="*">
+        <Button Grid.Row="0" Grid.Column="0"
+                x:Name="SaveButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Margin="0,0,0,4"
+                ToolTip.Tip="변경 사항 저장">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="ContentSave" Width="12" Height="12" />
+            <TextBlock Text="Save" FontSize="11" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Row="1" Grid.Column="0"
+                x:Name="CancelButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                ToolTip.Tip="편집 취소">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <mi:MaterialIcon Kind="Cancel" Width="12" Height="12" />
+            <TextBlock Text="Cancel" FontSize="11" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      </Panel>
+    </Border>
+
+    <!-- ── 목록 ──────────────────────────────────────────────────────────── -->
+    <ListBox x:Name="ItemListBox"
+             Padding="4" />
+
+  </DockPanel>
+
+</UserControl>

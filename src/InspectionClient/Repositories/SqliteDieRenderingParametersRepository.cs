@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,61 +19,92 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
     _db = db;
   }
 
-  public async Task SaveAsync(string name, DieRenderingParameters parameters, CancellationToken ct = default)
+  public async Task<DieParametersRow> CreateAsync(string name, CancellationToken ct = default)
   {
-    var json = JsonSerializer.Serialize(ParametersDto.From(parameters), RepositoryJsonOptions.Default);
+    ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+    var defaults = new DieRenderingParameters();
+    var json     = Serialize(defaults);
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       INSERT INTO DieRenderingParameters (Name, Json)
       VALUES ($name, $json)
-      ON CONFLICT(Name) DO UPDATE SET Json = excluded.Json
+      RETURNING Id
       """;
     cmd.Parameters.AddWithValue("$name", name);
     cmd.Parameters.AddWithValue("$json", json);
-    await cmd.ExecuteNonQueryAsync(ct);
+
+    var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
+    return new DieParametersRow(id, name, defaults);
   }
 
-  public async Task<DieRenderingParameters?> FindAsync(string name, CancellationToken ct = default)
+  public async Task<DieParametersRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Json FROM DieRenderingParameters WHERE Name = $name";
-    cmd.Parameters.AddWithValue("$name", name);
+    cmd.CommandText = "SELECT Id, Name, Json FROM DieRenderingParameters WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
 
-    var json = await cmd.ExecuteScalarAsync(ct) as string;
-    if (json is null)
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    if (!await reader.ReadAsync(ct))
       return null;
 
-    var dto = JsonSerializer.Deserialize<ParametersDto>(json, RepositoryJsonOptions.Default);
-    return dto?.ToParameters();
+    return ReadRow(reader);
   }
 
-  public async Task<IReadOnlyList<DieParametersEntry>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<DieParametersRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Name, Json FROM DieRenderingParameters ORDER BY Name ASC";
+    cmd.CommandText = "SELECT Id, Name, Json FROM DieRenderingParameters ORDER BY Name ASC";
 
-    var list = new List<DieParametersEntry>();
+    var list = new List<DieParametersRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
     while (await reader.ReadAsync(ct))
-    {
-      var dto = JsonSerializer.Deserialize<ParametersDto>(reader.GetString(1), RepositoryJsonOptions.Default);
-      if (dto is not null)
-        list.Add(new DieParametersEntry(reader.GetString(0), dto.ToParameters()));
-    }
+      list.Add(ReadRow(reader));
 
     return list;
   }
 
-  public async Task DeleteAsync(string name, CancellationToken ct = default)
+  public async Task UpdateAsync(DieParametersRow item, CancellationToken ct = default)
   {
+    ArgumentNullException.ThrowIfNull(item);
+
+    var json = Serialize(item.Parameters);
+
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "DELETE FROM DieRenderingParameters WHERE Name = $name";
-    cmd.Parameters.AddWithValue("$name", name);
+    cmd.CommandText = """
+      UPDATE DieRenderingParameters
+      SET Name = $name, Json = $json
+      WHERE Id = $id
+      """;
+    cmd.Parameters.AddWithValue("$id",   item.Id);
+    cmd.Parameters.AddWithValue("$name", item.Name);
+    cmd.Parameters.AddWithValue("$json", json);
     await cmd.ExecuteNonQueryAsync(ct);
   }
 
-  // ── 직렬화 전용 DTO ───────────────────────────────────────────────────
+  public async Task DeleteAsync(long id, CancellationToken ct = default)
+  {
+    await using var cmd = _db.Connection.CreateCommand();
+    cmd.CommandText = "DELETE FROM DieRenderingParameters WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
+    await cmd.ExecuteNonQueryAsync(ct);
+  }
+
+  // ── 헬퍼 ─────────────────────────────────────────────────────────────────
+
+  private static DieParametersRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
+  {
+    var id   = reader.GetInt64(0);
+    var name = reader.GetString(1);
+    var dto  = JsonSerializer.Deserialize<ParametersDto>(reader.GetString(2), RepositoryJsonOptions.Default);
+    return new DieParametersRow(id, name, dto?.ToParameters() ?? new DieRenderingParameters());
+  }
+
+  private static string Serialize(DieRenderingParameters p) =>
+      JsonSerializer.Serialize(ParametersDto.From(p), RepositoryJsonOptions.Default);
+
+  // ── 직렬화 전용 DTO ───────────────────────────────────────────────────────
   // DieRenderingParameters는 ObservableObject이므로 직접 직렬화하지 않고
   // 순수 데이터 DTO를 통해 직렬화한다.
 

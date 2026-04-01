@@ -15,18 +15,36 @@ namespace InspectionClient.ViewModels;
 /// Wafer Setup 워크플로 ViewModel.
 ///
 /// 책임:
-///   - WaferInfo 입력 폼 바인딩
-///   - DieSetupWorkflow에서 DieSize 가져오기
-///   - Save: IWaferInfoRepository에 저장
-///   - Load: DB 목록에서 선택하여 폼에 채우기
-///   - Delete: 선택된 WaferInfo를 DB에서 삭제
+///   - WaferInfo CRUD (목록 로드, 생성, 저장, 삭제)
+///   - WaferInfo 입력 폼 바인딩 (편집 버퍼)
+///   - Load 시 편집 버퍼를 채움
+///   - Save 시 편집 버퍼에서 새 WaferInfo record를 조립하여 저장
+///   - Die 파라미터 목록에서 DieSize 가져오기
 /// </summary>
 public partial class WaferSetupWorkflowViewModel : ViewModelBase
 {
-  private readonly IWaferInfoRepository                _repository;
-  private readonly IDieRenderingParametersRepository   _dieRepository;
+  private readonly IWaferInfoRepository _repository;
 
-  // ── 입력 폼 바인딩 프로퍼티 ─────────────────────────────────────────────
+  // ── WaferInfo 목록 ────────────────────────────────────────────────────
+
+  public ObservableCollection<WaferInfoRow> Items { get; } = new();
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
+  [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+  private WaferInfoRow? _selectedItem;
+
+  /// <summary>
+  /// 현재 편집 중인 항목. DbTableControl.LoadedItem과 양방향 바인딩.
+  /// null이면 Browse 상태, non-null이면 Edit 상태.
+  /// </summary>
+  [ObservableProperty] private WaferInfoRow? _loadedItem;
+
+  // ── Die 파라미터 목록 (DieSize import 전용) ──────────────────────────
+
+  public DieParametersListViewModel DieTableVm { get; }
+
+  // ── 입력 폼 바인딩 (편집 버퍼) ──────────────────────────────────────────
 
   [ObservableProperty] private string           _waferId          = "WAFER-001";
   [ObservableProperty] private string           _lotId            = "LOT-001";
@@ -43,100 +61,102 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
   [ObservableProperty] private decimal?         _waferOffsetYum   = 0m;
   [ObservableProperty] private string           _processStep      = "Unknown";
 
-  /// <summary>마지막으로 저장된 WaferInfo 요약. 저장 전에는 "(미저장)".</summary>
-  [ObservableProperty] private string _savedSummary = "(미저장)";
-
-  // ── WaferInfo 목록 패널 ─────────────────────────────────────────────────
-
-  public ObservableCollection<WaferInfo> WaferInfoList { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(LoadSelectedCommand))]
-  [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
-  private WaferInfo? _selectedWaferInfo;
-
-  // ── Die 파라미터 목록 패널 (DieSize 가져오기용) ──────────────────────────
-
-  public ObservableCollection<DieParametersEntry> DieParameterList { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(ImportDieSizeCommand))]
-  private DieParametersEntry? _selectedDieEntry;
-
   public WaferSetupWorkflowViewModel(
-      IWaferInfoRepository               repository,
-      IDieRenderingParametersRepository  dieRepository,
-      ILogService                        logService)
+      IWaferInfoRepository              repository,
+      IDieRenderingParametersRepository dieRepository,
+      ILogService                       logService)
       : base(logService)
   {
-    _repository    = repository;
-    _dieRepository = dieRepository;
+    _repository = repository;
+    DieTableVm  = new DieParametersListViewModel(dieRepository, logService);
+    _ = RefreshAsync();
   }
 
-  // ── 커맨드 ─────────────────────────────────────────────────────────────
+  // ── CRUD 커맨드 ──────────────────────────────────────────────────────
 
-  /// <summary>DB에서 Die 파라미터 목록을 새로고침한다.</summary>
   [RelayCommand]
-  private async Task RefreshDieListAsync() => await Execute(async () =>
+  private async Task RefreshAsync() => await Execute(async () =>
   {
-    var entries = await _dieRepository.ListAsync();
-    DieParameterList.Clear();
-    foreach (var entry in entries)
-      DieParameterList.Add(entry);
-  }, nameof(RefreshDieListAsync));
+    var list = await _repository.ListAsync();
+    Items.Clear();
+    foreach (var item in list)
+      Items.Add(item);
+  }, nameof(RefreshAsync));
 
-  /// <summary>선택된 Die 파라미터의 CanvasSize를 DieSizeWidth/Height에 적용한다.</summary>
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private void Load(object? item) => Execute(() =>
+  {
+    if (SelectedItem is not WaferInfoRow row)
+      return;
+    ApplyToForm(row.Info);
+    // DbTableControl이 LoadedItem을 SelectedItem으로 set한다.
+    // ViewModel은 TwoWay 바인딩으로 동기화만 수행한다.
+  }, nameof(Load));
+
+  [RelayCommand]
+  private async Task CreateAsync() => await Execute(async () =>
+  {
+    var name = $"New-{DateTime.Now:yyMMdd-HHmmss}";
+    var row  = await _repository.CreateAsync(name);
+    await RefreshAsync();
+    SelectedItem = FindById(row.Id);
+  }, nameof(CreateAsync));
+
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private async Task DeleteAsync() => await Execute(async () =>
+  {
+    if (SelectedItem is not WaferInfoRow current)
+      return;
+    await _repository.DeleteAsync(current.Id);
+    Items.Remove(current);
+    SelectedItem = null;
+  }, nameof(DeleteAsync));
+
+  [RelayCommand]
+  private async Task SaveAsync() => await Execute(async () =>
+  {
+    if (LoadedItem is not WaferInfoRow current)
+      return;
+    var updated = current with { Info = BuildWaferInfo() };
+    await _repository.UpdateAsync(updated);
+    var idx = Items.IndexOf(current);
+    if (idx >= 0)
+      Items[idx] = updated;
+    SelectedItem = updated;
+    // DbTableControl이 Save 클릭 시 LoadedItem을 null로 초기화한다.
+  }, nameof(SaveAsync));
+
+  [RelayCommand]
+  private async Task CancelAsync() => await Execute(async () =>
+  {
+    if (LoadedItem is not WaferInfoRow current)
+      return;
+    var restored = await _repository.FindByIdAsync(current.Id);
+    if (restored is not null)
+    {
+      var idx = Items.IndexOf(current);
+      if (idx >= 0)
+        Items[idx] = restored;
+      SelectedItem = restored;
+    }
+    // DbTableControl이 Cancel 클릭 시 LoadedItem을 null로 초기화한다.
+  }, nameof(CancelAsync));
+
+  // ── Die Import 커맨드 ─────────────────────────────────────────────────
+
   [RelayCommand(CanExecute = nameof(HasSelectedDieEntry))]
   private void ImportDieSize() => Execute(() =>
   {
-    var p = SelectedDieEntry!.Parameters;
+    var p = DieTableVm.SelectedItem!.Parameters;
     DieSizeWidthUm  = (decimal)p.CanvasWidth;
     DieSizeHeightUm = (decimal)p.CanvasHeight;
   }, nameof(ImportDieSize));
 
-  private bool HasSelectedDieEntry => SelectedDieEntry is not null;
+  private bool HasSelectedDieEntry => DieTableVm.SelectedItem is not null;
 
-  /// <summary>현재 입력값으로 WaferInfo를 생성하고 Repository에 저장한다.</summary>
-  [RelayCommand]
-  private async Task SaveAsync() => await Execute(async () =>
-  {
-    var waferInfo = BuildWaferInfo();
-    await _repository.SaveAsync(waferInfo);
-    SavedSummary = BuildSummary(waferInfo);
-    await RefreshListAsync();
-  }, nameof(SaveAsync));
+  // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
 
-  /// <summary>DB에서 WaferInfo 목록을 새로고침한다.</summary>
-  [RelayCommand]
-  private async Task RefreshListAsync() => await Execute(async () =>
-  {
-    var list = await _repository.ListAsync();
-    WaferInfoList.Clear();
-    foreach (var item in list)
-      WaferInfoList.Add(item);
-  }, nameof(RefreshListAsync));
-
-  /// <summary>선택된 WaferInfo를 폼에 채운다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedWaferInfo))]
-  private void LoadSelected() => Execute(() =>
-  {
-    ApplyToForm(SelectedWaferInfo!);
-    SavedSummary = BuildSummary(SelectedWaferInfo!);
-  }, nameof(LoadSelected));
-
-  /// <summary>선택된 WaferInfo를 DB에서 삭제한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedWaferInfo))]
-  private async Task DeleteSelectedAsync() => await Execute(async () =>
-  {
-    var toDelete = SelectedWaferInfo!;
-    await _repository.DeleteAsync(toDelete.WaferId);
-    SelectedWaferInfo = null;
-    await RefreshListAsync();
-  }, nameof(DeleteSelectedAsync));
-
-  // ── CanExecute 헬퍼 ───────────────────────────────────────────────────
-
-  private bool HasSelectedWaferInfo => SelectedWaferInfo is not null;
+  private bool HasSelectedItem => SelectedItem is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
@@ -174,6 +194,11 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
     ProcessStep      = info.ProcessStep;
   }
 
-  private static string BuildSummary(WaferInfo info) =>
-      $"{info.WaferId} | {info.WaferType} | Die {info.DieSize.WidthUm:0}×{info.DieSize.HeightUm:0} µm";
+  private WaferInfoRow? FindById(long id)
+  {
+    foreach (var item in Items)
+      if (item.Id == id)
+        return item;
+    return null;
+  }
 }

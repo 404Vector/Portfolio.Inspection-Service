@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Core.Models;
 using InspectionClient.Interfaces;
+using InspectionClient.Models;
 using InspectionClient.Services;
 using InspectionRecipe.Models;
-using Microsoft.Data.Sqlite;
 
 namespace InspectionClient.Repositories;
 
@@ -19,66 +20,95 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     _db = db;
   }
 
-  public async Task SaveAsync(WaferSurfaceInspectionRecipe recipe, CancellationToken ct = default)
+  public async Task<RecipeRow> CreateAsync(string name, CancellationToken ct = default)
   {
-    ArgumentNullException.ThrowIfNull(recipe);
+    ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+    var recipe    = new WaferSurfaceInspectionRecipe(
+      RecipeName: name,
+      Description: string.Empty,
+      Wafer: WaferInfo.CreateDummy(),
+      Fov: new FovSize(1413.0, 1035.0));
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
+    var json      = JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default);
+
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO Recipe (RecipeName, WaferId, CreatedAt, Json)
-      VALUES ($recipeName, $waferId, $createdAt, $json)
-      ON CONFLICT(RecipeName) DO UPDATE SET
-        WaferId   = excluded.WaferId,
-        CreatedAt = excluded.CreatedAt,
-        Json      = excluded.Json
+      INSERT INTO Recipe (Name, WaferId, CreatedAt, Json)
+      VALUES ($name, $waferId, $createdAt, $json)
+      RETURNING Id
       """;
-    cmd.Parameters.AddWithValue("$recipeName", recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",    recipe.Wafer.WaferId);
-    cmd.Parameters.AddWithValue("$createdAt",  createdAt);
-    cmd.Parameters.AddWithValue("$json",       JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default));
-    await cmd.ExecuteNonQueryAsync(ct);
+    cmd.Parameters.AddWithValue("$name",      name);
+    cmd.Parameters.AddWithValue("$waferId",   recipe.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$createdAt", createdAt);
+    cmd.Parameters.AddWithValue("$json",      json);
+
+    var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
+    return new RecipeRow(id, name, recipe);
   }
 
-  public async Task<WaferSurfaceInspectionRecipe?> FindAsync(string recipeName, CancellationToken ct = default)
+  public async Task<RecipeRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(recipeName);
-
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Json FROM Recipe WHERE RecipeName = $recipeName";
-    cmd.Parameters.AddWithValue("$recipeName", recipeName);
+    cmd.CommandText = "SELECT Id, Name, Json FROM Recipe WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
 
-    var json = await cmd.ExecuteScalarAsync(ct) as string;
-    if (json is null)
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    if (!await reader.ReadAsync(ct))
       return null;
 
-    return JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(json, RepositoryJsonOptions.Default);
+    return ReadRow(reader);
   }
 
-  public async Task<IReadOnlyList<WaferSurfaceInspectionRecipe>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<RecipeRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Json FROM Recipe ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Name, Json FROM Recipe ORDER BY CreatedAt DESC";
 
-    var list = new List<WaferSurfaceInspectionRecipe>();
+    var list = new List<RecipeRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
     while (await reader.ReadAsync(ct))
-    {
-      var item = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(0), RepositoryJsonOptions.Default);
-      if (item is not null)
-        list.Add(item);
-    }
+      list.Add(ReadRow(reader));
 
     return list;
   }
 
-  public async Task DeleteAsync(string recipeName, CancellationToken ct = default)
+  public async Task UpdateAsync(RecipeRow item, CancellationToken ct = default)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(recipeName);
+    ArgumentNullException.ThrowIfNull(item);
+
+    var createdAt = DateTimeOffset.UtcNow.ToString("O");
+    var json      = JsonSerializer.Serialize(item.Recipe, RepositoryJsonOptions.Default);
 
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "DELETE FROM Recipe WHERE RecipeName = $recipeName";
-    cmd.Parameters.AddWithValue("$recipeName", recipeName);
+    cmd.CommandText = """
+      UPDATE Recipe
+      SET Name = $name, WaferId = $waferId, CreatedAt = $createdAt, Json = $json
+      WHERE Id = $id
+      """;
+    cmd.Parameters.AddWithValue("$id",        item.Id);
+    cmd.Parameters.AddWithValue("$name",      item.Name);
+    cmd.Parameters.AddWithValue("$waferId",   item.Recipe.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$createdAt", createdAt);
+    cmd.Parameters.AddWithValue("$json",      json);
     await cmd.ExecuteNonQueryAsync(ct);
+  }
+
+  public async Task DeleteAsync(long id, CancellationToken ct = default)
+  {
+    await using var cmd = _db.Connection.CreateCommand();
+    cmd.CommandText = "DELETE FROM Recipe WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
+    await cmd.ExecuteNonQueryAsync(ct);
+  }
+
+  // ── 헬퍼 ─────────────────────────────────────────────────────────────────
+
+  private static RecipeRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
+  {
+    var id     = reader.GetInt64(0);
+    var name   = reader.GetString(1);
+    var recipe = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(2), RepositoryJsonOptions.Default);
+    return new RecipeRow(id, name, recipe!);
   }
 }
