@@ -201,5 +201,6 @@ public partial class DbTableControl : UserControl
   {
     BrowsePanel.IsVisible = !isLoaded;
     EditPanel.IsVisible   =  isLoaded;
+    ItemListBox.IsEnabled = !isLoaded;
   }
 }

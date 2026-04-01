@@ -44,7 +44,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     cmd.Parameters.AddWithValue("$json",      json);
 
     var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
-    return new RecipeRow(id, name, recipe);
+    return new RecipeRow { Id = id, Name = name, Recipe = recipe };
   }
 
   public async Task<RecipeRow?> FindByIdAsync(long id, CancellationToken ct = default)
@@ -109,6 +109,6 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     var id     = reader.GetInt64(0);
     var name   = reader.GetString(1);
     var recipe = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(2), RepositoryJsonOptions.Default);
-    return new RecipeRow(id, name, recipe!);
+    return new RecipeRow { Id = id, Name = name, Recipe = recipe! };
   }
 }

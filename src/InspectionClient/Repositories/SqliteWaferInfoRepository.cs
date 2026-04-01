@@ -28,8 +28,8 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO WaferInfo (Name, WaferType, CreatedAt, Json)
-      VALUES ($name, $waferType, $createdAt, $json)
+      INSERT INTO WaferInfo (Name, WaferType, CreatedAt, DieParametersId, Json)
+      VALUES ($name, $waferType, $createdAt, NULL, $json)
       RETURNING Id
       """;
     cmd.Parameters.AddWithValue("$name",      name);
@@ -37,14 +37,16 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
     cmd.Parameters.AddWithValue("$createdAt", info.CreatedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$json",      json);
 
-    var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
-    return new WaferInfoRow(id, name, info);
+    var id  = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
+    var row = new WaferInfoRow { Id = id, Name = name };
+    row.LoadFrom(info);
+    return row;
   }
 
   public async Task<WaferInfoRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, Json FROM WaferInfo WHERE Id = $id";
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo WHERE Id = $id";
     cmd.Parameters.AddWithValue("$id", id);
 
     await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -57,7 +59,7 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
   public async Task<IReadOnlyList<WaferInfoRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, Json FROM WaferInfo ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo ORDER BY CreatedAt DESC";
 
     var list = new List<WaferInfoRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -71,19 +73,24 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
   {
     ArgumentNullException.ThrowIfNull(item);
 
-    var json = JsonSerializer.Serialize(item.Info, RepositoryJsonOptions.Default);
+    var info = item.ToWaferInfo();
+    var json = JsonSerializer.Serialize(info, RepositoryJsonOptions.Default);
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       UPDATE WaferInfo
-      SET Name = $name, WaferType = $waferType, CreatedAt = $createdAt, Json = $json
+      SET Name = $name, WaferType = $waferType, CreatedAt = $createdAt,
+          DieParametersId = $dieParamsId, Json = $json
       WHERE Id = $id
       """;
-    cmd.Parameters.AddWithValue("$id",        item.Id);
-    cmd.Parameters.AddWithValue("$name",      item.Name);
-    cmd.Parameters.AddWithValue("$waferType", item.Info.WaferType.ToString());
-    cmd.Parameters.AddWithValue("$createdAt", item.Info.CreatedAt.ToString("O"));
-    cmd.Parameters.AddWithValue("$json",      json);
+    cmd.Parameters.AddWithValue("$id",          item.Id);
+    cmd.Parameters.AddWithValue("$name",        item.Name);
+    cmd.Parameters.AddWithValue("$waferType",   info.WaferType.ToString());
+    cmd.Parameters.AddWithValue("$createdAt",   info.CreatedAt.ToString("O"));
+    cmd.Parameters.AddWithValue("$dieParamsId", item.DieParametersId.HasValue
+        ? (object)item.DieParametersId.Value
+        : DBNull.Value);
+    cmd.Parameters.AddWithValue("$json",        json);
     await cmd.ExecuteNonQueryAsync(ct);
   }
 
@@ -99,9 +106,12 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
 
   private static WaferInfoRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
   {
-    var id   = reader.GetInt64(0);
-    var name = reader.GetString(1);
-    var info = JsonSerializer.Deserialize<WaferInfo>(reader.GetString(2), RepositoryJsonOptions.Default);
-    return new WaferInfoRow(id, name, info!);
+    var id          = reader.GetInt64(0);
+    var name        = reader.GetString(1);
+    var dieParamsId = reader.IsDBNull(2) ? (long?)null : reader.GetInt64(2);
+    var info        = JsonSerializer.Deserialize<WaferInfo>(reader.GetString(3), RepositoryJsonOptions.Default)!;
+    var row         = new WaferInfoRow { Id = id, Name = name, DieParametersId = dieParamsId };
+    row.LoadFrom(info);
+    return row;
   }
 }

@@ -36,7 +36,7 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
     cmd.Parameters.AddWithValue("$json", json);
 
     var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
-    return new DieParametersRow(id, name, defaults);
+    return new DieParametersRow { Id = id, Name = name, Parameters = defaults };
   }
 
   public async Task<DieParametersRow?> FindByIdAsync(long id, CancellationToken ct = default)
@@ -98,7 +98,7 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
     var id   = reader.GetInt64(0);
     var name = reader.GetString(1);
     var dto  = JsonSerializer.Deserialize<ParametersDto>(reader.GetString(2), RepositoryJsonOptions.Default);
-    return new DieParametersRow(id, name, dto?.ToParameters() ?? new DieRenderingParameters());
+    return new DieParametersRow { Id = id, Name = name, Parameters = dto?.ToParameters() ?? new DieRenderingParameters() };
   }
 
   private static string Serialize(DieRenderingParameters p) =>

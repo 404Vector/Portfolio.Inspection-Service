@@ -32,8 +32,8 @@
                          Foreground="{DynamicResource TextMuted}">
                 <TextBlock.Text>
                   <MultiBinding StringFormat="{}{0} | {1}">
-                    <Binding Path="Info.WaferType" />
-                    <Binding Path="Info.LotId" />
+                    <Binding Path="WaferType" />
+                    <Binding Path="LotId" />
                   </MultiBinding>
                 </TextBlock.Text>
               </TextBlock>

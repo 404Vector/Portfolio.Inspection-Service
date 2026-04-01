@@ -15,7 +15,7 @@ namespace InspectionClient.Services;
 public sealed class InspectionDatabase : IDisposable
 {
   // 스키마 변경 시 이 값을 증가시키면 다음 실행 시 DB가 자동으로 재생성됩니다.
-  private const int SchemaVersion = 3;
+  private const int SchemaVersion = 4;
 
   private SqliteConnection _connection;
 
@@ -76,11 +76,12 @@ public sealed class InspectionDatabase : IDisposable
     // Microsoft.Data.Sqlite는 단일 명령어만 지원하므로 각 DDL을 개별 실행합니다.
     ExecuteNonQuery("""
       CREATE TABLE IF NOT EXISTS WaferInfo (
-        Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        Name      TEXT    NOT NULL UNIQUE,
-        WaferType TEXT    NOT NULL,
-        CreatedAt TEXT    NOT NULL,
-        Json      TEXT    NOT NULL
+        Id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name            TEXT    NOT NULL UNIQUE,
+        WaferType       TEXT    NOT NULL,
+        CreatedAt       TEXT    NOT NULL,
+        DieParametersId INTEGER REFERENCES DieRenderingParameters(Id) ON DELETE SET NULL,
+        Json            TEXT    NOT NULL
       )
       """);
 

@@ -123,12 +123,8 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   {
     if (LoadedItem is not RecipeRow current)
       return;
-    var updated = current with { Recipe = BuildRecipe() };
-    await _repository.UpdateAsync(updated);
-    var idx = Items.IndexOf(current);
-    if (idx >= 0)
-      Items[idx] = updated;
-    SelectedItem = updated;
+    current.Recipe = BuildRecipe();
+    await _repository.UpdateAsync(current);
     // DbTableControl이 Save 클릭 시 LoadedItem을 null로 초기화한다.
   }, nameof(SaveAsync));
 
@@ -154,7 +150,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   private void SelectWaferInfo() => Execute(() =>
   {
     if (WaferTableVm.SelectedItem is WaferInfoRow row)
-      SetLoadedWafer(row.Info);
+      SetLoadedWafer(row.ToWaferInfo());
   }, nameof(SelectWaferInfo));
 
   private bool HasSelectedWaferRow => WaferTableVm.SelectedItem is not null;
@@ -173,7 +169,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   // ── 이벤트 핸들러 ────────────────────────────────────────────────────
 
   private void OnWaferSelected(object? sender, WaferInfoRow row) =>
-      SetLoadedWafer(row.Info);
+      SetLoadedWafer(row.ToWaferInfo());
 
   // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
 
