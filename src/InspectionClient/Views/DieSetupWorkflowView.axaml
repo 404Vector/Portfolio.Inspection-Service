@@ -61,9 +61,8 @@
             Background="{DynamicResource BgSurface}"
             BorderBrush="{DynamicResource BorderSubtle}"
             BorderThickness="1,0,0,0">
-      <ScrollViewer Padding="16,12"
-                    VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="12">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12" Margin="16,12">
 
           <!-- 섹션: Canvas -->
           <TextBlock Text="CANVAS"

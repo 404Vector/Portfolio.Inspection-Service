@@ -12,83 +12,36 @@
 
   <Grid ColumnDefinitions="240,1,*">
 
-    <!-- ── 좌측: 목록 패널 ────────────────────────────────────────────── -->
-    <DockPanel Grid.Column="0">
-
-      <!-- WaferInfo 목록 (선택 전용) -->
-      <controls:DbTableControl DockPanel.Dock="Top"
-                               Height="240"
-                               Header="WAFER LIST"
-                               ItemsSource="{Binding WaferTableVm.Items}"
-                               SelectedItem="{Binding WaferTableVm.SelectedItem}"
-                               LoadCommand="{Binding WaferTableVm.LoadCommand}"
-                               RefreshCommand="{Binding WaferTableVm.RefreshCommand}">
-        <controls:DbTableControl.ItemTemplate>
-          <DataTemplate x:DataType="models:WaferInfoRow">
-            <StackPanel Spacing="2" Margin="4,4">
-              <TextBlock Text="{Binding Name}"
-                         FontSize="12" FontWeight="SemiBold" />
-              <TextBlock FontSize="10"
-                         Foreground="{DynamicResource TextMuted}">
-                <TextBlock.Text>
-                  <MultiBinding StringFormat="{}{0} | {1}">
-                    <Binding Path="WaferType" />
-                    <Binding Path="LotId" />
-                  </MultiBinding>
-                </TextBlock.Text>
-              </TextBlock>
-            </StackPanel>
-          </DataTemplate>
-        </controls:DbTableControl.ItemTemplate>
-      </controls:DbTableControl>
-
-      <!-- Wafer 선택 버튼 -->
-      <Border DockPanel.Dock="Top"
-              Padding="8,8"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,1,0,1">
-        <Button HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center"
-                Command="{Binding SelectWaferInfoCommand}"
-                ToolTip.Tip="선택한 Wafer를 Recipe에 연결">
-          <StackPanel Orientation="Horizontal" Spacing="4">
-            <mi:MaterialIcon Kind="LinkVariant" Width="12" Height="12" />
-            <TextBlock Text="Wafer 선택" FontSize="11" />
+    <!-- ── 좌측: Recipe 목록 패널 ──────────────────────────────────────── -->
+    <controls:DbTableControl Grid.Column="0"
+                             Header="RECIPE LIST"
+                             ItemsSource="{Binding Items}"
+                             SelectedItem="{Binding SelectedItem}"
+                             LoadedItem="{Binding LoadedItem, Mode=TwoWay}"
+                             LoadCommand="{Binding LoadCommand}"
+                             CreateCommand="{Binding CreateCommand}"
+                             DeleteCommand="{Binding DeleteCommand}"
+                             SaveCommand="{Binding SaveCommand}"
+                             CancelCommand="{Binding CancelCommand}"
+                             RefreshCommand="{Binding RefreshCommand}">
+      <controls:DbTableControl.ItemTemplate>
+        <DataTemplate x:DataType="models:RecipeRow">
+          <StackPanel Spacing="2" Margin="4,4">
+            <TextBlock Text="{Binding Name}"
+                       FontSize="12" FontWeight="SemiBold" />
+            <TextBlock FontSize="10"
+                       Foreground="{DynamicResource TextMuted}">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
+                  <Binding Path="Recipe.Fov.WidthUm" />
+                  <Binding Path="Recipe.Fov.HeightUm" />
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
           </StackPanel>
-        </Button>
-      </Border>
-
-      <!-- Recipe 목록 -->
-      <controls:DbTableControl Header="RECIPE LIST"
-                               ItemsSource="{Binding Items}"
-                               SelectedItem="{Binding SelectedItem}"
-                               LoadedItem="{Binding LoadedItem, Mode=TwoWay}"
-                               LoadCommand="{Binding LoadCommand}"
-                               CreateCommand="{Binding CreateCommand}"
-                               DeleteCommand="{Binding DeleteCommand}"
-                               SaveCommand="{Binding SaveCommand}"
-                               CancelCommand="{Binding CancelCommand}"
-                               RefreshCommand="{Binding RefreshCommand}">
-        <controls:DbTableControl.ItemTemplate>
-          <DataTemplate x:DataType="models:RecipeRow">
-            <StackPanel Spacing="2" Margin="4,4">
-              <TextBlock Text="{Binding Name}"
-                         FontSize="12" FontWeight="SemiBold" />
-              <TextBlock FontSize="10"
-                         Foreground="{DynamicResource TextMuted}">
-                <TextBlock.Text>
-                  <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
-                    <Binding Path="Recipe.Fov.WidthUm" />
-                    <Binding Path="Recipe.Fov.HeightUm" />
-                  </MultiBinding>
-                </TextBlock.Text>
-              </TextBlock>
-            </StackPanel>
-          </DataTemplate>
-        </controls:DbTableControl.ItemTemplate>
-      </controls:DbTableControl>
-
-    </DockPanel>
+        </DataTemplate>
+      </controls:DbTableControl.ItemTemplate>
+    </controls:DbTableControl>
 
     <!-- 구분선 -->
     <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
@@ -96,26 +49,9 @@
     <!-- ── 우측: 파라미터 폼 ──────────────────────────────────────────── -->
     <ScrollViewer Grid.Column="2"
                   IsEnabled="{Binding LoadedItem, Converter={x:Static ObjectConverters.IsNotNull}}"
-                  Padding="24,16"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-      <StackPanel MaxWidth="640" Spacing="20">
-
-        <!-- 섹션: Wafer Info -->
-        <StackPanel Spacing="8">
-          <TextBlock Text="WAFER INFO"
-                     FontSize="10" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextMuted}" />
-          <Border Background="{DynamicResource BgSurface}"
-                  BorderBrush="{DynamicResource BorderSubtle}"
-                  BorderThickness="1" CornerRadius="4" Padding="12,8">
-            <TextBlock Text="{Binding WaferSummary}"
-                       FontSize="12"
-                       Foreground="{DynamicResource TextSecondary}" />
-          </Border>
-        </StackPanel>
-
-        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+      <StackPanel MaxWidth="640" Spacing="20" Margin="24,16">
 
         <!-- 섹션: Recipe Identity -->
         <TextBlock Text="RECIPE"
