@@ -184,7 +184,7 @@
           <!-- 섹션: Offsets -->
           <TextBlock Text="OFFSETS" Classes="section-header" />
 
-          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Die Offset X (μm)" Classes="form-label" />
             <NumericUpDown Grid.Row="0" Grid.Column="1"
                            Value="{Binding LoadedItem.DieOffsetXum}"
@@ -198,18 +198,11 @@
                            Minimum="-100000" Maximum="100000" Increment="100" FormatString="0.##"
                            Classes="form-input" Margin="0,8,0,0" />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Wafer Offset X (μm)"
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Edge Offset (μm)"
                        Classes="form-label" Margin="0,8,0,0" />
             <NumericUpDown Grid.Row="2" Grid.Column="1"
-                           Value="{Binding LoadedItem.WaferOffsetXum}"
-                           Minimum="-10000" Maximum="10000" Increment="10" FormatString="0.##"
-                           Classes="form-input" Margin="0,8,0,0" />
-
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Wafer Offset Y (μm)"
-                       Classes="form-label" Margin="0,8,0,0" />
-            <NumericUpDown Grid.Row="3" Grid.Column="1"
-                           Value="{Binding LoadedItem.WaferOffsetYum}"
-                           Minimum="-10000" Maximum="10000" Increment="10" FormatString="0.##"
+                           Value="{Binding LoadedItem.EdgeOffsetUm}"
+                           Minimum="0" Maximum="50000" Increment="100" FormatString="0.##"
                            Classes="form-input" Margin="0,8,0,0" />
           </Grid>
 

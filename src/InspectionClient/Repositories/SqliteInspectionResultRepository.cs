@@ -33,7 +33,7 @@ public sealed class SqliteInspectionResultRepository : IInspectionResultReposito
       """;
     cmd.Parameters.AddWithValue("$resultId",    resultId);
     cmd.Parameters.AddWithValue("$recipeName",  result.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",     result.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",     result.WaferId);
     cmd.Parameters.AddWithValue("$status",      result.Status.ToString());
     cmd.Parameters.AddWithValue("$startedAt",   result.StartedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$completedAt", result.CompletedAt.ToString("O"));

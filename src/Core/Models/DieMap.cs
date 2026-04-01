@@ -5,8 +5,8 @@ namespace Core.Models;
 /// Die 유효성 판정은 Die 중심이 웨이퍼 원 안에 있는지를 기준으로 합니다.
 /// </summary>
 public record DieMap {
-  /// <summary>이 DieMap이 파생된 웨이퍼 정보</summary>
-  public WaferInfo Wafer { get; }
+  /// <summary>웨이퍼 반지름 (µm). 렌더링 및 스캔 범위 계산에 사용됩니다.</summary>
+  public double RadiusUm { get; }
 
   /// <summary>
   /// 유효 Die 목록. DieIndex(Col, Row)로 조회 가능합니다.
@@ -17,9 +17,9 @@ public record DieMap {
   /// <summary>유효 Die 총 개수</summary>
   public int DieCount => Dies.Count;
 
-  private DieMap(WaferInfo wafer, IReadOnlyList<DieRegion> dies) {
-    Wafer = wafer;
-    Dies  = dies;
+  private DieMap(double radiusUm, IReadOnlyList<DieRegion> dies) {
+    RadiusUm = radiusUm;
+    Dies     = dies;
   }
 
   /// <summary>
@@ -64,7 +64,7 @@ public record DieMap {
       }
     }
 
-    return new DieMap(wafer, dies.AsReadOnly());
+    return new DieMap(radiusUm, dies.AsReadOnly());
   }
 
   /// <summary>

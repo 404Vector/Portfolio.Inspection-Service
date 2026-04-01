@@ -45,11 +45,10 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
 
   public WaferInfoListViewModel WaferTableVm { get; }
 
-  // ── 로드된 WaferInfo ──────────────────────────────────────────────────
+  // ── 선택된 WaferInfo ──────────────────────────────────────────────────
 
-  private WaferInfo? _loadedWaferInfo;
-
-  [ObservableProperty] private string _waferSummary = "(없음)";
+  [ObservableProperty] private string _selectedWaferId = string.Empty;
+  [ObservableProperty] private string _waferSummary    = "(없음)";
 
   // ── Recipe 파라미터 편집 버퍼 ─────────────────────────────────────────
 
@@ -93,7 +92,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   {
     if (SelectedItem is not RecipeRow row)
       return;
-    SetLoadedWafer(row.Recipe.Wafer);
+    SetSelectedWafer(row.Recipe.WaferId, waferSummary: null);
     ApplyToForm(row.Recipe);
     // DbTableControl이 LoadedItem을 SelectedItem으로 set한다.
     // ViewModel은 TwoWay 바인딩으로 동기화만 수행한다.
@@ -150,7 +149,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   private void SelectWaferInfo() => Execute(() =>
   {
     if (WaferTableVm.SelectedItem is WaferInfoRow row)
-      SetLoadedWafer(row.ToWaferInfo());
+      SetSelectedWafer(row.WaferId, $"{row.WaferId} | {row.WaferType} | Die {row.DieSizeWidthUm:0}×{row.DieSizeHeightUm:0} µm");
   }, nameof(SelectWaferInfo));
 
   private bool HasSelectedWaferRow => WaferTableVm.SelectedItem is not null;
@@ -169,7 +168,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   // ── 이벤트 핸들러 ────────────────────────────────────────────────────
 
   private void OnWaferSelected(object? sender, WaferInfoRow row) =>
-      SetLoadedWafer(row.ToWaferInfo());
+      SetSelectedWafer(row.WaferId, $"{row.WaferId} | {row.WaferType} | Die {row.DieSizeWidthUm:0}×{row.DieSizeHeightUm:0} µm");
 
   // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
 
@@ -177,16 +176,16 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
-  private void SetLoadedWafer(WaferInfo info)
+  private void SetSelectedWafer(string waferId, string? waferSummary)
   {
-    _loadedWaferInfo = info;
-    WaferSummary = $"{info.WaferId} | {info.WaferType} | Die {info.DieSize.WidthUm:0}×{info.DieSize.HeightUm:0} µm";
+    SelectedWaferId = waferId;
+    WaferSummary    = waferSummary ?? (string.IsNullOrEmpty(waferId) ? "(없음)" : waferId);
   }
 
   private WaferSurfaceInspectionRecipe BuildRecipe() => new(
     RecipeName:      RecipeName,
     Description:     Description,
-    Wafer:           _loadedWaferInfo ?? WaferInfo.CreateDummy(),
+    WaferId:         SelectedWaferId,
     Fov:             new FovSize(FovWidthUm, FovHeightUm),
     OverlapXum:      OverlapXum,
     OverlapYum:      OverlapYum,
@@ -198,6 +197,7 @@ public partial class RecipeSetupWorkflowViewModel : ViewModelBase
   {
     RecipeName      = recipe.RecipeName;
     Description     = recipe.Description;
+    SetSelectedWafer(recipe.WaferId, waferSummary: null);
     FovWidthUm      = recipe.Fov.WidthUm;
     FovHeightUm     = recipe.Fov.HeightUm;
     OverlapXum      = recipe.OverlapXum;

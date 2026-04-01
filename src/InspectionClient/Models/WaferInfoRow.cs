@@ -27,8 +27,7 @@ public sealed class WaferInfoRow : ObservableObject
   private double           _dieSizeHeightUm  = 10_000.0;
   private double           _dieOffsetXum     = 0.0;
   private double           _dieOffsetYum     = 0.0;
-  private double           _waferOffsetXum   = 0.0;
-  private double           _waferOffsetYum   = 0.0;
+  private double           _edgeOffsetUm     = 3_000.0;
   private string           _processStep      = "Unknown";
 
   public string           WaferId          { get => _waferId;          set => SetProperty(ref _waferId,          value); }
@@ -42,8 +41,7 @@ public sealed class WaferInfoRow : ObservableObject
   public double           DieSizeHeightUm  { get => _dieSizeHeightUm;  set => SetProperty(ref _dieSizeHeightUm,  value); }
   public double           DieOffsetXum     { get => _dieOffsetXum;     set => SetProperty(ref _dieOffsetXum,     value); }
   public double           DieOffsetYum     { get => _dieOffsetYum;     set => SetProperty(ref _dieOffsetYum,     value); }
-  public double           WaferOffsetXum   { get => _waferOffsetXum;   set => SetProperty(ref _waferOffsetXum,   value); }
-  public double           WaferOffsetYum   { get => _waferOffsetYum;   set => SetProperty(ref _waferOffsetYum,   value); }
+  public double           EdgeOffsetUm     { get => _edgeOffsetUm;     set => SetProperty(ref _edgeOffsetUm,     value); }
   public string           ProcessStep      { get => _processStep;      set => SetProperty(ref _processStep,      value); }
 
   public long? DieParametersId { get; set; }
@@ -60,7 +58,7 @@ public sealed class WaferInfoRow : ObservableObject
     CoordinateOrigin: WaferCoordinate.Origin,
     DieSize:          new DieSize(DieSizeWidthUm, DieSizeHeightUm),
     DieOffset:        new WaferCoordinate(DieOffsetXum, DieOffsetYum),
-    WaferOffset:      new WaferCoordinate(WaferOffsetXum, WaferOffsetYum),
+    EdgeOffsetUm:     EdgeOffsetUm,
     ProcessStep:      ProcessStep,
     CreatedAt:        DateTimeOffset.UtcNow
   );
@@ -79,8 +77,7 @@ public sealed class WaferInfoRow : ObservableObject
     DieSizeHeightUm  = info.DieSize.HeightUm;
     DieOffsetXum     = info.DieOffset.Xum;
     DieOffsetYum     = info.DieOffset.Yum;
-    WaferOffsetXum   = info.WaferOffset.Xum;
-    WaferOffsetYum   = info.WaferOffset.Yum;
+    EdgeOffsetUm     = info.EdgeOffsetUm;
     ProcessStep      = info.ProcessStep;
   }
 }

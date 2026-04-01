@@ -94,6 +94,21 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
     await cmd.ExecuteNonQueryAsync(ct);
   }
 
+  public async Task<WaferInfoRow?> FindByWaferIdAsync(string waferId, CancellationToken ct = default)
+  {
+    ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
+
+    await using var cmd = _db.Connection.CreateCommand();
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo WHERE json_extract(Json, '$.WaferId') = $waferId LIMIT 1";
+    cmd.Parameters.AddWithValue("$waferId", waferId);
+
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    if (!await reader.ReadAsync(ct))
+      return null;
+
+    return ReadRow(reader);
+  }
+
   public async Task DeleteAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();

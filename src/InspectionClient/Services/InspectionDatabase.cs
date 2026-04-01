@@ -212,12 +212,12 @@ public sealed class InspectionDatabase : IDisposable
 
   private void SeedRecipe(SqliteTransaction tx)
   {
-    var wafer  = Core.Models.WaferInfo.CreateDummy();
+    var dummy  = Core.Models.WaferInfo.CreateDummy();
     var recipe = new InspectionRecipe.Models.WaferSurfaceInspectionRecipe(
-      RecipeName:      "SEED-RECIPE",
-      Description:     "Seed dummy recipe",
-      Wafer:           wafer,
-      Fov:             new Core.Models.FovSize(1413.0, 1035.0)
+      RecipeName:  "SEED-RECIPE",
+      Description: "Seed dummy recipe",
+      WaferId:     dummy.WaferId,
+      Fov:         new Core.Models.FovSize(1413.0, 1035.0)
     );
     var json      = Serialize(recipe);
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
@@ -229,7 +229,7 @@ public sealed class InspectionDatabase : IDisposable
       VALUES ($name, $waferId, $createdAt, $json)
       """;
     cmd.Parameters.AddWithValue("$name",      recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",   recipe.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
     cmd.ExecuteNonQuery();
@@ -241,7 +241,7 @@ public sealed class InspectionDatabase : IDisposable
     var startedAt = DateTimeOffset.UtcNow;
     var result    = new Core.Models.WaferSurfaceInspectionResult(
       RecipeName:   "SEED-RECIPE",
-      Wafer:        Core.Models.WaferInfo.CreateDummy(),
+      WaferId:      Core.Models.WaferInfo.CreateDummy().WaferId,
       Status:       Core.Enums.InspectionStatus.Pass,
       StartedAt:    startedAt,
       CompletedAt:  startedAt.AddSeconds(1),
@@ -259,7 +259,7 @@ public sealed class InspectionDatabase : IDisposable
       """;
     cmd.Parameters.AddWithValue("$resultId",   resultId);
     cmd.Parameters.AddWithValue("$recipeName", result.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",    result.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",    result.WaferId);
     cmd.Parameters.AddWithValue("$status",     result.Status.ToString());
     cmd.Parameters.AddWithValue("$startedAt",  result.StartedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$completedAt",result.CompletedAt.ToString("O"));

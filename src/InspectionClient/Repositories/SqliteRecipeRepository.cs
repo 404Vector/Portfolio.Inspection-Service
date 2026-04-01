@@ -25,10 +25,10 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
     var recipe    = new WaferSurfaceInspectionRecipe(
-      RecipeName: name,
+      RecipeName:  name,
       Description: string.Empty,
-      Wafer: WaferInfo.CreateDummy(),
-      Fov: new FovSize(1413.0, 1035.0));
+      WaferId:     string.Empty,
+      Fov:         new FovSize(1413.0, 1035.0));
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
     var json      = JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default);
 
@@ -39,7 +39,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
       RETURNING Id
       """;
     cmd.Parameters.AddWithValue("$name",      name);
-    cmd.Parameters.AddWithValue("$waferId",   recipe.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
 
@@ -88,7 +88,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
       """;
     cmd.Parameters.AddWithValue("$id",        item.Id);
     cmd.Parameters.AddWithValue("$name",      item.Name);
-    cmd.Parameters.AddWithValue("$waferId",   item.Recipe.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",   item.Recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
     await cmd.ExecuteNonQueryAsync(ct);
