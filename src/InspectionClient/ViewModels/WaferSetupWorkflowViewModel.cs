@@ -144,7 +144,7 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
       return;
     current.DieParametersId = SelectedDieParameters?.Id;
     await _repository.UpdateAsync(current);
-    // DbTableControl이 Save 클릭 시 LoadedItem을 null로 초기화한다.
+    LoadedItem = null;
   }, nameof(SaveAsync));
 
   [RelayCommand]
@@ -160,7 +160,7 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
         Items[idx] = restored;
       SelectedItem = restored;
     }
-    // DbTableControl이 Cancel 클릭 시 LoadedItem을 null로 초기화한다.
+    LoadedItem = null;
   }, nameof(CancelAsync));
 
   // ── 보조편집패널 커맨드 ──────────────────────────────────────────────

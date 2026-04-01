@@ -115,7 +115,7 @@ public sealed partial class DieSetupWorkflowViewModel : ViewModelBase
     if (LoadedItem is not DieParametersRow current)
       return;
     await _repository.UpdateAsync(current);
-    // DbTableControl이 Save 클릭 시 LoadedItem을 null로 초기화한다.
+    LoadedItem = null;
   }, nameof(SaveAsync));
 
   [RelayCommand]
@@ -131,7 +131,7 @@ public sealed partial class DieSetupWorkflowViewModel : ViewModelBase
         Items[idx] = restored;
       SelectedItem = restored;
     }
-    // DbTableControl이 Cancel 클릭 시 LoadedItem을 null로 초기화한다.
+    LoadedItem = null;
   }, nameof(CancelAsync));
 
   private bool HasSelectedItem => SelectedItem is not null;

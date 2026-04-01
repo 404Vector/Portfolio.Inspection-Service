@@ -59,7 +59,7 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
   public async Task<IReadOnlyList<WaferInfoRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo ORDER BY Id DESC";
 
     var list = new List<WaferInfoRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);

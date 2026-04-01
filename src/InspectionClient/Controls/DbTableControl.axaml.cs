@@ -16,9 +16,9 @@ namespace InspectionClient.Controls;
 ///   LoadedItem!=null → Edit   패널 (Save / Cancel)
 ///
 /// 책임 경계:
-///   - 컨트롤: LoadedItem 관리(Load 시 set, Save/Cancel 후 null), 패널 전환
+///   - 컨트롤: LoadedItem 관리(Load 시 set), 패널 전환
 ///             Load/Delete 버튼 활성화 (SelectedItem != null 여부)
-///   - ViewModel: SaveCommand/CancelCommand를 통한 실제 데이터 변경
+///   - ViewModel: SaveCommand/CancelCommand를 통한 실제 데이터 변경 및 완료 후 LoadedItem=null 설정
 /// </summary>
 public partial class DbTableControl : UserControl
 {
@@ -151,11 +151,9 @@ public partial class DbTableControl : UserControl
       DeleteCommand.Execute(SelectedItem);
   }
 
-  private void OnSaveClicked  (object? sender, RoutedEventArgs e) =>
-      SetCurrentValue(LoadedItemProperty, null);
+  private void OnSaveClicked  (object? sender, RoutedEventArgs e) { }
 
-  private void OnCancelClicked(object? sender, RoutedEventArgs e) =>
-      SetCurrentValue(LoadedItemProperty, null);
+  private void OnCancelClicked(object? sender, RoutedEventArgs e) { }
 
   // ── 내부 로직 ─────────────────────────────────────────────────────────
 

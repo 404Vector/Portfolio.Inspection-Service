@@ -55,7 +55,7 @@ public sealed class SqliteDieRenderingParametersRepository : IDieRenderingParame
   public async Task<IReadOnlyList<DieParametersRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, Json FROM DieRenderingParameters ORDER BY Name ASC";
+    cmd.CommandText = "SELECT Id, Name, Json FROM DieRenderingParameters ORDER BY Id DESC";
 
     var list = new List<DieParametersRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
