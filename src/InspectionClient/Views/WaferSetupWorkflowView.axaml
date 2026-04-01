@@ -149,16 +149,34 @@
           <!-- 섹션: Die Size -->
           <TextBlock Text="DIE SIZE" Classes="section-header" />
 
-          <Grid ColumnDefinitions="160,*,Auto">
-            <TextBlock Grid.Column="0" Text="Die Parameters" Classes="form-label" />
-            <Border    Grid.Column="1" Classes="value-display">
-              <TextBlock Text="{Binding SelectedDieParametersLabel}" Classes="value-text" />
+          <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto">
+
+            <!-- Target Die ID -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Target Die ID" Classes="form-label" />
+            <Border    Grid.Row="0" Grid.Column="1" Classes="value-display">
+              <TextBlock Text="{Binding LoadedItem.DieParametersId}"
+                         Classes="value-text" />
             </Border>
-            <Button    Grid.Column="2"
+            <Button    Grid.Row="0" Grid.Column="2"
                        Command="{Binding OpenDieParametersPanelCommand}"
-                       Classes="edit-btn" ToolTip.Tip="Die 파라미터 선택">
+                       Classes="edit-btn" ToolTip.Tip="Die 선택">
               <mi:MaterialIcon Kind="ChevronRight" Width="14" Height="14" />
             </Button>
+
+            <!-- Die Size -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Die Size (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <Border    Grid.Row="1" Grid.Column="1" Classes="value-display" Margin="0,8,0,0">
+              <TextBlock Classes="value-text">
+                <TextBlock.Text>
+                  <MultiBinding StringFormat="{}{0:0} × {1:0}">
+                    <Binding Path="LoadedItem.DieSizeWidthUm" />
+                    <Binding Path="LoadedItem.DieSizeHeightUm" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
+            </Border>
+
           </Grid>
 
           <Border Height="1" Background="{DynamicResource BorderSubtle}" />

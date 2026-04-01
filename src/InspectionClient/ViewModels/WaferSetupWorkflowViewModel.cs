@@ -60,15 +60,6 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
   public bool IsNotchOrientationPanel => ActiveSidePanel == SidePanelMode.NotchOrientation;
   public bool IsDieParametersPanel    => ActiveSidePanel == SidePanelMode.DieParameters;
 
-  /// <summary>현재 선택된 DieParametersRow (DieSize 표시용).</summary>
-  [ObservableProperty]
-  [NotifyPropertyChangedFor(nameof(SelectedDieParametersLabel))]
-  private DieParametersRow? _selectedDieParameters;
-
-  public string SelectedDieParametersLabel =>
-      SelectedDieParameters is { } p
-          ? $"{p.Name} - {p.Parameters.CanvasWidth:0}×{p.Parameters.CanvasHeight:0}"
-          : "(선택 없음)";
 
   public WaferSetupWorkflowViewModel(
       IWaferInfoRepository              repository,
@@ -112,10 +103,7 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
   [RelayCommand(CanExecute = nameof(HasSelectedItem))]
   private void Load(object? item) => Execute(() =>
   {
-    if (item is not WaferInfoRow row)
-      return;
-    SelectedDieParameters = row.DieParametersId is { } id ? FindDieById(id) : null;
-    // DbTableControl이 LoadedItem을 SelectedItem으로 set한다.
+    // LoadedItem.DieParametersId가 이미 row에 포함되어 있으므로 추가 작업 불필요.
   }, nameof(Load));
 
   [RelayCommand]
@@ -142,7 +130,6 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
   {
     if (LoadedItem is not WaferInfoRow current)
       return;
-    current.DieParametersId = SelectedDieParameters?.Id;
     await _repository.UpdateAsync(current);
     LoadedItem = null;
   }, nameof(SaveAsync));
@@ -216,9 +203,9 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
   [RelayCommand]
   private void SelectDieParameters(DieParametersRow row)
   {
-    SelectedDieParameters = row;
     if (LoadedItem is { } loaded)
     {
+      loaded.DieParametersId = row.Id;
       loaded.DieSizeWidthUm  = row.Parameters.CanvasWidth;
       loaded.DieSizeHeightUm = row.Parameters.CanvasHeight;
     }
