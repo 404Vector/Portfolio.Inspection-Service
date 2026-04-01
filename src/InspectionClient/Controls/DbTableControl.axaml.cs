@@ -17,6 +17,7 @@ namespace InspectionClient.Controls;
 ///
 /// 책임 경계:
 ///   - 컨트롤: LoadedItem 관리(Load 시 set, Save/Cancel 후 null), 패널 전환
+///             Load/Delete 버튼 활성화 (SelectedItem != null 여부)
 ///   - ViewModel: SaveCommand/CancelCommand를 통한 실제 데이터 변경
 /// </summary>
 public partial class DbTableControl : UserControl
@@ -92,6 +93,7 @@ public partial class DbTableControl : UserControl
     ItemListBox.SelectionChanged += OnSelectionChanged;
     ItemListBox.DoubleTapped     += OnDoubleTapped;
     LoadButton.Click             += OnLoadClicked;
+    DeleteButton.Click           += OnDeleteClicked;
     SaveButton.Click             += OnSaveClicked;
     CancelButton.Click           += OnCancelClicked;
   }
@@ -101,6 +103,7 @@ public partial class DbTableControl : UserControl
     ItemListBox.SelectionChanged -= OnSelectionChanged;
     ItemListBox.DoubleTapped     -= OnDoubleTapped;
     LoadButton.Click             -= OnLoadClicked;
+    DeleteButton.Click           -= OnDeleteClicked;
     SaveButton.Click             -= OnSaveClicked;
     CancelButton.Click           -= OnCancelClicked;
     base.OnDetachedFromVisualTree(e);
@@ -116,17 +119,15 @@ public partial class DbTableControl : UserControl
     if (ItemListBox is null)
       return;
 
-    if      (change.Property == HeaderProperty)       HeaderTextBlock.Text        = change.GetNewValue<string>();
-    else if (change.Property == ItemsSourceProperty)  ItemListBox.ItemsSource     = change.GetNewValue<IEnumerable?>();
-    else if (change.Property == SelectedItemProperty) ItemListBox.SelectedItem    = change.NewValue;
-    else if (change.Property == ItemTemplateProperty) ItemListBox.ItemTemplate    = change.GetNewValue<IDataTemplate?>();
-    else if (change.Property == LoadedItemProperty)   ApplyLoadedState(change.NewValue is not null);
-    else if (change.Property == LoadCommandProperty)  LoadButton.Command          = change.GetNewValue<ICommand?>();
-    else if (change.Property == CreateCommandProperty)CreateButton.Command        = change.GetNewValue<ICommand?>();
-    else if (change.Property == DeleteCommandProperty)DeleteButton.Command        = change.GetNewValue<ICommand?>();
-    else if (change.Property == SaveCommandProperty)  SaveButton.Command          = change.GetNewValue<ICommand?>();
-    else if (change.Property == CancelCommandProperty)CancelButton.Command        = change.GetNewValue<ICommand?>();
-    else if (change.Property == RefreshCommandProperty)RefreshButton.Command      = change.GetNewValue<ICommand?>();
+    if      (change.Property == HeaderProperty)        HeaderTextBlock.Text     = change.GetNewValue<string>();
+    else if (change.Property == ItemsSourceProperty)   ItemListBox.ItemsSource  = change.GetNewValue<IEnumerable?>();
+    else if (change.Property == SelectedItemProperty)  ApplySelectedState(change.NewValue);
+    else if (change.Property == ItemTemplateProperty)  ItemListBox.ItemTemplate = change.GetNewValue<IDataTemplate?>();
+    else if (change.Property == LoadedItemProperty)    ApplyLoadedState(change.NewValue is not null);
+    else if (change.Property == CreateCommandProperty) CreateButton.Command     = change.GetNewValue<ICommand?>();
+    else if (change.Property == SaveCommandProperty)   SaveButton.Command       = change.GetNewValue<ICommand?>();
+    else if (change.Property == CancelCommandProperty) CancelButton.Command     = change.GetNewValue<ICommand?>();
+    else if (change.Property == RefreshCommandProperty)RefreshButton.Command    = change.GetNewValue<ICommand?>();
   }
 
   // ── 이벤트 핸들러 ────────────────────────────────────────────────────
@@ -141,6 +142,14 @@ public partial class DbTableControl : UserControl
   }
 
   private void OnLoadClicked  (object? sender, RoutedEventArgs e) => TriggerLoad();
+
+  private void OnDeleteClicked(object? sender, RoutedEventArgs e)
+  {
+    if (SelectedItem is null)
+      return;
+    if (DeleteCommand?.CanExecute(SelectedItem) == true)
+      DeleteCommand.Execute(SelectedItem);
+  }
 
   private void OnSaveClicked  (object? sender, RoutedEventArgs e) =>
       SetCurrentValue(LoadedItemProperty, null);
@@ -167,15 +176,25 @@ public partial class DbTableControl : UserControl
   {
     HeaderTextBlock.Text      = Header;
     ItemListBox.ItemsSource   = ItemsSource;
-    ItemListBox.SelectedItem  = SelectedItem;
     ItemListBox.ItemTemplate  = ItemTemplate;
-    LoadButton.Command        = LoadCommand;
     CreateButton.Command      = CreateCommand;
-    DeleteButton.Command      = DeleteCommand;
     SaveButton.Command        = SaveCommand;
     CancelButton.Command      = CancelCommand;
     RefreshButton.Command     = RefreshCommand;
+    ApplySelectedState(SelectedItem);
     ApplyLoadedState(LoadedItem is not null);
+  }
+
+  /// <summary>
+  /// SelectedItem 변경 시 ListBox 동기화 및 Load/Delete 버튼 활성화 상태를 갱신한다.
+  /// Load/Delete는 Command.CanExecute 대신 컨트롤이 직접 IsEnabled를 제어한다.
+  /// </summary>
+  private void ApplySelectedState(object? selectedItem)
+  {
+    ItemListBox.SelectedItem  = selectedItem;
+    var hasSelection          = selectedItem is not null;
+    LoadButton.IsEnabled      = hasSelection;
+    DeleteButton.IsEnabled    = hasSelection;
   }
 
   private void ApplyLoadedState(bool isLoaded)
