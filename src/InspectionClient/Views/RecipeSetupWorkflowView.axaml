@@ -46,108 +46,210 @@
     <!-- 구분선 -->
     <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
 
-    <!-- ── 우측: 파라미터 폼 ──────────────────────────────────────────── -->
-    <ScrollViewer Grid.Column="2"
-                  IsEnabled="{Binding LoadedItem, Converter={x:Static ObjectConverters.IsNotNull}}"
-                  HorizontalScrollBarVisibility="Disabled"
-                  VerticalScrollBarVisibility="Auto">
-      <StackPanel MaxWidth="640" Spacing="20" Margin="24,16">
+    <!-- ── 우측: 파라미터 폼 + 보조편집패널 ──────────────────────────── -->
+    <Grid Grid.Column="2"
+          ColumnDefinitions="*,Auto"
+          VerticalAlignment="Stretch"
+          IsEnabled="{Binding LoadedItem, Converter={x:Static ObjectConverters.IsNotNull}}">
 
-        <!-- 섹션: Recipe Identity -->
-        <TextBlock Text="RECIPE"
-                   FontSize="10" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextMuted}" />
+      <!-- ── 메인 편집 패널 ──────────────────────────────────────────── -->
+      <ScrollViewer Grid.Column="0"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="640" Spacing="20" Margin="24,16">
 
-        <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Recipe Name" Classes="form-label" />
-          <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding RecipeName}" FontSize="12" />
+          <!-- 섹션: Recipe Identity -->
+          <TextBlock Text="RECIPE" Classes="section-header" />
 
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Description"
-                     Classes="form-label" Margin="0,8,0,0" />
-          <TextBox   Grid.Row="1" Grid.Column="1"
-                     Text="{Binding Description}" FontSize="12" Margin="0,8,0,0" />
-        </Grid>
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Recipe Name" Classes="form-label" />
+            <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding RecipeName}" FontSize="12" />
 
-        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Description"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <TextBox   Grid.Row="1" Grid.Column="1"
+                       Text="{Binding Description}" FontSize="12" Margin="0,8,0,0" />
+          </Grid>
 
-        <!-- 섹션: FOV -->
-        <StackPanel Spacing="8">
-          <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Grid.Column="0" Text="FOV"
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+          <!-- 섹션: FOV -->
+          <TextBlock Text="FOV" Classes="section-header" />
+
+          <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+
+            <!-- Width -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)" Classes="form-label" />
+            <Border    Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Classes="value-display">
+              <TextBlock Text="{Binding FovWidthUm, StringFormat={}{0:0.##}}" Classes="value-text" />
+            </Border>
+
+            <!-- Height -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <Border    Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Classes="value-display" Margin="0,8,0,0">
+              <TextBlock Text="{Binding FovHeightUm, StringFormat={}{0:0.##}}" Classes="value-text" />
+            </Border>
+
+            <!-- Magnification -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Magnification (×)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <Border    Grid.Row="2" Grid.Column="1" Classes="value-display" Margin="0,8,0,0">
+              <TextBlock Text="{Binding SelectedMagnification, StringFormat={}{0}×}" Classes="value-text" />
+            </Border>
+            <Button    Grid.Row="2" Grid.Column="2"
+                       Command="{Binding OpenMagnificationPanelCommand}"
+                       Classes="edit-btn" Margin="0,8,0,0" ToolTip.Tip="배율 선택">
+              <mi:MaterialIcon Kind="ChevronRight" Width="14" Height="14" />
+            </Button>
+
+            <!-- Pixel Resolution -->
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Pixel Resolution (μm/px)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <Border    Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Classes="value-display" Margin="0,8,0,0">
+              <TextBlock Text="{Binding PixelResolutionUm, StringFormat={}{0:0.####}}" Classes="value-text" />
+            </Border>
+
+          </Grid>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" />
+
+          <!-- 섹션: Scan Options -->
+          <TextBlock Text="SCAN OPTIONS" Classes="section-header" />
+
+          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
+
+            <!-- Overlap X: px 편집 → μm 자동 표시 -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Overlap X" Classes="form-label" />
+            <StackPanel Grid.Row="0" Grid.Column="1"
+                        Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <NumericUpDown Value="{Binding OverlapXPx}"
+                             Minimum="0" Maximum="10000" Increment="1" FormatString="0"
+                             Width="100" FontSize="12" />
+              <TextBlock Text="px  =" Classes="unit-label" />
+              <Border Classes="value-display" MinWidth="90">
+                <TextBlock Text="{Binding OverlapXum, StringFormat={}{0:0.##} μm}" Classes="value-text" />
+              </Border>
+            </StackPanel>
+
+            <!-- Overlap Y: px 편집 → μm 자동 표시 -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Overlap Y"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <StackPanel Grid.Row="1" Grid.Column="1"
+                        Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                        Margin="0,8,0,0">
+              <NumericUpDown Value="{Binding OverlapYPx}"
+                             Minimum="0" Maximum="10000" Increment="1" FormatString="0"
+                             Width="100" FontSize="12" />
+              <TextBlock Text="px  =" Classes="unit-label" />
+              <Border Classes="value-display" MinWidth="90">
+                <TextBlock Text="{Binding OverlapYum, StringFormat={}{0:0.##} μm}" Classes="value-text" />
+              </Border>
+            </StackPanel>
+
+            <!-- Stop on First Fail -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Stop on First Fail"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <ToggleSwitch Grid.Row="2" Grid.Column="1"
+                          IsChecked="{Binding StopOnFirstFail}"
+                          OnContent="" OffContent="" Margin="0,8,0,0" />
+
+            <!-- Max Frames -->
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Frames (0=∞)"
+                       Classes="form-label" Margin="0,8,0,0" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1"
+                           Value="{Binding MaxFrameCount}"
+                           Minimum="0" Maximum="100000" Increment="100" FormatString="0"
+                           FontSize="12" Margin="0,8,0,0" />
+          </Grid>
+
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- ── 보조편집패널 ─────────────────────────────────────────────── -->
+      <Border Grid.Column="1"
+              IsVisible="{Binding IsMagnificationPanelVisible}"
+              BorderBrush="{DynamicResource BorderSubtle}"
+              BorderThickness="1,0,0,0"
+              Width="200">
+        <DockPanel>
+
+          <!-- 헤더 -->
+          <Border DockPanel.Dock="Top"
+                  Padding="12,10"
+                  BorderBrush="{DynamicResource BorderSubtle}"
+                  BorderThickness="0,0,0,1">
+            <TextBlock Text="MAGNIFICATION"
                        FontSize="10" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextMuted}"
                        VerticalAlignment="Center" />
-            <Button Grid.Column="1"
-                    Command="{Binding RecalculateFovFromEquipmentCommand}"
-                    FontSize="11">
-              <StackPanel Orientation="Horizontal" Spacing="4">
-                <mi:MaterialIcon Kind="Calculator" Width="12" Height="12" />
-                <TextBlock Text="장비 설정에서 계산" />
-              </StackPanel>
-            </Button>
-          </Grid>
+          </Border>
 
-          <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto">
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)" Classes="form-label" />
-            <NumericUpDown Grid.Row="0" Grid.Column="1"
-                           Value="{Binding FovWidthUm}"
-                           Minimum="1" Maximum="100000" Increment="10" FormatString="0.##"
-                           FontSize="12" />
+          <!-- 배율 선택 리스트 -->
+          <ItemsControl Padding="4"
+                        ItemsSource="{Binding AvailableMagnifications}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                        Classes="side-item"
+                        Command="{Binding $parent[UserControl].((vm:RecipeSetupWorkflowViewModel)DataContext).SelectMagnificationCommand}"
+                        CommandParameter="{Binding}">
+                  <TextBlock FontSize="13">
+                    <TextBlock.Text>
+                      <MultiBinding StringFormat="{}{0}×">
+                        <Binding />
+                      </MultiBinding>
+                    </TextBlock.Text>
+                  </TextBlock>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
-                       Classes="form-label" Margin="0,8,0,0" />
-            <NumericUpDown Grid.Row="1" Grid.Column="1"
-                           Value="{Binding FovHeightUm}"
-                           Minimum="1" Maximum="100000" Increment="10" FormatString="0.##"
-                           FontSize="12" Margin="0,8,0,0" />
-          </Grid>
-        </StackPanel>
+        </DockPanel>
+      </Border>
 
-        <Border Height="1" Background="{DynamicResource BorderSubtle}" />
-
-        <!-- 섹션: Scan Options -->
-        <TextBlock Text="SCAN OPTIONS"
-                   FontSize="10" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextMuted}" />
-
-        <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Overlap X (μm)" Classes="form-label" />
-          <NumericUpDown Grid.Row="0" Grid.Column="1"
-                         Value="{Binding OverlapXum}"
-                         Minimum="0" Maximum="10000" Increment="10" FormatString="0.#"
-                         FontSize="12" />
-
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Overlap Y (μm)"
-                     Classes="form-label" Margin="0,8,0,0" />
-          <NumericUpDown Grid.Row="1" Grid.Column="1"
-                         Value="{Binding OverlapYum}"
-                         Minimum="0" Maximum="10000" Increment="10" FormatString="0.#"
-                         FontSize="12" Margin="0,8,0,0" />
-
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Stop on First Fail"
-                     Classes="form-label" Margin="0,8,0,0" />
-          <ToggleSwitch Grid.Row="2" Grid.Column="1"
-                        IsChecked="{Binding StopOnFirstFail}"
-                        OnContent="" OffContent="" Margin="0,8,0,0" />
-
-          <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Frames (0=∞)"
-                     Classes="form-label" Margin="0,8,0,0" />
-          <NumericUpDown Grid.Row="3" Grid.Column="1"
-                         Value="{Binding MaxFrameCount}"
-                         Minimum="0" Maximum="100000" Increment="100" FormatString="0"
-                         FontSize="12" Margin="0,8,0,0" />
-        </Grid>
-
-      </StackPanel>
-    </ScrollViewer>
+    </Grid>
 
   </Grid>
 
   <UserControl.Styles>
+    <Style Selector="TextBlock.section-header">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    </Style>
     <Style Selector="TextBlock.form-label">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
       <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.unit-label">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.value-display">
+      <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.value-text">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.edit-btn">
+      <Setter Property="Padding" Value="4" />
+      <Setter Property="Margin" Value="4,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.side-item">
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
     </Style>
   </UserControl.Styles>
 

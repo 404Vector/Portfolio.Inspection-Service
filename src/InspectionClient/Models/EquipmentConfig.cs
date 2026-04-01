@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 
@@ -52,14 +53,9 @@ public class EquipmentConfig
   public double PixelPitchUm { get; set; } = 3.45;
 
   [Category("Objective")]
-  [DisplayName("Magnification (×)")]
-  [Description("Magnification of the mounted objective lens.")]
-  public double Magnification { get; set; } = 10.0;
-
-  [Category("Objective")]
-  [DisplayName("Effective Pixel Size (μm/px)")]
-  [Description("Derived from pixel pitch ÷ magnification.")]
-  public double EffectivePixelSizeUm { get; set; } = 0.345;
+  [DisplayName("Magnifications (×)")]
+  [Description("Available objective lens magnifications.")]
+  public List<uint> Magnifications { get; set; } = [2, 5, 10];
 
   [Category("Illumination")]
   [DisplayName("Illumination Type")]

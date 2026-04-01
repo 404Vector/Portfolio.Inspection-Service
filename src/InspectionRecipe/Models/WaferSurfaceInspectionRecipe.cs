@@ -21,6 +21,7 @@ public record WaferSurfaceInspectionRecipe(
   string  Description,
   string  WaferId,
   FovSize Fov,
+  uint    Magnification   = 2,
   double  OverlapXum      = 0.0,
   double  OverlapYum      = 0.0,
   bool    StopOnFirstFail = false,
