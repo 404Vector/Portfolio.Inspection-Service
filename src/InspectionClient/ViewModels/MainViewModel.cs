@@ -10,14 +10,12 @@ public partial class MainViewModel : ViewModelBase
 {
   private static readonly Dictionary<string, string> DisplayNames = new()
   {
-    [ServiceKeys.Inspection]  = ServiceKeys.Inspection,
-    ["DieSetup"]              = "Die Setup",
-    ["WaferSetup"]            = "Wafer Setup",
-    ["RecipeSetup"]           = "Recipe Setup",
-    ["History"]               = "History",
-    ["FrameGrabber"]          = "Frame Grabber",
-    ["EquipmentSpec"]         = "Equipment Spec",
-    ["AppSetting"]            = "App Setting",
+    [ServiceKeys.Inspection] = ServiceKeys.Inspection,
+    ["Setup"]                = "Setup",
+    ["History"]              = "History",
+    ["FrameGrabber"]         = "Frame Grabber",
+    ["EquipmentSpec"]        = "Equipment Spec",
+    ["AppSetting"]           = "App Setting",
   };
 
   [ObservableProperty] private ViewModelBase _currentViewModel = null!;
@@ -28,31 +26,25 @@ public partial class MainViewModel : ViewModelBase
 
   public IObservableLogService Log { get; }
 
-  private readonly InspectionWorkflowViewModel   _inspectionVm;
-  private readonly DieSetupWorkflowViewModel     _dieSetupVm;
-  private readonly WaferSetupWorkflowViewModel   _waferSetupVm;
-  private readonly RecipeSetupWorkflowViewModel  _recipeSetupVm;
-  private readonly HistoryViewModel              _historyVm;
-  private readonly FrameGrabberViewModelBase     _fgVm;
-  private readonly EquipmentSpecViewModel        _equipmentSpecVm;
-  private readonly AppSettingViewModel           _appSettingVm;
+  private readonly InspectionWorkflowViewModel _inspectionVm;
+  private readonly SetupWorkflowViewModel      _setupVm;
+  private readonly HistoryViewModel            _historyVm;
+  private readonly FrameGrabberViewModelBase   _fgVm;
+  private readonly EquipmentSpecViewModel      _equipmentSpecVm;
+  private readonly AppSettingViewModel         _appSettingVm;
 
   public MainViewModel(
-      InspectionWorkflowViewModel   inspectionVm,
-      DieSetupWorkflowViewModel     dieSetupVm,
-      WaferSetupWorkflowViewModel   waferSetupVm,
-      RecipeSetupWorkflowViewModel  recipeSetupVm,
-      HistoryViewModel              historyVm,
-      FrameGrabberViewModelBase     fgVm,
-      EquipmentSpecViewModel        equipmentSpecVm,
-      AppSettingViewModel           appSettingVm,
-      IObservableLogService         logService,
-      IServiceConnectionMonitor     connectionMonitor) : base(logService)
+      InspectionWorkflowViewModel inspectionVm,
+      SetupWorkflowViewModel      setupVm,
+      HistoryViewModel            historyVm,
+      FrameGrabberViewModelBase   fgVm,
+      EquipmentSpecViewModel      equipmentSpecVm,
+      AppSettingViewModel         appSettingVm,
+      IObservableLogService       logService,
+      IServiceConnectionMonitor   connectionMonitor) : base(logService)
   {
     _inspectionVm    = inspectionVm;
-    _dieSetupVm      = dieSetupVm;
-    _waferSetupVm    = waferSetupVm;
-    _recipeSetupVm   = recipeSetupVm;
+    _setupVm         = setupVm;
     _historyVm       = historyVm;
     _fgVm            = fgVm;
     _equipmentSpecVm = equipmentSpecVm;
@@ -70,7 +62,7 @@ public partial class MainViewModel : ViewModelBase
         IsInspectionConnected = e.IsConnected;
     };
 
-    Navigate("DieSetup");
+    Navigate("Setup");
   }
 
   // ── 커맨드 ───────────────────────────────────────────────────────────
@@ -81,9 +73,7 @@ public partial class MainViewModel : ViewModelBase
     CurrentViewModel = viewName switch
     {
       ServiceKeys.Inspection => _inspectionVm,
-      "DieSetup"             => _dieSetupVm,
-      "WaferSetup"           => _waferSetupVm,
-      "RecipeSetup"          => _recipeSetupVm,
+      "Setup"                => _setupVm,
       "History"              => _historyVm,
       "FrameGrabber"         => _fgVm,
       "EquipmentSpec"        => _equipmentSpecVm,

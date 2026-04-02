@@ -5,16 +5,22 @@
              xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:views="using:InspectionClient.Views"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="InspectionClient.Views.RecipeSetupWorkflowView"
-             x:DataType="vm:RecipeSetupWorkflowViewModel">
+             x:Class="InspectionClient.Views.SetupWorkflowView"
+             x:DataType="vm:SetupWorkflowViewModel">
 
   <TabControl Classes="tab-underline">
 
-    <TabItem Header="Wafer Surface">
-      <views:WaferSurfaceRecipeSetupView DataContext="{Binding WaferSurface}" />
+    <TabItem Header="Die">
+      <views:DieSetupWorkflowView DataContext="{Binding DieSetup}" />
     </TabItem>
 
-    <!-- 새 Recipe 타입 추가 시: TabItem과 해당 View를 여기에 추가 -->
+    <TabItem Header="Wafer">
+      <views:WaferSetupWorkflowView DataContext="{Binding WaferSetup}" />
+    </TabItem>
+
+    <TabItem Header="Recipe">
+      <views:RecipeSetupWorkflowView DataContext="{Binding RecipeSetup}" />
+    </TabItem>
 
   </TabControl>
 

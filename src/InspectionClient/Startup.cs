@@ -90,7 +90,9 @@ internal static class Startup
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddSingleton<DieSetupWorkflowViewModel>();
         services.AddSingleton<WaferSetupWorkflowViewModel>();
+        services.AddSingleton<WaferSurfaceRecipeWorkflowViewModel>();
         services.AddSingleton<RecipeSetupWorkflowViewModel>();
+        services.AddSingleton<SetupWorkflowViewModel>();
         services.AddSingleton<InspectionWorkflowViewModel>();
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<FileFrameGrabberViewModel>();

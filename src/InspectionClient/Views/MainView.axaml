@@ -71,36 +71,14 @@
 
         <StackPanel VerticalAlignment="Top" Spacing="2" Margin="0,8,0,0">
 
-          <!-- Die Setup -->
-          <Button Name="NavDieSetup" Classes="nav-item active"
-                  Command="{Binding NavigateCommand}" CommandParameter="DieSetup"
+          <!-- Setup -->
+          <Button Name="NavSetup" Classes="nav-item active"
+                  Command="{Binding NavigateCommand}" CommandParameter="Setup"
                   PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
-                  ToolTip.Tip="Die Setup" ToolTip.Placement="Right">
+                  ToolTip.Tip="Setup" ToolTip.Placement="Right">
             <Grid Width="48" Height="48">
               <Rectangle Classes="nav-accent" />
-              <mi:MaterialIcon Kind="ImageOutline" />
-            </Grid>
-          </Button>
-
-          <!-- Wafer Setup -->
-          <Button Name="NavWaferSetup" Classes="nav-item"
-                  Command="{Binding NavigateCommand}" CommandParameter="WaferSetup"
-                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
-                  ToolTip.Tip="Wafer Setup" ToolTip.Placement="Right">
-            <Grid Width="48" Height="48">
-              <Rectangle Classes="nav-accent" />
-              <mi:MaterialIcon Kind="CircleOutline" />
-            </Grid>
-          </Button>
-
-          <!-- Recipe Setup -->
-          <Button Name="NavRecipeSetup" Classes="nav-item"
-                  Command="{Binding NavigateCommand}" CommandParameter="RecipeSetup"
-                  PointerEntered="OnNavPointerEntered" PointerExited="OnNavPointerExited"
-                  ToolTip.Tip="Recipe Setup" ToolTip.Placement="Right">
-            <Grid Width="48" Height="48">
-              <Rectangle Classes="nav-accent" />
-              <mi:MaterialIcon Kind="FileDocumentOutline" />
+              <mi:MaterialIcon Kind="TuneVariant" />
             </Grid>
           </Button>
 
@@ -171,14 +149,8 @@
           <DataTemplate DataType="vm:InspectionWorkflowViewModel">
             <views:InspectionWorkflowView />
           </DataTemplate>
-          <DataTemplate DataType="vm:DieSetupWorkflowViewModel">
-            <views:DieSetupWorkflowView />
-          </DataTemplate>
-          <DataTemplate DataType="vm:WaferSetupWorkflowViewModel">
-            <views:WaferSetupWorkflowView />
-          </DataTemplate>
-          <DataTemplate DataType="vm:RecipeSetupWorkflowViewModel">
-            <views:RecipeSetupWorkflowView />
+          <DataTemplate DataType="vm:SetupWorkflowViewModel">
+            <views:SetupWorkflowView />
           </DataTemplate>
           <DataTemplate DataType="vm:HistoryViewModel">
             <views:HistoryView />

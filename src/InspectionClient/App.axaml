@@ -8,6 +8,7 @@
         <FluentTheme />
         <materialIcons:MaterialIconStyles />
 <StyleInclude Source="avares://InspectionClient/Assets/Styles/NavigatorStyles.axaml" />
+<StyleInclude Source="avares://InspectionClient/Assets/Styles/TabStyles.axaml" />
     </Application.Styles>
 
     <Application.Resources>
