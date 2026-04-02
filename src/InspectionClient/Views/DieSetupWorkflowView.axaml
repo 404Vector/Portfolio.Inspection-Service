@@ -64,6 +64,18 @@
       <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="12" Margin="16,12">
 
+          <!-- 섹션: Identity -->
+          <Grid ColumnDefinitions="110,*">
+            <TextBlock Grid.Column="0" Text="Name"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <TextBox Grid.Column="1"
+                     Text="{Binding LoadedItem.Name}"
+                     FontSize="12" />
+          </Grid>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
+
           <!-- 섹션: Canvas -->
           <TextBlock Text="CANVAS"
                      FontSize="10" FontWeight="SemiBold"

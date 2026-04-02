@@ -44,13 +44,13 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     cmd.Parameters.AddWithValue("$json",      json);
 
     var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
-    return new RecipeRow { Id = id, Name = name, Recipe = recipe };
+    return new RecipeRow { Id = id, Recipe = recipe };
   }
 
   public async Task<RecipeRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, Json FROM Recipe WHERE Id = $id";
+    cmd.CommandText = "SELECT Id, Json FROM Recipe WHERE Id = $id";
     cmd.Parameters.AddWithValue("$id", id);
 
     await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -63,7 +63,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
   public async Task<IReadOnlyList<RecipeRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Name, Json FROM Recipe ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Json FROM Recipe ORDER BY CreatedAt DESC";
 
     var list = new List<RecipeRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -87,7 +87,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
       WHERE Id = $id
       """;
     cmd.Parameters.AddWithValue("$id",        item.Id);
-    cmd.Parameters.AddWithValue("$name",      item.Name);
+    cmd.Parameters.AddWithValue("$name",      item.Recipe.RecipeName);
     cmd.Parameters.AddWithValue("$waferId",   item.Recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
@@ -107,8 +107,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
   private static RecipeRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
   {
     var id     = reader.GetInt64(0);
-    var name   = reader.GetString(1);
-    var recipe = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(2), RepositoryJsonOptions.Default);
-    return new RecipeRow { Id = id, Name = name, Recipe = recipe! };
+    var recipe = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(1), RepositoryJsonOptions.Default);
+    return new RecipeRow { Id = id, Recipe = recipe! };
   }
 }

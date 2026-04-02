@@ -123,7 +123,14 @@ public partial class DbTableControl : UserControl
     else if (change.Property == ItemsSourceProperty)   ItemListBox.ItemsSource  = change.GetNewValue<IEnumerable?>();
     else if (change.Property == SelectedItemProperty)  ApplySelectedState(change.NewValue);
     else if (change.Property == ItemTemplateProperty)  ItemListBox.ItemTemplate = change.GetNewValue<IDataTemplate?>();
-    else if (change.Property == LoadedItemProperty)    ApplyLoadedState(change.NewValue is not null);
+    else if (change.Property == LoadedItemProperty)
+    {
+      var wasLoaded = change.OldValue is not null;
+      var isLoaded  = change.NewValue is not null;
+      ApplyLoadedState(isLoaded);
+      if (wasLoaded && !isLoaded)
+        RefreshCommand?.Execute(null);
+    }
     else if (change.Property == CreateCommandProperty) CreateButton.Command     = change.GetNewValue<ICommand?>();
     else if (change.Property == SaveCommandProperty)   SaveButton.Command       = change.GetNewValue<ICommand?>();
     else if (change.Property == CancelCommandProperty) CancelButton.Command     = change.GetNewValue<ICommand?>();

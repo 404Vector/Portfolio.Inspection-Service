@@ -27,17 +27,13 @@
       <controls:DbTableControl.ItemTemplate>
         <DataTemplate x:DataType="models:RecipeRow">
           <StackPanel Spacing="2" Margin="4,4">
-            <TextBlock Text="{Binding Name}"
-                       FontSize="12" FontWeight="SemiBold" />
-            <TextBlock FontSize="10"
-                       Foreground="{DynamicResource TextMuted}">
-              <TextBlock.Text>
-                <MultiBinding StringFormat="{}FOV {0:0}×{1:0} μm">
-                  <Binding Path="Recipe.Fov.WidthUm" />
-                  <Binding Path="Recipe.Fov.HeightUm" />
-                </MultiBinding>
-              </TextBlock.Text>
-            </TextBlock>
+            <Grid ColumnDefinitions="Auto,8,*">
+              <TextBlock Grid.Column="0" Text="{Binding Id}"
+                         FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Grid.Column="2" Text="{Binding Recipe.RecipeName}"
+                         FontSize="12" FontWeight="SemiBold" />
+            </Grid>
           </StackPanel>
         </DataTemplate>
       </controls:DbTableControl.ItemTemplate>
