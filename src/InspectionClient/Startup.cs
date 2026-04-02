@@ -84,6 +84,7 @@ internal static class Startup
         services.AddSingleton<IDieRenderingParametersRepository, SqliteDieRenderingParametersRepository>();
         services.AddSingleton<IWaferInfoRepository, SqliteWaferInfoRepository>();
         services.AddSingleton<IRecipeRepository, SqliteRecipeRepository>();
+        services.AddSingleton<IDieSpotRecipeRepository, SqliteDieSpotRecipeRepository>();
         services.AddSingleton<IInspectionResultRepository, SqliteInspectionResultRepository>();
         services.AddSingleton<IUserAnnotationRepository, SqliteUserAnnotationRepository>();
 
@@ -91,6 +92,7 @@ internal static class Startup
         services.AddSingleton<DieSetupWorkflowViewModel>();
         services.AddSingleton<WaferSetupWorkflowViewModel>();
         services.AddSingleton<WaferSurfaceRecipeWorkflowViewModel>();
+        services.AddSingleton<DieSpotRecipeWorkflowViewModel>();
         services.AddSingleton<RecipeSetupWorkflowViewModel>();
         services.AddSingleton<SetupWorkflowViewModel>();
         services.AddSingleton<InspectionWorkflowViewModel>();

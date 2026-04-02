@@ -11,11 +11,14 @@ namespace InspectionClient.ViewModels;
 public partial class RecipeSetupWorkflowViewModel : ViewModelBase
 {
   public WaferSurfaceRecipeWorkflowViewModel WaferSurface { get; }
+  public DieSpotRecipeWorkflowViewModel      DieSpot      { get; }
 
   public RecipeSetupWorkflowViewModel(
       WaferSurfaceRecipeWorkflowViewModel waferSurface,
-      ILogService logService) : base(logService)
+      DieSpotRecipeWorkflowViewModel      dieSpot,
+      ILogService                         logService) : base(logService)
   {
     WaferSurface = waferSurface;
+    DieSpot      = dieSpot;
   }
 }

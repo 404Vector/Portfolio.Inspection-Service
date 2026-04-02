@@ -15,7 +15,7 @@ namespace InspectionClient.Services;
 public sealed class InspectionDatabase : IDisposable
 {
   // 스키마 변경 시 이 값을 증가시키면 다음 실행 시 DB가 자동으로 재생성됩니다.
-  private const int SchemaVersion = 4;
+  private const int SchemaVersion = 5;
 
   private SqliteConnection _connection;
 
@@ -87,6 +87,16 @@ public sealed class InspectionDatabase : IDisposable
 
     ExecuteNonQuery("""
       CREATE TABLE IF NOT EXISTS Recipe (
+        Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name      TEXT    NOT NULL UNIQUE,
+        WaferId   TEXT    NOT NULL,
+        CreatedAt TEXT    NOT NULL,
+        Json      TEXT    NOT NULL
+      )
+      """);
+
+    ExecuteNonQuery("""
+      CREATE TABLE IF NOT EXISTS DieSpotRecipe (
         Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         Name      TEXT    NOT NULL UNIQUE,
         WaferId   TEXT    NOT NULL,

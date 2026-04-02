@@ -14,7 +14,9 @@
       <views:WaferSurfaceRecipeSetupView DataContext="{Binding WaferSurface}" />
     </TabItem>
 
-    <!-- 새 Recipe 타입 추가 시: TabItem과 해당 View를 여기에 추가 -->
+    <TabItem Header="Die Spot">
+      <views:DieSpotRecipeSetupView DataContext="{Binding DieSpot}" />
+    </TabItem>
 
   </TabControl>
 
