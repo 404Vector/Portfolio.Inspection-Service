@@ -3,90 +3,49 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:InspectionClient.ViewModels"
+             xmlns:models="using:InspectionClient.Models"
              xmlns:controls="using:InspectionClient.Controls"
-             xmlns:ifaces="using:InspectionClient.Interfaces"
-             xmlns:mi="using:Material.Icons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
              x:Class="InspectionClient.Views.DieSetupWorkflowView"
              x:DataType="vm:DieSetupWorkflowViewModel">
 
   <Grid ColumnDefinitions="240,1,*,280">
 
-    <!-- ── 1열: Parameters 목록 패널 ──────────────────────────────────── -->
-    <DockPanel Grid.Column="0">
-
-      <!-- 목록 헤더 -->
-      <Border DockPanel.Dock="Top"
-              Padding="12,10"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,0,0,1">
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Grid.Column="0"
-                     Text="SAVED PARAMETERS"
-                     FontSize="10" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextMuted}"
-                     VerticalAlignment="Center" />
-          <Button Grid.Column="1"
-                  Command="{Binding RefreshListCommand}"
-                  Padding="4" ToolTip.Tip="새로고침">
-            <mi:MaterialIcon Kind="Refresh" Width="14" Height="14" />
-          </Button>
-        </Grid>
-      </Border>
-
-      <!-- 목록 액션 버튼 -->
-      <Border DockPanel.Dock="Bottom"
-              Padding="8,8"
-              BorderBrush="{DynamicResource BorderSubtle}"
-              BorderThickness="0,1,0,0">
-        <Grid ColumnDefinitions="*,4,*">
-          <Button Grid.Column="0"
-                  HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center"
-                  Command="{Binding LoadSelectedCommand}"
-                  ToolTip.Tip="선택 항목을 폼에 불러오기">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <mi:MaterialIcon Kind="Import" Width="12" Height="12" />
-              <TextBlock Text="Load" FontSize="11" />
-            </StackPanel>
-          </Button>
-          <Button Grid.Column="2"
-                  HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Center"
-                  Command="{Binding DeleteSelectedCommand}"
-                  ToolTip.Tip="선택 항목 삭제">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <mi:MaterialIcon Kind="Delete" Width="12" Height="12" />
-              <TextBlock Text="Delete" FontSize="11" />
-            </StackPanel>
-          </Button>
-        </Grid>
-      </Border>
-
-      <!-- 파라미터 목록 -->
-      <ListBox ItemsSource="{Binding ParameterList}"
-               SelectedItem="{Binding SelectedEntry}"
-               Padding="4">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="ifaces:DieParametersEntry">
-            <StackPanel Spacing="2" Margin="4,4">
-              <TextBlock Text="{Binding Name}"
+    <!-- ── 1열: 파라미터 목록 (DbTableControl) ───────────────────────── -->
+    <controls:DbTableControl Grid.Column="0"
+                             Header="SAVED PARAMETERS"
+                             ItemsSource="{Binding Items}"
+                             SelectedItem="{Binding SelectedItem}"
+                             LoadedItem="{Binding LoadedItem, Mode=TwoWay}"
+                             LoadCommand="{Binding LoadCommand}"
+                             CreateCommand="{Binding CreateCommand}"
+                             DeleteCommand="{Binding DeleteCommand}"
+                             SaveCommand="{Binding SaveCommand}"
+                             CancelCommand="{Binding CancelCommand}"
+                             RefreshCommand="{Binding RefreshCommand}">
+      <controls:DbTableControl.ItemTemplate>
+        <DataTemplate x:DataType="models:DieParametersRow">
+          <StackPanel Spacing="2" Margin="4,4">
+            <Grid ColumnDefinitions="Auto,8,*">
+              <TextBlock Grid.Column="0" Text="{Binding Id}"
+                         FontSize="12" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Grid.Column="2" Text="{Binding Name}"
                          FontSize="12" FontWeight="SemiBold" />
-              <TextBlock FontSize="10"
-                         Foreground="{DynamicResource TextMuted}">
-                <TextBlock.Text>
-                  <MultiBinding StringFormat="{}{0:0} × {1:0} μm">
-                    <Binding Path="Parameters.CanvasWidth" />
-                    <Binding Path="Parameters.CanvasHeight" />
-                  </MultiBinding>
-                </TextBlock.Text>
-              </TextBlock>
-            </StackPanel>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-
-    </DockPanel>
+            </Grid>
+            <TextBlock FontSize="10"
+                       Foreground="{DynamicResource TextMuted}">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:0} × {1:0} μm">
+                  <Binding Path="Parameters.CanvasWidth" />
+                  <Binding Path="Parameters.CanvasHeight" />
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+          </StackPanel>
+        </DataTemplate>
+      </controls:DbTableControl.ItemTemplate>
+    </controls:DbTableControl>
 
     <!-- 구분선 -->
     <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
@@ -96,207 +55,136 @@
                                   Renderer="{Binding Renderer}"
                                   Parameters="{Binding Parameters}" />
 
-    <!-- ── 3열: 파라미터 패널 ──────────────────────────────────────────── -->
+    <!-- ── 3열: 파라미터 편집 패널 ────────────────────────────────────── -->
     <Border Grid.Column="3"
+            IsEnabled="{Binding LoadedItem, Converter={x:Static ObjectConverters.IsNotNull}}"
             Background="{DynamicResource BgSurface}"
             BorderBrush="{DynamicResource BorderSubtle}"
             BorderThickness="1,0,0,0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12" Margin="16,12">
 
-      <DockPanel>
+          <!-- 섹션: Identity -->
+          <Grid ColumnDefinitions="110,*">
+            <TextBlock Grid.Column="0" Text="Name"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <TextBox Grid.Column="1"
+                     Text="{Binding LoadedItem.Name}"
+                     FontSize="12" />
+          </Grid>
 
-        <!-- ── 하단 고정: Save / Reset / Apply 버튼 ──────────────────── -->
-        <Border DockPanel.Dock="Bottom"
-                Padding="16,10"
-                BorderBrush="{DynamicResource BorderSubtle}"
-                BorderThickness="0,1,0,0">
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
+
+          <!-- 섹션: Canvas -->
+          <TextBlock Text="CANVAS"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     Margin="0,0,0,4" />
+
+          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Width (μm)"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                           Value="{Binding LoadedItem.Parameters.CanvasWidth}"
+                           Minimum="{Binding CanvasWidthMin}"
+                           Maximum="{Binding CanvasWidthMax}"
+                           Increment="500" FormatString="0" FontSize="12" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Height (μm)"
+                       VerticalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                           Value="{Binding LoadedItem.Parameters.CanvasHeight}"
+                           Minimum="{Binding CanvasHeightMin}"
+                           Maximum="{Binding CanvasHeightMax}"
+                           Increment="500" FormatString="0" Margin="0,8,0,0" FontSize="12" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Background"
+                       VerticalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                           Value="{Binding LoadedItem.Parameters.BackgroundGray}"
+                           Minimum="{Binding BackgroundGrayMin}"
+                           Maximum="{Binding BackgroundGrayMax}"
+                           Increment="10" FormatString="0" Margin="0,8,0,0" FontSize="12" />
+          </Grid>
+
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
+
+          <!-- 섹션: Elements -->
+          <TextBlock Text="ELEMENTS"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     Margin="0,0,0,4" />
+
           <StackPanel Spacing="8">
-
-            <!-- DB 저장 영역 -->
-            <Grid ColumnDefinitions="*,8,Auto">
-              <TextBox Grid.Column="0"
-                       Text="{Binding SaveName}"
-                       Watermark="저장 이름"
-                       FontSize="12" />
-              <Button Grid.Column="2"
-                      Classes="accent"
-                      Command="{Binding SaveCommand}"
-                      ToolTip.Tip="현재 파라미터를 DB에 저장">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <mi:MaterialIcon Kind="ContentSave" Width="14" Height="14" />
-                  <TextBlock Text="Save" />
-                </StackPanel>
-              </Button>
+            <Grid ColumnDefinitions="110,*">
+              <TextBlock Grid.Column="0" Text="Alignment Marks"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding LoadedItem.Parameters.ShowAlignmentMarks}"
+                            OnContent="" OffContent="" VerticalAlignment="Center" />
             </Grid>
-
-            <!-- DB 저장 상태 -->
-            <TextBlock Text="{Binding SavedDbName}"
-                       FontSize="10"
-                       Foreground="{DynamicResource TextMuted}" />
-
-
+            <Grid ColumnDefinitions="110,*">
+              <TextBlock Grid.Column="0" Text="Ruler"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding LoadedItem.Parameters.ShowRuler}"
+                            OnContent="" OffContent="" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="110,*">
+              <TextBlock Grid.Column="0" Text="Texture Bands"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding LoadedItem.Parameters.ShowTextureBands}"
+                            OnContent="" OffContent="" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="110,*">
+              <TextBlock Grid.Column="0" Text="Calibration Mark"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+              <ToggleSwitch Grid.Column="1"
+                            IsChecked="{Binding LoadedItem.Parameters.ShowCalibrationMark}"
+                            OnContent="" OffContent="" VerticalAlignment="Center" />
+            </Grid>
           </StackPanel>
-        </Border>
 
-        <!-- ── 스크롤 영역: 파라미터 폼 ──────────────────────────────── -->
-        <ScrollViewer Padding="16,12"
-                      VerticalScrollBarVisibility="Auto">
-          <StackPanel Spacing="12">
+          <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
 
-            <!-- 섹션: Canvas -->
-            <TextBlock Text="CANVAS"
-                       FontSize="10" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextMuted}"
-                       Margin="0,0,0,4" />
+          <!-- 섹션: Pads -->
+          <TextBlock Text="PADS"
+                     FontSize="10" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextMuted}"
+                     Margin="0,0,0,4" />
 
-            <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto">
+          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Row Count"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                           Value="{Binding LoadedItem.Parameters.PadRowCount}"
+                           Minimum="{Binding PadRowCountMin}"
+                           Maximum="{Binding PadRowCountMax}"
+                           Increment="1" FormatString="0" FontSize="12" />
 
-              <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="Width (μm)"
-                         VerticalAlignment="Center"
-                         Foreground="{DynamicResource TextSecondary}"
-                         FontSize="12" />
-              <NumericUpDown Grid.Row="0" Grid.Column="1"
-                             Value="{Binding Parameters.CanvasWidth}"
-                             Minimum="{Binding CanvasWidthMin}"
-                             Maximum="{Binding CanvasWidthMax}"
-                             Increment="500"
-                             FormatString="0"
-                             FontSize="12" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Column Count"
+                       VerticalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{DynamicResource TextSecondary}" FontSize="12" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                           Value="{Binding LoadedItem.Parameters.PadColumnCount}"
+                           Minimum="{Binding PadColumnCountMin}"
+                           Maximum="{Binding PadColumnCountMax}"
+                           Increment="1" FormatString="0" Margin="0,8,0,0" FontSize="12" />
+          </Grid>
 
-              <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="Height (μm)"
-                         VerticalAlignment="Center"
-                         Margin="0,8,0,0"
-                         Foreground="{DynamicResource TextSecondary}"
-                         FontSize="12" />
-              <NumericUpDown Grid.Row="1" Grid.Column="1"
-                             Value="{Binding Parameters.CanvasHeight}"
-                             Minimum="{Binding CanvasHeightMin}"
-                             Maximum="{Binding CanvasHeightMax}"
-                             Increment="500"
-                             FormatString="0"
-                             Margin="0,8,0,0"
-                             FontSize="12" />
-
-              <TextBlock Grid.Row="2" Grid.Column="0"
-                         Text="Background"
-                         VerticalAlignment="Center"
-                         Margin="0,8,0,0"
-                         Foreground="{DynamicResource TextSecondary}"
-                         FontSize="12" />
-              <NumericUpDown Grid.Row="2" Grid.Column="1"
-                             Value="{Binding Parameters.BackgroundGray}"
-                             Minimum="{Binding BackgroundGrayMin}"
-                             Maximum="{Binding BackgroundGrayMax}"
-                             Increment="10"
-                             FormatString="0"
-                             Margin="0,8,0,0"
-                             FontSize="12" />
-            </Grid>
-
-            <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
-
-            <!-- 섹션: Elements -->
-            <TextBlock Text="ELEMENTS"
-                       FontSize="10" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextMuted}"
-                       Margin="0,0,0,4" />
-
-            <StackPanel Spacing="8">
-
-              <Grid ColumnDefinitions="110,*">
-                <TextBlock Grid.Column="0"
-                           Text="Alignment Marks"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextSecondary}"
-                           FontSize="12" />
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding Parameters.ShowAlignmentMarks}"
-                              OnContent="" OffContent=""
-                              VerticalAlignment="Center" />
-              </Grid>
-
-              <Grid ColumnDefinitions="110,*">
-                <TextBlock Grid.Column="0"
-                           Text="Ruler"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextSecondary}"
-                           FontSize="12" />
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding Parameters.ShowRuler}"
-                              OnContent="" OffContent=""
-                              VerticalAlignment="Center" />
-              </Grid>
-
-              <Grid ColumnDefinitions="110,*">
-                <TextBlock Grid.Column="0"
-                           Text="Texture Bands"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextSecondary}"
-                           FontSize="12" />
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding Parameters.ShowTextureBands}"
-                              OnContent="" OffContent=""
-                              VerticalAlignment="Center" />
-              </Grid>
-
-              <Grid ColumnDefinitions="110,*">
-                <TextBlock Grid.Column="0"
-                           Text="Calibration Mark"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextSecondary}"
-                           FontSize="12" />
-                <ToggleSwitch Grid.Column="1"
-                              IsChecked="{Binding Parameters.ShowCalibrationMark}"
-                              OnContent="" OffContent=""
-                              VerticalAlignment="Center" />
-              </Grid>
-
-            </StackPanel>
-
-            <Border Height="1" Background="{DynamicResource BorderSubtle}" Margin="0,4" />
-
-            <!-- 섹션: Pads -->
-            <TextBlock Text="PADS"
-                       FontSize="10" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextMuted}"
-                       Margin="0,0,0,4" />
-
-            <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto">
-
-              <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="Row Count"
-                         VerticalAlignment="Center"
-                         Foreground="{DynamicResource TextSecondary}"
-                         FontSize="12" />
-              <NumericUpDown Grid.Row="0" Grid.Column="1"
-                             Value="{Binding Parameters.PadRowCount}"
-                             Minimum="{Binding PadRowCountMin}"
-                             Maximum="{Binding PadRowCountMax}"
-                             Increment="1"
-                             FormatString="0"
-                             FontSize="12" />
-
-              <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="Column Count"
-                         VerticalAlignment="Center"
-                         Margin="0,8,0,0"
-                         Foreground="{DynamicResource TextSecondary}"
-                         FontSize="12" />
-              <NumericUpDown Grid.Row="1" Grid.Column="1"
-                             Value="{Binding Parameters.PadColumnCount}"
-                             Minimum="{Binding PadColumnCountMin}"
-                             Maximum="{Binding PadColumnCountMax}"
-                             Increment="1"
-                             FormatString="0"
-                             Margin="0,8,0,0"
-                             FontSize="12" />
-            </Grid>
-
-          </StackPanel>
-        </ScrollViewer>
-
-      </DockPanel>
+        </StackPanel>
+      </ScrollViewer>
     </Border>
 
   </Grid>

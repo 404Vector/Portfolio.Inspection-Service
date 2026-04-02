@@ -18,9 +18,9 @@ namespace Core.Models;
 /// Die 격자의 원점 오프셋 (µm).
 /// 웨이퍼 중심 대비 첫 번째 Die 기준점의 상대 위치입니다.
 /// </param>
-/// <param name="WaferOffset">
-/// 웨이퍼 기계 원점 대비 실제 웨이퍼 중심의 오프셋 (µm).
-/// 척(Chuck) 또는 스테이지 로딩 오차를 보정할 때 사용합니다.
+/// <param name="EdgeOffsetUm">
+/// 웨이퍼 가장자리로부터 패턴(유효 다이) 영역 시작점까지의 오프셋 (µm).
+/// 가장자리 배제 영역(Edge Exclusion) 폭에 해당하며, 스캔 범위 계산에 사용됩니다.
 /// </param>
 /// <param name="ProcessStep">현재 공정 단계 (예: "Litho", "Etch", "CMP")</param>
 /// <param name="CreatedAt">웨이퍼 정보 생성 시각</param>
@@ -35,7 +35,7 @@ public record WaferInfo(
   WaferCoordinate  CoordinateOrigin,
   DieSize          DieSize,
   WaferCoordinate  DieOffset,
-  WaferCoordinate  WaferOffset,
+  double           EdgeOffsetUm,
   string           ProcessStep,
   DateTimeOffset   CreatedAt
 ) {
@@ -70,7 +70,7 @@ public record WaferInfo(
       CoordinateOrigin: WaferCoordinate.Origin,
       DieSize:          new DieSize(26_000.0, 33_000.0),
       DieOffset:        WaferCoordinate.Origin,
-      WaferOffset:      WaferCoordinate.Origin,
+      EdgeOffsetUm:     1_000.0,
       ProcessStep:      "Unknown",
       CreatedAt:        DateTimeOffset.UtcNow
     );

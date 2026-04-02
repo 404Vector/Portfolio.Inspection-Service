@@ -31,7 +31,7 @@ public sealed class MockInspectionService : IInspectionService
   private CancellationTokenSource? _cts;
   private readonly Random _random = new();
 
-  public Task StartAsync(WaferSurfaceInspectionRecipe recipe, CancellationToken ct = default)
+  public Task StartAsync(WaferSurfaceInspectionRecipe recipe, WaferInfo wafer, CancellationToken ct = default)
   {
     if (_cts is not null)
       throw new InvalidOperationException("이미 검사가 진행 중입니다.");
@@ -39,7 +39,7 @@ public sealed class MockInspectionService : IInspectionService
     _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
     var token = _cts.Token;
 
-    _ = Task.Run(() => RunAsync(recipe, token), token);
+    _ = Task.Run(() => RunAsync(wafer, token), token);
     return Task.CompletedTask;
   }
 
@@ -49,12 +49,12 @@ public sealed class MockInspectionService : IInspectionService
     return Task.CompletedTask;
   }
 
-  private async Task RunAsync(WaferSurfaceInspectionRecipe recipe, CancellationToken ct)
+  private async Task RunAsync(WaferInfo wafer, CancellationToken ct)
   {
     bool cancelled = false;
     try
     {
-      var dieMap = DieMap.From(recipe.Wafer);
+      var dieMap = DieMap.From(wafer);
       var dies   = dieMap.Dies;
       int total  = dies.Count;
 

@@ -52,7 +52,7 @@ public sealed class WaferMapControl : Control
     var map = DieMap;
     if (map is null) return;
 
-    double radiusUm = map.Wafer.RadiusUm;
+    double radiusUm = map.RadiusUm;
     double mapSpan  = radiusUm * 2.0;
 
     double availW = Bounds.Width;

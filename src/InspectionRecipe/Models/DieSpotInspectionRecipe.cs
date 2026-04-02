@@ -10,7 +10,7 @@ namespace InspectionRecipe.Models;
 /// </summary>
 /// <param name="RecipeName">레시피 식별 이름</param>
 /// <param name="Description">레시피 설명</param>
-/// <param name="Wafer">검사 대상 웨이퍼 정보</param>
+/// <param name="WaferId">검사 대상 웨이퍼의 식별자. WaferInfo 테이블에서 조회하여 사용한다.</param>
 /// <param name="Fov">카메라 FOV 크기 (µm)</param>
 /// <param name="ShotCenter">촬영 중심 좌표 (웨이퍼 좌표계, µm)</param>
 /// <param name="Threshold">검사 알고리즘 판정 임계값 (0.0 ~ 1.0)</param>
@@ -18,7 +18,7 @@ namespace InspectionRecipe.Models;
 public record DieSpotInspectionRecipe(
   string          RecipeName,
   string          Description,
-  WaferInfo       Wafer,
+  string          WaferId,
   FovSize         Fov,
   WaferCoordinate ShotCenter,
   double          Threshold  = 0.5,

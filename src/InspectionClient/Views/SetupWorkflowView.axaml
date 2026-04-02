@@ -5,17 +5,21 @@
              xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:views="using:InspectionClient.Views"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
-             x:Class="InspectionClient.Views.RecipeSetupWorkflowView"
-             x:DataType="vm:RecipeSetupWorkflowViewModel">
+             x:Class="InspectionClient.Views.SetupWorkflowView"
+             x:DataType="vm:SetupWorkflowViewModel">
 
   <TabControl Classes="tab-underline">
 
-    <TabItem Header="Wafer Surface">
-      <views:WaferSurfaceRecipeSetupView DataContext="{Binding WaferSurface}" />
+    <TabItem Header="Die">
+      <views:DieSetupWorkflowView DataContext="{Binding DieSetup}" />
     </TabItem>
 
-    <TabItem Header="Die Spot">
-      <views:DieSpotRecipeSetupView DataContext="{Binding DieSpot}" />
+    <TabItem Header="Wafer">
+      <views:WaferSetupWorkflowView DataContext="{Binding WaferSetup}" />
+    </TabItem>
+
+    <TabItem Header="Recipe">
+      <views:RecipeSetupWorkflowView DataContext="{Binding RecipeSetup}" />
     </TabItem>
 
   </TabControl>

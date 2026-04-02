@@ -8,9 +8,6 @@ namespace Core.Models;
 /// FOV가 Die보다 크거나 작은 경우를 모두 지원합니다.
 /// </summary>
 public record ScanPlan {
-  /// <summary>스캔 대상 웨이퍼 정보</summary>
-  public WaferInfo Wafer { get; }
-
   /// <summary>유효 Die 레이아웃</summary>
   public DieMap DieMap { get; }
 
@@ -33,14 +30,12 @@ public record ScanPlan {
   public int TotalShotCount => Sectors.Sum(s => s.ShotCount);
 
   private ScanPlan(
-    WaferInfo              wafer,
-    DieMap                 dieMap,
-    FovSize                fov,
-    double                 overlapXum,
-    double                 overlapYum,
+    DieMap                    dieMap,
+    FovSize                   fov,
+    double                    overlapXum,
+    double                    overlapYum,
     IReadOnlyList<ScanSector> sectors
   ) {
-    Wafer      = wafer;
     DieMap     = dieMap;
     Fov        = fov;
     OverlapXum = overlapXum;
@@ -69,7 +64,7 @@ public record ScanPlan {
     var dieMap   = DieMap.From(wafer);
     var sectors  = BuildSectors(wafer, dieMap, fov, overlapXum, overlapYum);
 
-    return new ScanPlan(wafer, dieMap, fov, overlapXum, overlapYum, sectors);
+    return new ScanPlan(dieMap, fov, overlapXum, overlapYum, sectors);
   }
 
   // ── 내부 계산 ──────────────────────────────────────────────────────────

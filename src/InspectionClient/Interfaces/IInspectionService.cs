@@ -16,7 +16,10 @@ public interface IInspectionService
   /// 웨이퍼 검사를 시작한다.
   /// 진행 상황은 <see cref="ProgressChanged"/> 이벤트로 발행된다.
   /// </summary>
-  Task StartAsync(WaferSurfaceInspectionRecipe recipe, CancellationToken ct = default);
+  /// <param name="recipe">실행할 검사 레시피</param>
+  /// <param name="wafer">검사 대상 웨이퍼 정보. DieMap 계산 및 결과 기록에 사용된다.</param>
+  /// <param name="ct">취소 토큰</param>
+  Task StartAsync(WaferSurfaceInspectionRecipe recipe, WaferInfo wafer, CancellationToken ct = default);
 
   /// <summary>
   /// 진행 중인 검사를 중단한다.

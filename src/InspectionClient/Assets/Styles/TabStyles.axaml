@@ -1,0 +1,61 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ── TabControl.tab-underline ─────────────────────────────────────
+       언더라인 인디케이터 스타일.
+       SetupWorkflowView (Die/Wafer/Recipe) 및
+       RecipeSetupWorkflowView (recipe type 탭)에서 공용.
+  ─────────────────────────────────────────────────────────────────── -->
+
+  <Style Selector="TabControl.tab-underline">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <!-- 탭 스트립 하단 구분선: BgSurface 위에 BorderSubtle 라인 -->
+  <Style Selector="TabControl.tab-underline /template/ Border#PART_SelectedPipe">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <!-- ── TabItem 기본 ────────────────────────────────────────────── -->
+  <Style Selector="TabControl.tab-underline TabItem">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Padding" Value="16,10" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="Root"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                BorderThickness="0,0,0,2"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Header}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            TextElement.Foreground="{TemplateBinding Foreground}"
+                            TextElement.FontSize="{TemplateBinding FontSize}"
+                            TextElement.FontWeight="{TemplateBinding FontWeight}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <!-- ── Hover ──────────────────────────────────────────────────── -->
+  <Style Selector="TabControl.tab-underline TabItem:pointerover /template/ Border#Root">
+    <Setter Property="Background" Value="{DynamicResource NavHover}" />
+  </Style>
+
+  <!-- ── Selected ──────────────────────────────────────────────── -->
+  <Style Selector="TabControl.tab-underline TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TabControl.tab-underline TabItem:selected /template/ Border#Root">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+</Styles>

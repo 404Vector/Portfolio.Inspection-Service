@@ -27,8 +27,10 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   private readonly IRecipeRepository           _recipeRepository;
   private readonly IInspectionResultRepository _resultRepository;
   private readonly IInspectionService          _inspectionService;
+  private readonly IWaferInfoRepository        _waferRepository;
 
   private WaferSurfaceInspectionRecipe? _loadedRecipe;
+  private WaferInfo?                    _loadedWafer;
   private DateTimeOffset                _inspectionStartedAt;
 
   // ── 상태 표시 ──────────────────────────────────────────────────────────
@@ -71,12 +73,14 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
       IRecipeRepository           recipeRepository,
       IInspectionResultRepository resultRepository,
       IInspectionService          inspectionService,
+      IWaferInfoRepository        waferRepository,
       ILogService                 logService)
       : base(logService)
   {
     _recipeRepository  = recipeRepository;
     _resultRepository  = resultRepository;
     _inspectionService = inspectionService;
+    _waferRepository   = waferRepository;
 
     _inspectionService.ProgressChanged += OnProgressChanged;
     _inspectionService.Completed       += OnCompleted;
@@ -127,7 +131,7 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
     var result = new WaferSurfaceInspectionResult(
       RecipeName:   _loadedRecipe.RecipeName,
-      Wafer:        _loadedRecipe.Wafer,
+      WaferId:      _loadedRecipe.WaferId,
       Status:       status,
       StartedAt:    _inspectionStartedAt,
       CompletedAt:  DateTimeOffset.UtcNow,
@@ -146,17 +150,18 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── 커맨드 ─────────────────────────────────────────────────────────────
 
-  private bool CanStart() => !IsRunning && _loadedRecipe is not null;
+  private bool CanStart() => !IsRunning && _loadedRecipe is not null && _loadedWafer is not null;
   private bool CanStop()  => IsRunning;
 
   [RelayCommand(CanExecute = nameof(CanStart))]
   private async Task StartAsync() => await Execute(async () =>
   {
     var recipe = _loadedRecipe!;
+    var wafer  = _loadedWafer!;
     ResetMap();
     IsRunning            = true;
     _inspectionStartedAt = DateTimeOffset.UtcNow;
-    await _inspectionService.StartAsync(recipe);
+    await _inspectionService.StartAsync(recipe, wafer);
   }, nameof(StartAsync));
 
   [RelayCommand(CanExecute = nameof(CanStop))]
@@ -171,16 +176,16 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   {
     var list = await _recipeRepository.ListAsync();
     RecipeList.Clear();
-    foreach (var item in list)
-      RecipeList.Add(item);
+    foreach (var row in list)
+      RecipeList.Add(row.Recipe);
   }, nameof(RefreshRecipeListAsync));
 
   /// <summary>선택된 Recipe를 검사에 연결한다.</summary>
   [RelayCommand(CanExecute = nameof(HasSelectedRecipe))]
-  private void LoadSelectedRecipe() => Execute(() =>
+  private async Task LoadSelectedRecipeAsync() => await Execute(async () =>
   {
-    SetRecipe(SelectedRecipe!);
-  }, nameof(LoadSelectedRecipe));
+    await SetRecipeAsync(SelectedRecipe!);
+  }, nameof(LoadSelectedRecipeAsync));
 
   /// <summary>검사 결과 DB 목록을 새로고침한다.</summary>
   [RelayCommand]
@@ -209,11 +214,13 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
-  private void SetRecipe(WaferSurfaceInspectionRecipe recipe)
+  private async Task SetRecipeAsync(WaferSurfaceInspectionRecipe recipe)
   {
-    _loadedRecipe  = recipe;
-    RecipeSummary  = $"{recipe.RecipeName} | {recipe.Wafer.WaferId} | FOV {recipe.Fov.WidthUm:0}×{recipe.Fov.HeightUm:0} µm";
-    DieMap         = DieMap.From(recipe.Wafer);
+    var waferRow = await _waferRepository.FindByWaferIdAsync(recipe.WaferId);
+    _loadedWafer  = waferRow?.ToWaferInfo();
+    _loadedRecipe = recipe;
+    RecipeSummary = $"{recipe.RecipeName} | {recipe.WaferId} | FOV {recipe.Fov.WidthUm:0}×{recipe.Fov.HeightUm:0} µm";
+    DieMap        = _loadedWafer is not null ? DieMap.From(_loadedWafer) : null;
     StartCommand.NotifyCanExecuteChanged();
     ResetMap();
   }

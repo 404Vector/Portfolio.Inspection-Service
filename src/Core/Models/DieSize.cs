@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Core.Models;
 
 /// <summary>
@@ -10,6 +12,7 @@ public readonly struct DieSize : IEquatable<DieSize> {
   /// <summary>Die 높이 (µm)</summary>
   public double HeightUm { get; }
 
+  [JsonConstructor]
   public DieSize(double widthUm, double heightUm) {
     if (widthUm <= 0) throw new ArgumentOutOfRangeException(nameof(widthUm), "Die 너비는 0보다 커야 합니다.");
     if (heightUm <= 0) throw new ArgumentOutOfRangeException(nameof(heightUm), "Die 높이는 0보다 커야 합니다.");

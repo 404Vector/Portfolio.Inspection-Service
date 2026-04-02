@@ -1,17 +1,14 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Core.Models;
+using InspectionClient.Models;
 
 namespace InspectionClient.Interfaces;
 
 /// <summary>
-/// WaferInfo 영속성 계약.
+/// WaferInfo 테이블 CRUD 계약.
 /// </summary>
-public interface IWaferInfoRepository
+public interface IWaferInfoRepository : INamedRepository<WaferInfoRow>
 {
-  Task SaveAsync(WaferInfo waferInfo, CancellationToken ct = default);
-  Task<WaferInfo?> FindAsync(string waferId, CancellationToken ct = default);
-  Task<IReadOnlyList<WaferInfo>> ListAsync(CancellationToken ct = default);
-  Task DeleteAsync(string waferId, CancellationToken ct = default);
+  /// <summary>WaferId(도메인 식별자)로 row를 조회한다. 없으면 null을 반환한다.</summary>
+  Task<WaferInfoRow?> FindByWaferIdAsync(string waferId, CancellationToken ct = default);
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Core.Models;
 
 /// <summary>
@@ -11,6 +13,7 @@ public readonly struct WaferCoordinate : IEquatable<WaferCoordinate> {
   /// <summary>Y축 위치 (µm). 양의 방향 = 위쪽 (SEMI 표준 기준).</summary>
   public double Yum { get; }
 
+  [JsonConstructor]
   public WaferCoordinate(double xum, double yum) {
     Xum = xum;
     Yum = yum;

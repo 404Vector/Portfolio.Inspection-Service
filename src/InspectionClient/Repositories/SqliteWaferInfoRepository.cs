@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Core.Models;
 using InspectionClient.Interfaces;
+using InspectionClient.Models;
 using InspectionClient.Services;
-using Microsoft.Data.Sqlite;
 
 namespace InspectionClient.Repositories;
 
@@ -19,67 +19,114 @@ public sealed class SqliteWaferInfoRepository : IWaferInfoRepository
     _db = db;
   }
 
-  public async Task SaveAsync(WaferInfo waferInfo, CancellationToken ct = default)
+  public async Task<WaferInfoRow> CreateAsync(string name, CancellationToken ct = default)
   {
-    ArgumentNullException.ThrowIfNull(waferInfo);
+    ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+    var info = WaferInfo.CreateDummy() with { WaferId = name };
+    var json = JsonSerializer.Serialize(info, RepositoryJsonOptions.Default);
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO WaferInfo (WaferId, LotId, WaferType, CreatedAt, Json)
-      VALUES ($waferId, $lotId, $waferType, $createdAt, $json)
-      ON CONFLICT(WaferId) DO UPDATE SET
-        LotId     = excluded.LotId,
-        WaferType = excluded.WaferType,
-        CreatedAt = excluded.CreatedAt,
-        Json      = excluded.Json
+      INSERT INTO WaferInfo (Name, WaferType, CreatedAt, DieParametersId, Json)
+      VALUES ($name, $waferType, $createdAt, NULL, $json)
+      RETURNING Id
       """;
-    cmd.Parameters.AddWithValue("$waferId",   waferInfo.WaferId);
-    cmd.Parameters.AddWithValue("$lotId",     waferInfo.LotId);
-    cmd.Parameters.AddWithValue("$waferType", waferInfo.WaferType.ToString());
-    cmd.Parameters.AddWithValue("$createdAt", waferInfo.CreatedAt.ToString("O"));
-    cmd.Parameters.AddWithValue("$json",      JsonSerializer.Serialize(waferInfo, RepositoryJsonOptions.Default));
-    await cmd.ExecuteNonQueryAsync(ct);
+    cmd.Parameters.AddWithValue("$name",      name);
+    cmd.Parameters.AddWithValue("$waferType", info.WaferType.ToString());
+    cmd.Parameters.AddWithValue("$createdAt", info.CreatedAt.ToString("O"));
+    cmd.Parameters.AddWithValue("$json",      json);
+
+    var id  = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
+    var row = new WaferInfoRow { Id = id, Name = name };
+    row.LoadFrom(info);
+    return row;
   }
 
-  public async Task<WaferInfo?> FindAsync(string waferId, CancellationToken ct = default)
+  public async Task<WaferInfoRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
-
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Json FROM WaferInfo WHERE WaferId = $waferId";
-    cmd.Parameters.AddWithValue("$waferId", waferId);
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
 
-    var json = await cmd.ExecuteScalarAsync(ct) as string;
-    if (json is null)
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    if (!await reader.ReadAsync(ct))
       return null;
 
-    return JsonSerializer.Deserialize<WaferInfo>(json, RepositoryJsonOptions.Default);
+    return ReadRow(reader);
   }
 
-  public async Task<IReadOnlyList<WaferInfo>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<WaferInfoRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Json FROM WaferInfo ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo ORDER BY Id DESC";
 
-    var list = new List<WaferInfo>();
+    var list = new List<WaferInfoRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
     while (await reader.ReadAsync(ct))
-    {
-      var item = JsonSerializer.Deserialize<WaferInfo>(reader.GetString(0), RepositoryJsonOptions.Default);
-      if (item is not null)
-        list.Add(item);
-    }
+      list.Add(ReadRow(reader));
 
     return list;
   }
 
-  public async Task DeleteAsync(string waferId, CancellationToken ct = default)
+  public async Task UpdateAsync(WaferInfoRow item, CancellationToken ct = default)
+  {
+    ArgumentNullException.ThrowIfNull(item);
+
+    var info = item.ToWaferInfo();
+    var json = JsonSerializer.Serialize(info, RepositoryJsonOptions.Default);
+
+    await using var cmd = _db.Connection.CreateCommand();
+    cmd.CommandText = """
+      UPDATE WaferInfo
+      SET Name = $name, WaferType = $waferType, CreatedAt = $createdAt,
+          DieParametersId = $dieParamsId, Json = $json
+      WHERE Id = $id
+      """;
+    cmd.Parameters.AddWithValue("$id",          item.Id);
+    cmd.Parameters.AddWithValue("$name",        item.Name);
+    cmd.Parameters.AddWithValue("$waferType",   info.WaferType.ToString());
+    cmd.Parameters.AddWithValue("$createdAt",   info.CreatedAt.ToString("O"));
+    cmd.Parameters.AddWithValue("$dieParamsId", item.DieParametersId.HasValue
+        ? (object)item.DieParametersId.Value
+        : DBNull.Value);
+    cmd.Parameters.AddWithValue("$json",        json);
+    await cmd.ExecuteNonQueryAsync(ct);
+  }
+
+  public async Task<WaferInfoRow?> FindByWaferIdAsync(string waferId, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
 
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "DELETE FROM WaferInfo WHERE WaferId = $waferId";
+    cmd.CommandText = "SELECT Id, Name, DieParametersId, Json FROM WaferInfo WHERE json_extract(Json, '$.WaferId') = $waferId LIMIT 1";
     cmd.Parameters.AddWithValue("$waferId", waferId);
+
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    if (!await reader.ReadAsync(ct))
+      return null;
+
+    return ReadRow(reader);
+  }
+
+  public async Task DeleteAsync(long id, CancellationToken ct = default)
+  {
+    await using var cmd = _db.Connection.CreateCommand();
+    cmd.CommandText = "DELETE FROM WaferInfo WHERE Id = $id";
+    cmd.Parameters.AddWithValue("$id", id);
     await cmd.ExecuteNonQueryAsync(ct);
+  }
+
+  // ── 헬퍼 ─────────────────────────────────────────────────────────────────
+
+  private static WaferInfoRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
+  {
+    var id          = reader.GetInt64(0);
+    var name        = reader.GetString(1);
+    var dieParamsId = reader.IsDBNull(2) ? (long?)null : reader.GetInt64(2);
+    var info        = JsonSerializer.Deserialize<WaferInfo>(reader.GetString(3), RepositoryJsonOptions.Default)!;
+    var row         = new WaferInfoRow { Id = id, Name = name, DieParametersId = dieParamsId };
+    row.LoadFrom(info);
+    return row;
   }
 }

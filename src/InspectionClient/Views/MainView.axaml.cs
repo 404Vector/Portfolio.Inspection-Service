@@ -11,10 +11,8 @@ public partial class MainView : UserControl
   // 버튼 Name → 논리적 뷰 이름 매핑 (PointerEntered hover 미리보기용)
   private static readonly Dictionary<string, string> ButtonToViewName = new()
   {
+    [nameof(NavSetup)]         = "Setup",
     [nameof(NavInspection)]    = "Inspection",
-    [nameof(NavDieSetup)]      = "DieSetup",
-    [nameof(NavWaferSetup)]    = "WaferSetup",
-    [nameof(NavRecipeSetup)]   = "RecipeSetup",
     [nameof(NavHistory)]       = "History",
     [nameof(NavFrameGrabber)]  = "FrameGrabber",
     [nameof(NavEquipmentSpec)] = "EquipmentSpec",
@@ -46,10 +44,8 @@ public partial class MainView : UserControl
   {
     var buttons = new Dictionary<string, Button?>
     {
+      ["Setup"]         = NavSetup,
       ["Inspection"]    = NavInspection,
-      ["DieSetup"]      = NavDieSetup,
-      ["WaferSetup"]    = NavWaferSetup,
-      ["RecipeSetup"]   = NavRecipeSetup,
       ["History"]       = NavHistory,
       ["FrameGrabber"]  = NavFrameGrabber,
       ["EquipmentSpec"] = NavEquipmentSpec,

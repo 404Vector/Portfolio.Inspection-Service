@@ -11,30 +11,31 @@ using InspectionRecipe.Models;
 
 namespace InspectionClient.Repositories;
 
-public sealed class SqliteRecipeRepository : IRecipeRepository
+public sealed class SqliteDieSpotRecipeRepository : IDieSpotRecipeRepository
 {
   private readonly InspectionDatabase _db;
 
-  public SqliteRecipeRepository(InspectionDatabase db)
+  public SqliteDieSpotRecipeRepository(InspectionDatabase db)
   {
     _db = db;
   }
 
-  public async Task<RecipeRow> CreateAsync(string name, CancellationToken ct = default)
+  public async Task<DieSpotRecipeRow> CreateAsync(string name, CancellationToken ct = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-    var recipe    = new WaferSurfaceInspectionRecipe(
+    var recipe    = new DieSpotInspectionRecipe(
       RecipeName:  name,
       Description: string.Empty,
       WaferId:     string.Empty,
-      Fov:         new FovSize(1413.0, 1035.0));
+      Fov:         new FovSize(1413.0, 1035.0),
+      ShotCenter:  WaferCoordinate.Origin);
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
     var json      = JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default);
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO Recipe (Name, WaferId, CreatedAt, Json)
+      INSERT INTO DieSpotRecipe (Name, WaferId, CreatedAt, Json)
       VALUES ($name, $waferId, $createdAt, $json)
       RETURNING Id
       """;
@@ -44,13 +45,13 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     cmd.Parameters.AddWithValue("$json",      json);
 
     var id = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
-    return new RecipeRow { Id = id, Recipe = recipe };
+    return new DieSpotRecipeRow { Id = id, Recipe = recipe };
   }
 
-  public async Task<RecipeRow?> FindByIdAsync(long id, CancellationToken ct = default)
+  public async Task<DieSpotRecipeRow?> FindByIdAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Json FROM Recipe WHERE Id = $id";
+    cmd.CommandText = "SELECT Id, Json FROM DieSpotRecipe WHERE Id = $id";
     cmd.Parameters.AddWithValue("$id", id);
 
     await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -60,12 +61,12 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     return ReadRow(reader);
   }
 
-  public async Task<IReadOnlyList<RecipeRow>> ListAsync(CancellationToken ct = default)
+  public async Task<IReadOnlyList<DieSpotRecipeRow>> ListAsync(CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "SELECT Id, Json FROM Recipe ORDER BY CreatedAt DESC";
+    cmd.CommandText = "SELECT Id, Json FROM DieSpotRecipe ORDER BY CreatedAt DESC";
 
-    var list = new List<RecipeRow>();
+    var list = new List<DieSpotRecipeRow>();
     await using var reader = await cmd.ExecuteReaderAsync(ct);
     while (await reader.ReadAsync(ct))
       list.Add(ReadRow(reader));
@@ -73,7 +74,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     return list;
   }
 
-  public async Task UpdateAsync(RecipeRow item, CancellationToken ct = default)
+  public async Task UpdateAsync(DieSpotRecipeRow item, CancellationToken ct = default)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -82,7 +83,7 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      UPDATE Recipe
+      UPDATE DieSpotRecipe
       SET Name = $name, WaferId = $waferId, CreatedAt = $createdAt, Json = $json
       WHERE Id = $id
       """;
@@ -97,17 +98,17 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
   public async Task DeleteAsync(long id, CancellationToken ct = default)
   {
     await using var cmd = _db.Connection.CreateCommand();
-    cmd.CommandText = "DELETE FROM Recipe WHERE Id = $id";
+    cmd.CommandText = "DELETE FROM DieSpotRecipe WHERE Id = $id";
     cmd.Parameters.AddWithValue("$id", id);
     await cmd.ExecuteNonQueryAsync(ct);
   }
 
   // ── 헬퍼 ─────────────────────────────────────────────────────────────────
 
-  private static RecipeRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
+  private static DieSpotRecipeRow ReadRow(Microsoft.Data.Sqlite.SqliteDataReader reader)
   {
     var id     = reader.GetInt64(0);
-    var recipe = JsonSerializer.Deserialize<WaferSurfaceInspectionRecipe>(reader.GetString(1), RepositoryJsonOptions.Default);
-    return new RecipeRow { Id = id, Recipe = recipe! };
+    var recipe = JsonSerializer.Deserialize<DieSpotInspectionRecipe>(reader.GetString(1), RepositoryJsonOptions.Default);
+    return new DieSpotRecipeRow { Id = id, Recipe = recipe! };
   }
 }

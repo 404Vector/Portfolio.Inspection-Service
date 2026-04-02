@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Core.Enums;
 using Core.Logging.Interfaces;
-using Core.Models;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
 
@@ -15,165 +14,223 @@ namespace InspectionClient.ViewModels;
 /// Wafer Setup 워크플로 ViewModel.
 ///
 /// 책임:
-///   - WaferInfo 입력 폼 바인딩
-///   - DieSetupWorkflow에서 DieSize 가져오기
-///   - Save: IWaferInfoRepository에 저장
-///   - Load: DB 목록에서 선택하여 폼에 채우기
-///   - Delete: 선택된 WaferInfo를 DB에서 삭제
+///   - WaferInfo CRUD (목록 로드, 생성, 저장, 삭제)
+///   - LoadedItem을 직접 바인딩하여 View에서 편집
+///   - 보조편집패널: ComboBox 대체 리스트 및 DieParameters 선택
 /// </summary>
 public partial class WaferSetupWorkflowViewModel : ViewModelBase
 {
-  private readonly IWaferInfoRepository                _repository;
-  private readonly IDieRenderingParametersRepository   _dieRepository;
+  private readonly IWaferInfoRepository _repository;
+  private readonly IDieRenderingParametersRepository _dieRepository;
 
-  // ── 입력 폼 바인딩 프로퍼티 ─────────────────────────────────────────────
+  // ── WaferInfo 목록 ────────────────────────────────────────────────────
 
-  [ObservableProperty] private string           _waferId          = "WAFER-001";
-  [ObservableProperty] private string           _lotId            = "LOT-001";
-  [ObservableProperty] private int              _slotIndex        = 1;
-  [ObservableProperty] private WaferType        _waferType        = WaferType.Wafer300mm;
-  [ObservableProperty] private decimal?         _thicknessUm      = 775m;
-  [ObservableProperty] private WaferGrade       _waferGrade       = WaferGrade.Dummy;
-  [ObservableProperty] private NotchOrientation _notchOrientation = NotchOrientation.Down;
-  [ObservableProperty] private decimal?         _dieSizeWidthUm   = 10_000m;
-  [ObservableProperty] private decimal?         _dieSizeHeightUm  = 10_000m;
-  [ObservableProperty] private decimal?         _dieOffsetXum     = 0m;
-  [ObservableProperty] private decimal?         _dieOffsetYum     = 0m;
-  [ObservableProperty] private decimal?         _waferOffsetXum   = 0m;
-  [ObservableProperty] private decimal?         _waferOffsetYum   = 0m;
-  [ObservableProperty] private string           _processStep      = "Unknown";
-
-  /// <summary>마지막으로 저장된 WaferInfo 요약. 저장 전에는 "(미저장)".</summary>
-  [ObservableProperty] private string _savedSummary = "(미저장)";
-
-  // ── WaferInfo 목록 패널 ─────────────────────────────────────────────────
-
-  public ObservableCollection<WaferInfo> WaferInfoList { get; } = new();
+  public ObservableCollection<WaferInfoRow> Items { get; } = new();
 
   [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(LoadSelectedCommand))]
-  [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
-  private WaferInfo? _selectedWaferInfo;
+  [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
+  [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+  private WaferInfoRow? _selectedItem;
 
-  // ── Die 파라미터 목록 패널 (DieSize 가져오기용) ──────────────────────────
+  /// <summary>
+  /// 현재 편집 중인 항목. DbTableControl.LoadedItem과 양방향 바인딩.
+  /// null이면 Browse 상태, non-null이면 Edit 상태.
+  /// </summary>
+  [ObservableProperty] private WaferInfoRow? _loadedItem;
 
-  public ObservableCollection<DieParametersEntry> DieParameterList { get; } = new();
+  // ── Die 파라미터 목록 ─────────────────────────────────────────────────
+
+  public ObservableCollection<DieParametersRow> DieItems { get; } = new();
+
+  // ── 보조편집패널 상태 ─────────────────────────────────────────────────
+
+  public enum SidePanelMode { None, WaferType, WaferGrade, NotchOrientation, DieParameters }
 
   [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(ImportDieSizeCommand))]
-  private DieParametersEntry? _selectedDieEntry;
+  [NotifyPropertyChangedFor(nameof(IsSidePanelVisible))]
+  [NotifyPropertyChangedFor(nameof(IsWaferTypePanel))]
+  [NotifyPropertyChangedFor(nameof(IsWaferGradePanel))]
+  [NotifyPropertyChangedFor(nameof(IsNotchOrientationPanel))]
+  [NotifyPropertyChangedFor(nameof(IsDieParametersPanel))]
+  private SidePanelMode _activeSidePanel = SidePanelMode.None;
+
+  public bool IsSidePanelVisible      => ActiveSidePanel != SidePanelMode.None;
+  public bool IsWaferTypePanel        => ActiveSidePanel == SidePanelMode.WaferType;
+  public bool IsWaferGradePanel       => ActiveSidePanel == SidePanelMode.WaferGrade;
+  public bool IsNotchOrientationPanel => ActiveSidePanel == SidePanelMode.NotchOrientation;
+  public bool IsDieParametersPanel    => ActiveSidePanel == SidePanelMode.DieParameters;
+
 
   public WaferSetupWorkflowViewModel(
-      IWaferInfoRepository               repository,
-      IDieRenderingParametersRepository  dieRepository,
-      ILogService                        logService)
+      IWaferInfoRepository              repository,
+      IDieRenderingParametersRepository dieRepository,
+      ILogService                       logService)
       : base(logService)
   {
     _repository    = repository;
     _dieRepository = dieRepository;
+    _ = InitializeAsync();
   }
 
-  // ── 커맨드 ─────────────────────────────────────────────────────────────
+  // ── 초기화 ───────────────────────────────────────────────────────────
 
-  /// <summary>DB에서 Die 파라미터 목록을 새로고침한다.</summary>
+  private async Task InitializeAsync()
+  {
+    await RefreshDieAsync();
+    await RefreshAsync();
+  }
+
+  // ── 커맨드 ───────────────────────────────────────────────────────────
+
   [RelayCommand]
-  private async Task RefreshDieListAsync() => await Execute(async () =>
+  private async Task RefreshDieAsync() => await Execute(async () =>
   {
-    var entries = await _dieRepository.ListAsync();
-    DieParameterList.Clear();
-    foreach (var entry in entries)
-      DieParameterList.Add(entry);
-  }, nameof(RefreshDieListAsync));
+    var list = await _dieRepository.ListAsync();
+    DieItems.Clear();
+    foreach (var item in list)
+      DieItems.Add(item);
+  }, nameof(RefreshDieAsync));
 
-  /// <summary>선택된 Die 파라미터의 CanvasSize를 DieSizeWidth/Height에 적용한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedDieEntry))]
-  private void ImportDieSize() => Execute(() =>
+  [RelayCommand]
+  private async Task RefreshAsync() => await Execute(async () =>
   {
-    var p = SelectedDieEntry!.Parameters;
-    DieSizeWidthUm  = (decimal)p.CanvasWidth;
-    DieSizeHeightUm = (decimal)p.CanvasHeight;
-  }, nameof(ImportDieSize));
+    var list = await _repository.ListAsync();
+    Items.Clear();
+    foreach (var item in list)
+      Items.Add(item);
+  }, nameof(RefreshAsync));
 
-  private bool HasSelectedDieEntry => SelectedDieEntry is not null;
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private void Load(object? item) => Execute(() =>
+  {
+    // LoadedItem.DieParametersId가 이미 row에 포함되어 있으므로 추가 작업 불필요.
+  }, nameof(Load));
 
-  /// <summary>현재 입력값으로 WaferInfo를 생성하고 Repository에 저장한다.</summary>
+  [RelayCommand]
+  private async Task CreateAsync() => await Execute(async () =>
+  {
+    var name = $"New-{DateTime.Now:yyMMdd-HHmmss}";
+    var row  = await _repository.CreateAsync(name);
+    await RefreshAsync();
+    SelectedItem = FindById(row.Id);
+  }, nameof(CreateAsync));
+
+  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
+  private async Task DeleteAsync() => await Execute(async () =>
+  {
+    if (SelectedItem is not WaferInfoRow current)
+      return;
+    await _repository.DeleteAsync(current.Id);
+    Items.Remove(current);
+    SelectedItem = null;
+  }, nameof(DeleteAsync));
+
   [RelayCommand]
   private async Task SaveAsync() => await Execute(async () =>
   {
-    var waferInfo = BuildWaferInfo();
-    await _repository.SaveAsync(waferInfo);
-    SavedSummary = BuildSummary(waferInfo);
-    await RefreshListAsync();
+    if (LoadedItem is not WaferInfoRow current)
+      return;
+    await _repository.UpdateAsync(current);
+    LoadedItem = null;
   }, nameof(SaveAsync));
 
-  /// <summary>DB에서 WaferInfo 목록을 새로고침한다.</summary>
   [RelayCommand]
-  private async Task RefreshListAsync() => await Execute(async () =>
+  private async Task CancelAsync() => await Execute(async () =>
   {
-    var list = await _repository.ListAsync();
-    WaferInfoList.Clear();
-    foreach (var item in list)
-      WaferInfoList.Add(item);
-  }, nameof(RefreshListAsync));
+    if (LoadedItem is not WaferInfoRow current)
+      return;
+    var restored = await _repository.FindByIdAsync(current.Id);
+    if (restored is not null)
+    {
+      var idx = Items.IndexOf(current);
+      if (idx >= 0)
+        Items[idx] = restored;
+      SelectedItem = restored;
+    }
+    LoadedItem = null;
+  }, nameof(CancelAsync));
 
-  /// <summary>선택된 WaferInfo를 폼에 채운다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedWaferInfo))]
-  private void LoadSelected() => Execute(() =>
+  // ── 보조편집패널 커맨드 ──────────────────────────────────────────────
+
+  [RelayCommand]
+  private void OpenWaferTypePanel() =>
+      ActiveSidePanel = ActiveSidePanel == SidePanelMode.WaferType
+          ? SidePanelMode.None
+          : SidePanelMode.WaferType;
+
+  [RelayCommand]
+  private void OpenWaferGradePanel() =>
+      ActiveSidePanel = ActiveSidePanel == SidePanelMode.WaferGrade
+          ? SidePanelMode.None
+          : SidePanelMode.WaferGrade;
+
+  [RelayCommand]
+  private void OpenNotchOrientationPanel() =>
+      ActiveSidePanel = ActiveSidePanel == SidePanelMode.NotchOrientation
+          ? SidePanelMode.None
+          : SidePanelMode.NotchOrientation;
+
+  [RelayCommand]
+  private void OpenDieParametersPanel() =>
+      ActiveSidePanel = ActiveSidePanel == SidePanelMode.DieParameters
+          ? SidePanelMode.None
+          : SidePanelMode.DieParameters;
+
+  [RelayCommand]
+  private void SelectWaferType(WaferType value)
   {
-    ApplyToForm(SelectedWaferInfo!);
-    SavedSummary = BuildSummary(SelectedWaferInfo!);
-  }, nameof(LoadSelected));
+    if (LoadedItem is { } row)
+      row.WaferType = value;
+    ActiveSidePanel = SidePanelMode.None;
+  }
 
-  /// <summary>선택된 WaferInfo를 DB에서 삭제한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedWaferInfo))]
-  private async Task DeleteSelectedAsync() => await Execute(async () =>
+  [RelayCommand]
+  private void SelectWaferGrade(WaferGrade value)
   {
-    var toDelete = SelectedWaferInfo!;
-    await _repository.DeleteAsync(toDelete.WaferId);
-    SelectedWaferInfo = null;
-    await RefreshListAsync();
-  }, nameof(DeleteSelectedAsync));
+    if (LoadedItem is { } row)
+      row.WaferGrade = value;
+    ActiveSidePanel = SidePanelMode.None;
+  }
 
-  // ── CanExecute 헬퍼 ───────────────────────────────────────────────────
+  [RelayCommand]
+  private void SelectNotchOrientation(NotchOrientation value)
+  {
+    if (LoadedItem is { } row)
+      row.NotchOrientation = value;
+    ActiveSidePanel = SidePanelMode.None;
+  }
 
-  private bool HasSelectedWaferInfo => SelectedWaferInfo is not null;
+  [RelayCommand]
+  private void SelectDieParameters(DieParametersRow row)
+  {
+    if (LoadedItem is { } loaded)
+    {
+      loaded.DieParametersId = row.Id;
+      loaded.DieSizeWidthUm  = row.Parameters.CanvasWidth;
+      loaded.DieSizeHeightUm = row.Parameters.CanvasHeight;
+    }
+    ActiveSidePanel = SidePanelMode.None;
+  }
+
+  // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
+
+  private bool HasSelectedItem => SelectedItem is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
-  private WaferInfo BuildWaferInfo() => new(
-    WaferId:          WaferId,
-    LotId:            LotId,
-    SlotIndex:        SlotIndex,
-    WaferType:        WaferType,
-    ThicknessUm:      (double)(ThicknessUm ?? 775m),
-    Grade:            WaferGrade,
-    NotchOrientation: NotchOrientation,
-    CoordinateOrigin: WaferCoordinate.Origin,
-    DieSize:          new DieSize((double)(DieSizeWidthUm ?? 10_000m), (double)(DieSizeHeightUm ?? 10_000m)),
-    DieOffset:        new WaferCoordinate((double)(DieOffsetXum ?? 0m), (double)(DieOffsetYum ?? 0m)),
-    WaferOffset:      new WaferCoordinate((double)(WaferOffsetXum ?? 0m), (double)(WaferOffsetYum ?? 0m)),
-    ProcessStep:      ProcessStep,
-    CreatedAt:        DateTimeOffset.UtcNow
-  );
-
-  private void ApplyToForm(WaferInfo info)
+  private WaferInfoRow? FindById(long id)
   {
-    WaferId          = info.WaferId;
-    LotId            = info.LotId;
-    SlotIndex        = info.SlotIndex;
-    WaferType        = info.WaferType;
-    ThicknessUm      = (decimal)info.ThicknessUm;
-    WaferGrade       = info.Grade;
-    NotchOrientation = info.NotchOrientation;
-    DieSizeWidthUm   = (decimal)info.DieSize.WidthUm;
-    DieSizeHeightUm  = (decimal)info.DieSize.HeightUm;
-    DieOffsetXum     = (decimal)info.DieOffset.Xum;
-    DieOffsetYum     = (decimal)info.DieOffset.Yum;
-    WaferOffsetXum   = (decimal)info.WaferOffset.Xum;
-    WaferOffsetYum   = (decimal)info.WaferOffset.Yum;
-    ProcessStep      = info.ProcessStep;
+    foreach (var item in Items)
+      if (item.Id == id)
+        return item;
+    return null;
   }
 
-  private static string BuildSummary(WaferInfo info) =>
-      $"{info.WaferId} | {info.WaferType} | Die {info.DieSize.WidthUm:0}×{info.DieSize.HeightUm:0} µm";
+  private DieParametersRow? FindDieById(long id)
+  {
+    foreach (var item in DieItems)
+      if (item.Id == id)
+        return item;
+    return null;
+  }
 }

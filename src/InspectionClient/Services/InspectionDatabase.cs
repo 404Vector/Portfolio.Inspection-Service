@@ -15,7 +15,7 @@ namespace InspectionClient.Services;
 public sealed class InspectionDatabase : IDisposable
 {
   // 스키마 변경 시 이 값을 증가시키면 다음 실행 시 DB가 자동으로 재생성됩니다.
-  private const int SchemaVersion = 2;
+  private const int SchemaVersion = 5;
 
   private SqliteConnection _connection;
 
@@ -76,20 +76,32 @@ public sealed class InspectionDatabase : IDisposable
     // Microsoft.Data.Sqlite는 단일 명령어만 지원하므로 각 DDL을 개별 실행합니다.
     ExecuteNonQuery("""
       CREATE TABLE IF NOT EXISTS WaferInfo (
-        WaferId     TEXT    NOT NULL PRIMARY KEY,
-        LotId       TEXT    NOT NULL,
-        WaferType   TEXT    NOT NULL,
-        CreatedAt   TEXT    NOT NULL,
-        Json        TEXT    NOT NULL
+        Id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name            TEXT    NOT NULL UNIQUE,
+        WaferType       TEXT    NOT NULL,
+        CreatedAt       TEXT    NOT NULL,
+        DieParametersId INTEGER REFERENCES DieRenderingParameters(Id) ON DELETE SET NULL,
+        Json            TEXT    NOT NULL
       )
       """);
 
     ExecuteNonQuery("""
       CREATE TABLE IF NOT EXISTS Recipe (
-        RecipeName  TEXT    NOT NULL PRIMARY KEY,
-        WaferId     TEXT    NOT NULL,
-        CreatedAt   TEXT    NOT NULL,
-        Json        TEXT    NOT NULL
+        Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name      TEXT    NOT NULL UNIQUE,
+        WaferId   TEXT    NOT NULL,
+        CreatedAt TEXT    NOT NULL,
+        Json      TEXT    NOT NULL
+      )
+      """);
+
+    ExecuteNonQuery("""
+      CREATE TABLE IF NOT EXISTS DieSpotRecipe (
+        Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name      TEXT    NOT NULL UNIQUE,
+        WaferId   TEXT    NOT NULL,
+        CreatedAt TEXT    NOT NULL,
+        Json      TEXT    NOT NULL
       )
       """);
 
@@ -124,8 +136,9 @@ public sealed class InspectionDatabase : IDisposable
 
     ExecuteNonQuery("""
       CREATE TABLE IF NOT EXISTS DieRenderingParameters (
-        Name  TEXT NOT NULL PRIMARY KEY,
-        Json  TEXT NOT NULL
+        Id    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        Name  TEXT    NOT NULL UNIQUE,
+        Json  TEXT    NOT NULL
       )
       """);
   }
@@ -185,7 +198,7 @@ public sealed class InspectionDatabase : IDisposable
       VALUES ($name, $json)
       """;
     cmd.Parameters.AddWithValue("$name", "SEED-DEFAULT");
-    cmd.Parameters.AddWithValue("$json", json);
+    cmd.Parameters.AddWithValue("$json",  json);
     cmd.ExecuteNonQuery();
   }
 
@@ -197,11 +210,10 @@ public sealed class InspectionDatabase : IDisposable
     using var cmd = _connection.CreateCommand();
     cmd.Transaction = tx;
     cmd.CommandText = """
-      INSERT INTO WaferInfo (WaferId, LotId, WaferType, CreatedAt, Json)
-      VALUES ($waferId, $lotId, $waferType, $createdAt, $json)
+      INSERT INTO WaferInfo (Name, WaferType, CreatedAt, Json)
+      VALUES ($name, $waferType, $createdAt, $json)
       """;
-    cmd.Parameters.AddWithValue("$waferId",   dummy.WaferId);
-    cmd.Parameters.AddWithValue("$lotId",     dummy.LotId);
+    cmd.Parameters.AddWithValue("$name",      dummy.WaferId);
     cmd.Parameters.AddWithValue("$waferType", dummy.WaferType.ToString());
     cmd.Parameters.AddWithValue("$createdAt", dummy.CreatedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$json",      json);
@@ -210,12 +222,12 @@ public sealed class InspectionDatabase : IDisposable
 
   private void SeedRecipe(SqliteTransaction tx)
   {
-    var wafer  = Core.Models.WaferInfo.CreateDummy();
+    var dummy  = Core.Models.WaferInfo.CreateDummy();
     var recipe = new InspectionRecipe.Models.WaferSurfaceInspectionRecipe(
-      RecipeName:      "SEED-RECIPE",
-      Description:     "Seed dummy recipe",
-      Wafer:           wafer,
-      Fov:             new Core.Models.FovSize(1413.0, 1035.0)
+      RecipeName:  "SEED-RECIPE",
+      Description: "Seed dummy recipe",
+      WaferId:     dummy.WaferId,
+      Fov:         new Core.Models.FovSize(1413.0, 1035.0)
     );
     var json      = Serialize(recipe);
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
@@ -223,13 +235,13 @@ public sealed class InspectionDatabase : IDisposable
     using var cmd = _connection.CreateCommand();
     cmd.Transaction = tx;
     cmd.CommandText = """
-      INSERT INTO Recipe (RecipeName, WaferId, CreatedAt, Json)
-      VALUES ($recipeName, $waferId, $createdAt, $json)
+      INSERT INTO Recipe (Name, WaferId, CreatedAt, Json)
+      VALUES ($name, $waferId, $createdAt, $json)
       """;
-    cmd.Parameters.AddWithValue("$recipeName", recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",    recipe.Wafer.WaferId);
-    cmd.Parameters.AddWithValue("$createdAt",  createdAt);
-    cmd.Parameters.AddWithValue("$json",       json);
+    cmd.Parameters.AddWithValue("$name",      recipe.RecipeName);
+    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
+    cmd.Parameters.AddWithValue("$createdAt", createdAt);
+    cmd.Parameters.AddWithValue("$json",      json);
     cmd.ExecuteNonQuery();
   }
 
@@ -239,7 +251,7 @@ public sealed class InspectionDatabase : IDisposable
     var startedAt = DateTimeOffset.UtcNow;
     var result    = new Core.Models.WaferSurfaceInspectionResult(
       RecipeName:   "SEED-RECIPE",
-      Wafer:        Core.Models.WaferInfo.CreateDummy(),
+      WaferId:      Core.Models.WaferInfo.CreateDummy().WaferId,
       Status:       Core.Enums.InspectionStatus.Pass,
       StartedAt:    startedAt,
       CompletedAt:  startedAt.AddSeconds(1),
@@ -257,7 +269,7 @@ public sealed class InspectionDatabase : IDisposable
       """;
     cmd.Parameters.AddWithValue("$resultId",   resultId);
     cmd.Parameters.AddWithValue("$recipeName", result.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",    result.Wafer.WaferId);
+    cmd.Parameters.AddWithValue("$waferId",    result.WaferId);
     cmd.Parameters.AddWithValue("$status",     result.Status.ToString());
     cmd.Parameters.AddWithValue("$startedAt",  result.StartedAt.ToString("O"));
     cmd.Parameters.AddWithValue("$completedAt",result.CompletedAt.ToString("O"));

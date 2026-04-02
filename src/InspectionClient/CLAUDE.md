@@ -54,7 +54,8 @@ InspectionClient → CommunityToolkit.Mvvm (NuGet)
 - 사용자 액션에서 발생하는 예외는 `Execute()` 래퍼를 통해 일관되게 로그를 남긴다.
 - ViewModel은 서비스/gRPC 호출만 조율한다 — 직접 비즈니스 로직을 포함하지 않는다.
 - 상태는 `[ObservableProperty]` 프로퍼티로만 관리한다. `INotifyPropertyChanged`를 수동으로 구현하지 않는다.
-- ViewModel 간 직접 참조는 금지한다. 공유 상태가 필요하면 서비스나 메시지를 통해 통신한다.
+- **Feature ViewModel** 간 직접 참조는 금지한다. 공유 상태가 필요하면 서비스나 메시지를 통해 통신한다.
+- **Shell/Conductor ViewModel**은 Feature ViewModel을 소유할 수 있다. Shell VM의 단일 책임은 "어떤 View를 표시할지 결정하는 것"이므로, Feature VM 참조는 결합이 아니라 역할에 해당한다. `MainViewModel`, `SetupWorkflowViewModel`, `RecipeSetupWorkflowViewModel`이 이에 해당한다.
 
 ### View 설계 규칙
 
