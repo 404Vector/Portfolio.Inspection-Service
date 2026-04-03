@@ -85,6 +85,9 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
     _inspectionService.ProgressChanged += OnProgressChanged;
     _inspectionService.Completed       += OnCompleted;
+
+    _ = RefreshRecipeListAsync();
+    _ = RefreshWaferListAsync();
   }
 
   // ── 검사 이벤트 핸들러 ────────────────────────────────────────────────

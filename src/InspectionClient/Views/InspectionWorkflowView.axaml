@@ -12,13 +12,9 @@
              x:Class="InspectionClient.Views.InspectionWorkflowView"
              x:DataType="vm:InspectionWorkflowViewModel">
 
-  <Grid ColumnDefinitions="240,1,*">
-
-    <!-- ── 좌측: 목록 패널 ────────────────────────────────────────────── -->
-    <DockPanel Grid.Column="0">
-
+  <Grid ColumnDefinitions="240,1,240,1,*">
       <!-- ── Recipe 목록 (상단) ──────────────────────────────────────── -->
-      <Grid DockPanel.Dock="Top" RowDefinitions="Auto,1,*,Auto" >
+      <Grid Grid.Column="0" RowDefinitions="Auto,1,*,Auto">
 
         <Border Grid.Row="0"
                 Padding="12,10">
@@ -60,7 +56,7 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-
+          
         <Border Grid.Row="3"
                 Padding="8,8"
                 BorderBrush="{DynamicResource BorderSubtle}"
@@ -78,11 +74,12 @@
 
       </Grid>
 
-      <!-- 구분선 -->
-      <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource BorderSubtle}" />
+
+    <!-- 구분선 -->
+    <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
 
       <!-- ── Wafer 목록 (하단) ──────────────────────────────────────── -->
-      <Grid RowDefinitions="Auto,1,*,Auto">
+      <Grid Grid.Column="2" RowDefinitions="Auto,1,*,Auto">
 
         <Border Grid.Row="0"
                 Padding="12,10">
@@ -135,14 +132,11 @@
         </Border>
 
       </Grid>
-
-    </DockPanel>
-
     <!-- 구분선 -->
-    <Border Grid.Column="1" Background="{DynamicResource BorderSubtle}" />
+    <Border Grid.Column="3" Background="{DynamicResource BorderSubtle}" />
 
     <!-- ── 우측: 검사 메인 영역 ─────────────────────────────────────── -->
-    <DockPanel Grid.Column="2">
+    <DockPanel Grid.Column="4">
 
       <!-- ── 상단 툴바 ──────────────────────────────────────────────────── -->
       <Border DockPanel.Dock="Top"
