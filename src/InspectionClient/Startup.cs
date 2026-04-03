@@ -36,14 +36,14 @@ internal static class Startup
 
         // ── gRPC Clients ──────────────────────────────────────────────────────
         var frameGrabberAddress = context.Configuration
-            .GetValue<string>("GrpcEndpoints:FileFrameGrabberService")
+            .GetValue<string>("GrpcEndpoints:VirtualFrameGrabberServer")
             ?? "http://localhost:5001";
 
         services.AddGrpcClient<GrpcFrameGrabber.FrameGrabberClient>(o =>
             o.Address = new Uri(frameGrabberAddress));
 
-        // TODO: InspectionService proto가 확정되면 아래 주석을 해제하세요.
-        // services.AddGrpcClient<InspectionService.Greeter.GreeterClient>(o =>
+        // TODO: InspectionServer proto가 확정되면 아래 주석을 해제하세요.
+        // services.AddGrpcClient<InspectionServer.Greeter.GreeterClient>(o =>
         //     o.Address = new Uri(inspectionAddress));
 
         // ── Equipment Config ──────────────────────────────────────────────────

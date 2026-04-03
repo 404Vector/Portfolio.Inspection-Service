@@ -1,8 +1,8 @@
 using Core.FrameGrabber.Models;
-using FileFrameGrabberService.Interfaces;
+using VirtualFrameGrabberServer.Interfaces;
 using CE = Core.Enums;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// GrabberConfig와 프레임 인덱스를 받아 GrabbedFrame을 합성한다.

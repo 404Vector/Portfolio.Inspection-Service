@@ -2,12 +2,12 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Core.FrameGrabber.Interfaces;
 using Core.FrameGrabber.Models;
-using FileFrameGrabberService.Interfaces;
+using VirtualFrameGrabberServer.Interfaces;
 using CE = Core.Enums;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
-public sealed class FileFrameGrabberService : IFrameGrabber
+public sealed class VirtualFrameGrabberServer : IFrameGrabber
 {
   private readonly GradientFrameSynthesizerService _gradientSynthesizer;
   private readonly FileImageFrameSynthesizerService _imageSynthesizer;
@@ -30,7 +30,7 @@ public sealed class FileFrameGrabberService : IFrameGrabber
     new("snapshot",      "Snapshot",            "현재 모드에 관계없이 프레임을 1장 즉시 캡처한다."),
   ];
 
-  public FileFrameGrabberService(
+  public VirtualFrameGrabberServer(
       GradientFrameSynthesizerService  gradientSynthesizer,
       FileImageFrameSynthesizerService imageSynthesizer,
       GrabberParameterStoreService     paramStore)

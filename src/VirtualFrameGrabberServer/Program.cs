@@ -1,7 +1,7 @@
 using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
 using Core.SharedMemory.Writer;
-using FileFrameGrabberService.Services;
+using VirtualFrameGrabberServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +17,7 @@ builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSe
 builder.Services.AddSingleton<GradientFrameSynthesizerService>();
 builder.Services.AddSingleton<FileImageFrameSynthesizerService>();
 builder.Services.AddSingleton<GrabberParameterStoreService>();
-builder.Services.AddSingleton<IFrameGrabber, FileFrameGrabberService.Services.FileFrameGrabberService>();
+builder.Services.AddSingleton<IFrameGrabber, VirtualFrameGrabberServer.Services.VirtualFrameGrabberServer>();
 
 // ── Shared Memory Ring Buffer ────────────────────────────────────────────────
 var ringBufferOptions = builder.Configuration
@@ -42,6 +42,6 @@ var registry = app.Services.GetRequiredService<ActiveStreamRegistry>();
 app.Lifetime.ApplicationStopping.Register(() => registry.CancelAll());
 
 app.MapGrpcService<FrameGrabberGrpcService>();
-app.MapGet("/", () => "FileFrameGrabberService (gRPC). Use a gRPC client to interact with this service.");
+app.MapGet("/", () => "VirtualFrameGrabberServer (gRPC). Use a gRPC client to interact with this service.");
 
 app.Run();

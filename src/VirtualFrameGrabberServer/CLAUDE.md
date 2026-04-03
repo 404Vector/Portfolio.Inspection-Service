@@ -1,4 +1,4 @@
-# FileFrameGrabberService
+# VirtualFrameGrabberServer
 
 ## 역할
 
@@ -7,7 +7,7 @@ gRPC를 통해 클라이언트가 Frame Grabber를 제어(설정, 획득 시작/
 
 ## 포함 대상
 
-- gRPC 서버 구현 (`framegrabber.proto` 기반, 네임스페이스: `FileFrameGrabberService.Grpc`)
+- gRPC 서버 구현 (`framegrabber.proto` 기반, 네임스페이스: `VirtualFrameGrabberServer.Grpc`)
 - `Grabbers/` — `IFrameGrabber` 구현체
   - `FileFrameGrabber` — 스토리지 이미지를 읽어 그랩 이벤트를 발생시키는 구현체
   - `FramePump` — `IFrameGrabber` → `SharedMemoryRingBuffer` 단일 프로듀서 (순수 클래스, lifecycle은 gRPC 서비스가 제어)
@@ -16,18 +16,18 @@ gRPC를 통해 클라이언트가 Frame Grabber를 제어(설정, 획득 시작/
 ## 제외 대상
 
 - 검사(Inspection) 비즈니스 로직
-- InspectionService 직접 호출 (gRPC로만 통신)
-- SharedMemory Reader 코드 (Consumer는 InspectionService)
+- InspectionServer 직접 호출 (gRPC로만 통신)
+- SharedMemory Reader 코드 (Consumer는 InspectionServer)
 - `IFrameGrabber` 인터페이스 및 관련 모델 정의 (`Core.FrameGrabber`에 위치)
 
 ## 의존성 규칙
 
 ```
-FileFrameGrabberService → Core, Core.FrameGrabber, Core.Grpc, Core.Logging, Core.SharedMemory
-FileFrameGrabberService → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
+VirtualFrameGrabberServer → Core, Core.FrameGrabber, Core.Grpc, Core.Logging, Core.SharedMemory
+VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 ```
 
-- `InspectionService`, `InspectionClient` 프로젝트를 참조하지 않는다.
+- `InspectionServer`, `InspectionClient` 프로젝트를 참조하지 않는다.
 
 ## FramePump lifecycle
 
@@ -58,6 +58,6 @@ FileFrameGrabberService → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 
 ## 네임스페이스
 
-- `FileFrameGrabberService.Grabbers` — 구현체
-- `FileFrameGrabberService.Services` — gRPC 서비스
+- `VirtualFrameGrabberServer.Grabbers` — 구현체
+- `VirtualFrameGrabberServer.Services` — gRPC 서비스
 - `Core.Grpc.FrameGrabber` — proto 생성 코드 (`Core.Grpc` 프로젝트, `csharp_namespace`)

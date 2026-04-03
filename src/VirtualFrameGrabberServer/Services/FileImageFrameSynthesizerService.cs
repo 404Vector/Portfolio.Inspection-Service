@@ -1,12 +1,12 @@
 using Core.FrameGrabber.Models;
-using FileFrameGrabberService.Interfaces;
+using VirtualFrameGrabberServer.Interfaces;
 using CE = Core.Enums;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// SetImageSource()로 전달받은 이미지 버퍼를 소스로 GrabbedFrame을 반환한다.
-/// 이미지 파일 읽기는 FileFrameGrabberService가 담당하며,
+/// 이미지 파일 읽기는 VirtualFrameGrabberServer가 담당하며,
 /// 이 클래스는 전달받은 픽셀 데이터만 보관하고 프레임을 조립한다.
 /// </summary>
 public sealed class FileImageFrameSynthesizerService : IFrameSynthesizerService

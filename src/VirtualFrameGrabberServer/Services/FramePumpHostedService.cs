@@ -2,7 +2,7 @@ using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
 using Core.SharedMemory.Writer;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// IFrameGrabber의 프레임 스트림을 SharedMemoryRingBuffer에 기록하는 단일 프로듀서.

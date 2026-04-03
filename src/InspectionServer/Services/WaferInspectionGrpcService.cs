@@ -1,7 +1,7 @@
 using Core.Grpc.Inspection;
 using Grpc.Core;
 
-namespace InspectionService.Services;
+namespace InspectionServer.Services;
 
 public sealed class WaferInspectionGrpcService : WaferInspection.WaferInspectionBase
 {
