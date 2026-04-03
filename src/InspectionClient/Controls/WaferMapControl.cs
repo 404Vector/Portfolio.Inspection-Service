@@ -73,39 +73,73 @@ public sealed class WaferMapControl : Control
         new Pen(new SolidColorBrush(Color.FromRgb(100, 149, 237)), 1.5),
         new Point(cx, cy), screenRadius, screenRadius);
 
-    // 2. Die 격자
+    // 2. Die 격자 (웨이퍼 원으로 클리핑)
+    double activeRadiusUm = map.ActiveRadiusUm;
+    double activeRadiusSq = activeRadiusUm * activeRadiusUm;
     var statuses  = DieStatuses;
     var diePen    = new Pen(new SolidColorBrush(Color.FromArgb(80, 150, 150, 150)), 0.5);
 
-    foreach (var die in map.Dies)
+    var clipGeometry = new EllipseGeometry(
+        new Rect(cx - screenRadius, cy - screenRadius,
+                 screenRadius * 2, screenRadius * 2));
+    using (context.PushGeometryClip(clipGeometry))
     {
-      double x0 = die.BottomLeft.Xum;
-      double y0 = die.BottomLeft.Yum;
-      double x1 = x0 + die.WidthUm;
-      double y1 = y0 + die.HeightUm;
-
-      var tl = ToScreen(x0, y1);  // top-left (화면 기준)
-      double w = (x1 - x0) * scale;
-      double h = (y1 - y0) * scale;
-
-      var rect   = new Rect(tl.X, tl.Y, w, h);
-      var state  = statuses is not null && statuses.TryGetValue(die.Index, out var s)
-          ? s
-          : DieInspectionState.Pending;
-
-      var fill = state switch
+      foreach (var die in map.Dies)
       {
-        DieInspectionState.Current => new SolidColorBrush(Color.FromArgb(180, 255, 200, 0)),
-        DieInspectionState.Pass    => new SolidColorBrush(Color.FromArgb(160, 50,  200, 100)),
-        DieInspectionState.Fail    => new SolidColorBrush(Color.FromArgb(180, 220, 60,  60)),
-        _                          => new SolidColorBrush(Color.FromArgb(40,  180, 180, 200)),
-      };
+        double x0 = die.BottomLeft.Xum;
+        double y0 = die.BottomLeft.Yum;
+        double x1 = x0 + die.WidthUm;
+        double y1 = y0 + die.HeightUm;
 
-      context.FillRectangle(fill, rect);
-      context.DrawRectangle(null, diePen, rect);
+        var tl = ToScreen(x0, y1);  // top-left (화면 기준)
+        double w = (x1 - x0) * scale;
+        double h = (y1 - y0) * scale;
+
+        var rect = new Rect(tl.X, tl.Y, w, h);
+
+        // Active/Inactive 판정: Die 네 꼭짓점이 모두 ActiveRadius 안에 있는지
+        bool isActive = x0 * x0 + y0 * y0 <= activeRadiusSq
+                     && x1 * x1 + y0 * y0 <= activeRadiusSq
+                     && x0 * x0 + y1 * y1 <= activeRadiusSq
+                     && x1 * x1 + y1 * y1 <= activeRadiusSq;
+
+        IBrush fill;
+        if (!isActive)
+        {
+          fill = new SolidColorBrush(Color.FromArgb(25, 120, 120, 140));
+        }
+        else
+        {
+          var state = statuses is not null && statuses.TryGetValue(die.Index, out var s)
+              ? s
+              : DieInspectionState.Pending;
+
+          fill = state switch
+          {
+            DieInspectionState.Current => new SolidColorBrush(Color.FromArgb(180, 255, 200, 0)),
+            DieInspectionState.Pass    => new SolidColorBrush(Color.FromArgb(160, 50,  200, 100)),
+            DieInspectionState.Fail    => new SolidColorBrush(Color.FromArgb(180, 220, 60,  60)),
+            _                          => new SolidColorBrush(Color.FromArgb(40,  180, 180, 200)),
+          };
+        }
+
+        context.FillRectangle(fill, rect);
+        context.DrawRectangle(null, diePen, rect);
+      }
     }
 
-    // 3. 중심 십자선
+    // 3. Active 영역 경계선
+    double activeScreenRadius = activeRadiusUm * scale;
+    if (activeScreenRadius > 0 && activeScreenRadius < screenRadius)
+    {
+      var activePen = new Pen(
+          new SolidColorBrush(Color.FromArgb(60, 255, 165, 0)), 1.0,
+          new DashStyle(new double[] { 4, 3 }, 0));
+      context.DrawEllipse(null, activePen, new Point(cx, cy),
+          activeScreenRadius, activeScreenRadius);
+    }
+
+    // 4. 중심 십자선
     var crossPen = new Pen(new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)), 0.5);
     context.DrawLine(crossPen, new Point(cx - 8, cy), new Point(cx + 8, cy));
     context.DrawLine(crossPen, new Point(cx, cy - 8), new Point(cx, cy + 8));

@@ -7,10 +7,10 @@ namespace InspectionRecipe.Models;
 /// 특정 Die 1개를 지목하여 좌·중·우 3-shot으로 die-to-die 검사하는 레시피.
 /// InspectFrame RPC에 대응합니다.
 /// ScanPlan 없이 지정된 웨이퍼 좌표에서 단발 촬영 후 검사합니다.
+/// 검사 대상 웨이퍼는 실행 시점에 별도로 선택됩니다.
 /// </summary>
 /// <param name="RecipeName">레시피 식별 이름</param>
 /// <param name="Description">레시피 설명</param>
-/// <param name="WaferId">검사 대상 웨이퍼의 식별자. WaferInfo 테이블에서 조회하여 사용한다.</param>
 /// <param name="Fov">카메라 FOV 크기 (µm)</param>
 /// <param name="ShotCenter">촬영 중심 좌표 (웨이퍼 좌표계, µm)</param>
 /// <param name="Threshold">검사 알고리즘 판정 임계값 (0.0 ~ 1.0)</param>
@@ -18,7 +18,6 @@ namespace InspectionRecipe.Models;
 public record DieSpotInspectionRecipe(
   string          RecipeName,
   string          Description,
-  string          WaferId,
   FovSize         Fov,
   WaferCoordinate ShotCenter,
   double          Threshold  = 0.5,

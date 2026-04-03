@@ -31,10 +31,14 @@ public partial class DbTableControl : UserControl
       AvaloniaProperty.Register<DbTableControl, IEnumerable?>(nameof(ItemsSource));
 
   public static readonly StyledProperty<object?> SelectedItemProperty =
-      AvaloniaProperty.Register<DbTableControl, object?>(nameof(SelectedItem));
+      AvaloniaProperty.Register<DbTableControl, object?>(
+          nameof(SelectedItem),
+          defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
   public static readonly StyledProperty<object?> LoadedItemProperty =
-      AvaloniaProperty.Register<DbTableControl, object?>(nameof(LoadedItem));
+      AvaloniaProperty.Register<DbTableControl, object?>(
+          nameof(LoadedItem),
+          defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
   public static readonly StyledProperty<IDataTemplate?> ItemTemplateProperty =
       AvaloniaProperty.Register<DbTableControl, IDataTemplate?>(nameof(ItemTemplate));

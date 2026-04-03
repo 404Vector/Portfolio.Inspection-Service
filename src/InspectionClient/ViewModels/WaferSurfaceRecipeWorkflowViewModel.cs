@@ -120,7 +120,6 @@ public partial class WaferSurfaceRecipeWorkflowViewModel : DbTableWorkflowViewMo
   private WaferSurfaceInspectionRecipe BuildRecipe() => new(
     RecipeName:      RecipeName,
     Description:     Description,
-    WaferId:         LoadedItem?.Recipe.WaferId ?? string.Empty,
     Fov:             new FovSize(FovWidthUm, FovHeightUm),
     Magnification:   SelectedMagnification,
     OverlapXum:      OverlapXum,
@@ -131,6 +130,7 @@ public partial class WaferSurfaceRecipeWorkflowViewModel : DbTableWorkflowViewMo
 
   private void ApplyToForm(WaferSurfaceInspectionRecipe recipe)
   {
+    this._log.Trace(this, recipe.RecipeName);
     RecipeName            = recipe.RecipeName;
     Description           = recipe.Description;
     SelectedMagnification = recipe.Magnification;

@@ -27,19 +27,17 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     var recipe    = new WaferSurfaceInspectionRecipe(
       RecipeName:  name,
       Description: string.Empty,
-      WaferId:     string.Empty,
       Fov:         new FovSize(1413.0, 1035.0));
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
     var json      = JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default);
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO Recipe (Name, WaferId, CreatedAt, Json)
-      VALUES ($name, $waferId, $createdAt, $json)
+      INSERT INTO Recipe (Name, CreatedAt, Json)
+      VALUES ($name, $createdAt, $json)
       RETURNING Id
       """;
     cmd.Parameters.AddWithValue("$name",      name);
-    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
 
@@ -83,12 +81,11 @@ public sealed class SqliteRecipeRepository : IRecipeRepository
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       UPDATE Recipe
-      SET Name = $name, WaferId = $waferId, CreatedAt = $createdAt, Json = $json
+      SET Name = $name, CreatedAt = $createdAt, Json = $json
       WHERE Id = $id
       """;
     cmd.Parameters.AddWithValue("$id",        item.Id);
     cmd.Parameters.AddWithValue("$name",      item.Recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",   item.Recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
     await cmd.ExecuteNonQueryAsync(ct);
