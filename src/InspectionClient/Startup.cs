@@ -5,8 +5,10 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Core.Logging.Factories;
 using Core.Logging.Services;
 using InspectionClient.Interfaces;
+using InspectionClient.Infrastructure;
 using InspectionClient.Repositories;
 using InspectionClient.Services;
+using Microsoft.EntityFrameworkCore;
 using InspectionClient.Services.Probes;
 using InspectionClient.ViewModels;
 using Microsoft.Extensions.Configuration;
@@ -75,18 +77,22 @@ internal static class Startup
         services.AddHostedService(sp => sp.GetRequiredService<ConnectionMonitor>());
 
         // ── Database ──────────────────────────────────────────────────────────
-        services.AddSingleton<InspectionDatabase>();
+        // DbContext는 thread-safe하지 않으므로 IDbContextFactory를 통해
+        // 각 작업 단위마다 새 인스턴스를 생성한다.
+        var dbPath = Path.Combine(AppContext.BaseDirectory, "inspection.db");
+        services.AddDbContextFactory<InspectionDbContext>(
+            options => options.UseSqlite($"Data Source={dbPath}"));
 
         // ── Die Rendering ─────────────────────────────────────────────────────
         services.AddSingleton<IDieImageRenderer, DieImageRenderer>();
 
         // ── Repositories ──────────────────────────────────────────────────────
-        services.AddSingleton<IDieRenderingParametersRepository, SqliteDieRenderingParametersRepository>();
-        services.AddSingleton<IWaferInfoRepository, SqliteWaferInfoRepository>();
-        services.AddSingleton<IRecipeRepository, SqliteRecipeRepository>();
-        services.AddSingleton<IDieSpotRecipeRepository, SqliteDieSpotRecipeRepository>();
-        services.AddSingleton<IInspectionResultRepository, SqliteInspectionResultRepository>();
-        services.AddSingleton<IUserAnnotationRepository, SqliteUserAnnotationRepository>();
+        services.AddSingleton<IDieRenderingParametersRepository, DieRenderingParametersRepository>();
+        services.AddSingleton<IWaferInfoRepository, WaferInfoRepository>();
+        services.AddSingleton<IRecipeRepository, RecipeRepository>();
+        services.AddSingleton<IDieSpotRecipeRepository, DieSpotRecipeRepository>();
+        services.AddSingleton<IInspectionResultRepository, InspectionResultRepository>();
+        services.AddSingleton<IUserAnnotationRepository, UserAnnotationRepository>();
 
         // ── ViewModels ────────────────────────────────────────────────────────
         services.AddSingleton<DieSetupWorkflowViewModel>();

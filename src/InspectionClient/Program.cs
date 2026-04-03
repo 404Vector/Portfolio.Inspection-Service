@@ -1,6 +1,8 @@
 using System;
 using Avalonia;
+using InspectionClient.Infrastructure;
 using InspectionClient.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,6 +17,13 @@ class Program
     public static void Main(string[] args)
     {
         App.Host = CreateHostBuilder(args).Build();
+
+        // EF Core: DB 및 테이블 생성, 시드 데이터 삽입
+        var factory = App.Host.Services.GetRequiredService<IDbContextFactory<InspectionDbContext>>();
+        using (var db = factory.CreateDbContext())
+        {
+            db.Database.EnsureCreated();
+        }
 
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
