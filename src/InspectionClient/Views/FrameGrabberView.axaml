@@ -3,9 +3,16 @@
              xmlns:vm="using:InspectionClient.ViewModels"
              xmlns:models="using:InspectionClient.Models"
              xmlns:controls="using:InspectionClient.Controls"
+             xmlns:converters="using:InspectionClient.Converters"
              x:Class="InspectionClient.Views.FrameGrabberView"
-             x:DataType="vm:FrameGrabberViewModelBase">
-  
+             x:DataType="vm:VirtualFrameGrabberViewModel">
+
+  <UserControl.Resources>
+    <converters:BoolToTextConverter x:Key="ScanSourceButtonConverter"
+                                    TrueText="Cancel"
+                                    FalseText="Setting" />
+  </UserControl.Resources>
+
   <Grid ColumnDefinitions="*,*">
 
     <!-- ── 좌측: 프레임 디스플레이 ── -->
@@ -58,103 +65,206 @@
       <ScrollViewer VerticalScrollBarVisibility="Auto"
                     HorizontalScrollBarVisibility="Disabled"
                     IsEnabled="{Binding !IsAcquisitionRunning}">
-        <ItemsControl ItemsSource="{Binding Parameters}">
-          <ItemsControl.ItemTemplate>
-            <controls:ParameterDataTemplateSelector>
+        <StackPanel>
 
-              <!-- Int64 -->
-              <controls:ParameterDataTemplateSelector.Int64Template>
-                <DataTemplate DataType="models:GrabberParameterItem">
-                  <Grid ColumnDefinitions="*,*" Margin="0,2">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextPrimary}"
+          <!-- ── 파라미터 목록 ── -->
+          <ItemsControl ItemsSource="{Binding Parameters}">
+            <ItemsControl.ItemTemplate>
+              <controls:ParameterDataTemplateSelector>
+
+                <!-- Int64 -->
+                <controls:ParameterDataTemplateSelector.Int64Template>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <NumericUpDown Grid.Column="1"
+                                     Value="{Binding CurrentValue}"
+                                     Minimum="{Binding MinValue}"
+                                     Maximum="{Binding MaxValue}"
+                                     Increment="1"
+                                     FormatString="0"
+                                     FontSize="13" />
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.Int64Template>
+
+                <!-- Double -->
+                <controls:ParameterDataTemplateSelector.DoubleTemplate>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <NumericUpDown Grid.Column="1"
+                                     Value="{Binding CurrentValue}"
+                                     Minimum="{Binding MinValue}"
+                                     Maximum="{Binding MaxValue}"
+                                     Increment="0.01"
+                                     FormatString="0.##"
+                                     FontSize="13" />
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.DoubleTemplate>
+
+                <!-- Bool -->
+                <controls:ParameterDataTemplateSelector.BoolTemplate>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <ToggleSwitch Grid.Column="1"
+                                    IsChecked="{Binding CurrentValue}"
+                                    OffContent="Off" OnContent="On"
+                                    FontSize="13" />
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.BoolTemplate>
+
+                <!-- Enum (AllowedValues가 있는 String) -->
+                <controls:ParameterDataTemplateSelector.EnumTemplate>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <controls:EnumPickerControl Grid.Column="1"
+                                                   ItemsSource="{Binding AllowedValues}"
+                                                   SelectedItem="{Binding CurrentValue}"
+                                                   FontSize="13" />
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.EnumTemplate>
+
+                <!-- Bytes (file picker) -->
+                <controls:ParameterDataTemplateSelector.BytesTemplate>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding CurrentValue}"
+                                   VerticalAlignment="Center"
+                                   FontSize="13"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="0,0,4,0" />
+                        <Button Grid.Column="1"
+                                Content="Browse"
+                                Command="{Binding $parent[ItemsControl].((vm:FrameGrabberViewModelBase)DataContext).BrowseFileCommand}"
+                                CommandParameter="{Binding}"
+                                FontSize="13" />
+                      </Grid>
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.BytesTemplate>
+
+                <!-- String (fallback) -->
+                <controls:ParameterDataTemplateSelector.StringTemplate>
+                  <DataTemplate DataType="models:GrabberParameterItem">
+                    <Grid ColumnDefinitions="*,*" Margin="0,2">
+                      <TextBlock Grid.Column="0"
+                                 Text="{Binding DisplayName}"
+                                 VerticalAlignment="Center"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 FontSize="13" />
+                      <TextBox Grid.Column="1"
+                               Text="{Binding CurrentValue}"
                                FontSize="13" />
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding CurrentValue}"
-                                   Minimum="{Binding MinValue}"
-                                   Maximum="{Binding MaxValue}"
-                                   Increment="1"
-                                   FormatString="0"
-                                   FontSize="13" />
-                  </Grid>
-                </DataTemplate>
-              </controls:ParameterDataTemplateSelector.Int64Template>
+                    </Grid>
+                  </DataTemplate>
+                </controls:ParameterDataTemplateSelector.StringTemplate>
 
-              <!-- Double -->
-              <controls:ParameterDataTemplateSelector.DoubleTemplate>
-                <DataTemplate DataType="models:GrabberParameterItem">
-                  <Grid ColumnDefinitions="*,*" Margin="0,2">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextPrimary}"
-                               FontSize="13" />
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding CurrentValue}"
-                                   Minimum="{Binding MinValue}"
-                                   Maximum="{Binding MaxValue}"
-                                   Increment="0.01"
-                                   FormatString="0.##"
-                                   FontSize="13" />
-                  </Grid>
-                </DataTemplate>
-              </controls:ParameterDataTemplateSelector.DoubleTemplate>
+              </controls:ParameterDataTemplateSelector>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
 
-              <!-- Bool -->
-              <controls:ParameterDataTemplateSelector.BoolTemplate>
-                <DataTemplate DataType="models:GrabberParameterItem">
-                  <Grid ColumnDefinitions="*,*" Margin="0,2">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextPrimary}"
-                               FontSize="13" />
-                    <ToggleSwitch Grid.Column="1"
-                                  IsChecked="{Binding CurrentValue}"
-                                  OffContent="Off" OnContent="On"
-                                  FontSize="13" />
-                  </Grid>
-                </DataTemplate>
-              </controls:ParameterDataTemplateSelector.BoolTemplate>
+          <!-- ── Scan Source 설정 ── -->
+          <Border Margin="0,8,0,0"
+                  Padding="0,4"
+                  BorderBrush="{DynamicResource BorderSubtle}"
+                  BorderThickness="0,1,0,0">
 
-              <!-- Enum (AllowedValues가 있는 String) -->
-              <controls:ParameterDataTemplateSelector.EnumTemplate>
-                <DataTemplate DataType="models:GrabberParameterItem">
-                  <Grid ColumnDefinitions="*,*" Margin="0,2">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextPrimary}"
-                               FontSize="13" />
-                    <controls:EnumPickerControl Grid.Column="1"
-                                               ItemsSource="{Binding AllowedValues}"
-                                               SelectedItem="{Binding CurrentValue}"
-                                               FontSize="13" />
-                  </Grid>
-                </DataTemplate>
-              </controls:ParameterDataTemplateSelector.EnumTemplate>
+            <!-- Scan Source 헤더: 라벨 + Setting/Cancel 버튼 -->
+            <StackPanel>
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                <TextBlock Grid.Column="0"
+                           Text="Scan Source"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextPrimary}"
+                           FontSize="13"
+                           FontWeight="SemiBold" />
+                <Button Grid.Column="1"
+                        Content="{Binding IsScanSourceSettingOpen,
+                                 Converter={StaticResource ScanSourceButtonConverter}}"
+                        Command="{Binding ToggleScanSourceSettingCommand}"
+                        FontSize="13"
+                        MinWidth="70" />
+              </Grid>
 
-              <!-- String (fallback) -->
-              <controls:ParameterDataTemplateSelector.StringTemplate>
-                <DataTemplate DataType="models:GrabberParameterItem">
-                  <Grid ColumnDefinitions="*,*" Margin="0,2">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextPrimary}"
-                               FontSize="13" />
-                    <TextBox Grid.Column="1"
-                             Text="{Binding CurrentValue}"
-                             FontSize="13" />
-                  </Grid>
-                </DataTemplate>
-              </controls:ParameterDataTemplateSelector.StringTemplate>
+              <!-- Wafer/Recipe 선택 패널 (Setting 열림 시 표시) -->
+              <StackPanel IsVisible="{Binding IsScanSourceSettingOpen}"
+                          Margin="0,4,0,0">
 
-            </controls:ParameterDataTemplateSelector>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                <Grid ColumnDefinitions="*,*" Height="200">
+                  <!-- 좌: Wafer 선택 -->
+                  <controls:SelectionListControl Grid.Column="0"
+                      Header="WAFER"
+                      ItemsSource="{Binding WaferList}"
+                      SelectedItem="{Binding SelectedWafer}"
+                      LoadedItem="{Binding LoadedWafer}"
+                      RefreshCommand="{Binding RefreshWafersCommand}"
+                      Margin="0,0,4,0">
+                    <controls:SelectionListControl.ItemTemplate>
+                      <DataTemplate DataType="models:WaferInfoRow">
+                        <TextBlock Text="{Binding Name}" FontSize="12" />
+                      </DataTemplate>
+                    </controls:SelectionListControl.ItemTemplate>
+                  </controls:SelectionListControl>
+
+                  <!-- 우: Recipe 선택 -->
+                  <controls:SelectionListControl Grid.Column="1"
+                      Header="RECIPE"
+                      ItemsSource="{Binding RecipeList}"
+                      SelectedItem="{Binding SelectedRecipe}"
+                      LoadedItem="{Binding LoadedRecipe}"
+                      RefreshCommand="{Binding RefreshRecipesCommand}"
+                      Margin="4,0,0,0">
+                    <controls:SelectionListControl.ItemTemplate>
+                      <DataTemplate DataType="models:RecipeRow">
+                        <TextBlock Text="{Binding Recipe.RecipeName}" FontSize="12" />
+                      </DataTemplate>
+                    </controls:SelectionListControl.ItemTemplate>
+                  </controls:SelectionListControl>
+                </Grid>
+
+                <!-- Generate 버튼 -->
+                <Button Content="Generate"
+                        Command="{Binding GenerateCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Margin="0,8,0,0"
+                        FontSize="13" />
+
+              </StackPanel>
+
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
       </ScrollViewer>
 
     </DockPanel>

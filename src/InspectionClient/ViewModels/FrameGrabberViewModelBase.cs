@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Core.Grpc.FrameGrabber;
@@ -21,6 +23,8 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
 {
   private readonly IFrameGrabberController _controller;
   private readonly IFrameSource _frameSource;
+
+  protected IFrameGrabberController Controller => _controller;
 
   public ObservableCollection<GrabberParameterItem> Parameters { get; }
 
@@ -162,11 +166,26 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
     {
       foreach (var p in modified)
       {
-        var (success, message) = await _controller.SetParameterAsync(
-            p.Key, CoerceToValueType(p.CurrentValue, p.ValueType));
+        bool success;
+        string message;
+
+        if (p.ValueType == ParameterValueType.Bytes && p.BytesData is not null)
+        {
+          (success, message) = await _controller.SetParameterWithStreamAsync(
+              p.Key, p.BytesData);
+        }
+        else
+        {
+          (success, message) = await _controller.SetParameterAsync(
+              p.Key, CoerceToValueType(p.CurrentValue, p.ValueType));
+        }
 
         if (success)
+        {
           p.OriginalValue = p.CurrentValue;
+          if (p.ValueType == ParameterValueType.Bytes)
+            p.BytesData = null;
+        }
         else
         {
           p.CurrentValue = p.OriginalValue;
@@ -183,6 +202,43 @@ public abstract partial class FrameGrabberViewModelBase : ViewModelBase
         foreach (var p in Parameters)
           p.CurrentValue = p.OriginalValue;
       });
+
+  // ── 파일 선택 (Bytes 파라미터) ──────────────────────────────
+
+  [RelayCommand]
+  private async Task BrowseFile(GrabberParameterItem parameter)
+  {
+    if (parameter.ValueType != ParameterValueType.Bytes) return;
+
+    var topLevel = Avalonia.Application.Current?.ApplicationLifetime
+        is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+        ? desktop.MainWindow : null;
+    if (topLevel is null) return;
+
+    var files = await topLevel.StorageProvider.OpenFilePickerAsync(
+        new FilePickerOpenOptions
+        {
+          Title = $"Select {parameter.DisplayName}",
+          AllowMultiple = false,
+          FileTypeFilter =
+          [
+            new FilePickerFileType("Image Files") { Patterns = ["*.png", "*.bmp", "*.jpg", "*.jpeg", "*.tif", "*.tiff", "*.raw"] },
+            FilePickerFileTypes.All,
+          ]
+        });
+
+    if (files.Count == 0) return;
+
+    var file = files[0];
+    await using var stream = await file.OpenReadAsync();
+    using var ms = new MemoryStream();
+    await stream.CopyToAsync(ms);
+
+    parameter.BytesData    = ms.ToArray();
+    parameter.CurrentValue = file.Name;
+
+    _log.Info(this, $"File selected for '{parameter.Key}': {file.Name} ({parameter.BytesData.Length:N0} bytes)");
+  }
 
   // ── OpticSettings 연동 ─────────────────────────────────────
 
