@@ -18,6 +18,7 @@ namespace InspectionClient.ViewModels;
 
 public partial class VirtualFrameGrabberViewModel : FrameGrabberViewModelBase
 {
+  private readonly IEquipmentConfigService _equipmentConfig;
   private readonly IWaferInfoRepository _waferRepo;
   private readonly IRecipeRepository _recipeRepo;
   private readonly IDieRenderingParametersRepository _dieParamsRepo;
@@ -51,16 +52,18 @@ public partial class VirtualFrameGrabberViewModel : FrameGrabberViewModelBase
       IFrameGrabberController controller,
       IFrameSource frameSource,
       IServiceConnectionMonitor connectionMonitor,
+      IEquipmentConfigService equipmentConfig,
       IWaferInfoRepository waferRepo,
       IRecipeRepository recipeRepo,
       IDieRenderingParametersRepository dieParamsRepo,
       IDieImageRenderer dieRenderer)
       : base(logService, controller, frameSource, connectionMonitor, CreateParameters())
   {
-    _waferRepo     = waferRepo;
-    _recipeRepo    = recipeRepo;
-    _dieParamsRepo = dieParamsRepo;
-    _dieRenderer   = dieRenderer;
+    _equipmentConfig = equipmentConfig;
+    _waferRepo       = waferRepo;
+    _recipeRepo      = recipeRepo;
+    _dieParamsRepo   = dieParamsRepo;
+    _dieRenderer     = dieRenderer;
   }
 
   private static GrabberParameterItem[] CreateParameters() =>
@@ -168,7 +171,8 @@ public partial class VirtualFrameGrabberViewModel : FrameGrabberViewModelBase
       }
 
       // 5. ScanPlan 생성 및 전송 (streaming)
-      var scanPlan  = ScanPlan.From(waferInfo, recipe.Fov, recipe.OverlapXum, recipe.OverlapYum);
+      double pixelSizeUm = _equipmentConfig.Config.PixelPitchUm / recipe.Magnification;
+      var scanPlan  = ScanPlan.From(waferInfo, recipe.Fov, pixelSizeUm, recipe.OverlapXum, recipe.OverlapYum);
       var planBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(scanPlan));
       var (planOk, planMsg) = await Controller.SetParameterWithStreamAsync(
           "scan_plan", planBytes);

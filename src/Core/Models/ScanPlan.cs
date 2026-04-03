@@ -21,6 +21,12 @@ public record ScanPlan {
   public double OverlapYum { get; }
 
   /// <summary>
+  /// 웨이퍼 면에서의 픽셀 크기 (µm/pixel).
+  /// CameraImageSensorPixelSize / LensMagnification으로 결정됩니다.
+  /// </summary>
+  public double PixelSizeUm { get; }
+
+  /// <summary>
   /// Sector 목록. 웨이퍼 하단(−Y)부터 상단(+Y) 순서로 정렬됩니다.
   /// 짝수 인덱스 Sector는 LeftToRight, 홀수는 RightToLeft (Boustrophedon).
   /// </summary>
@@ -35,13 +41,16 @@ public record ScanPlan {
     FovSize                   fov,
     double                    overlapXum,
     double                    overlapYum,
+    double                    pixelSizeUm,
     IReadOnlyList<ScanSector> sectors
   ) {
-    DieMap     = dieMap;
-    Fov        = fov;
-    OverlapXum = overlapXum;
-    OverlapYum = overlapYum;
-    Sectors    = sectors;
+    if (pixelSizeUm <= 0) throw new ArgumentOutOfRangeException(nameof(pixelSizeUm), "픽셀 크기는 0보다 커야 합니다.");
+    DieMap      = dieMap;
+    Fov         = fov;
+    OverlapXum  = overlapXum;
+    OverlapYum  = overlapYum;
+    PixelSizeUm = pixelSizeUm;
+    Sectors     = sectors;
   }
 
   /// <summary>
@@ -54,6 +63,7 @@ public record ScanPlan {
   public static ScanPlan From(
     WaferInfo wafer,
     FovSize   fov,
+    double    pixelSizeUm,
     double    overlapXum = 0.0,
     double    overlapYum = 0.0
   ) {
@@ -65,7 +75,7 @@ public record ScanPlan {
     var dieMap   = DieMap.From(wafer);
     var sectors  = BuildSectors(wafer, dieMap, fov, overlapXum, overlapYum);
 
-    return new ScanPlan(dieMap, fov, overlapXum, overlapYum, sectors);
+    return new ScanPlan(dieMap, fov, overlapXum, overlapYum, pixelSizeUm, sectors);
   }
 
   // ── 내부 계산 ──────────────────────────────────────────────────────────
