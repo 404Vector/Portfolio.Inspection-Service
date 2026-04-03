@@ -15,10 +15,10 @@ using Microsoft.EntityFrameworkCore;
 namespace InspectionClient.Repositories;
 
 public sealed class DieSpotRecipeRepository : IDieSpotRecipeRepository {
-  private readonly InspectionDbContext _db;
+  private readonly IDbContextFactory<InspectionDbContext> _factory;
 
-  public DieSpotRecipeRepository(InspectionDbContext db) {
-    _db = db;
+  public DieSpotRecipeRepository(IDbContextFactory<InspectionDbContext> factory) {
+    _factory = factory;
   }
 
   public async Task<DieSpotRecipeRow> CreateAsync(string name, CancellationToken ct = default) {
@@ -34,19 +34,22 @@ public sealed class DieSpotRecipeRepository : IDieSpotRecipeRepository {
       Json = JsonSerializer.Serialize(recipe, RepositoryJsonOptions.Default),
     };
 
-    _db.DieSpotRecipes.Add(entity);
-    await _db.SaveChangesAsync(ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    db.DieSpotRecipes.Add(entity);
+    await db.SaveChangesAsync(ct);
     return new DieSpotRecipeRow { Id = entity.Id, Recipe = recipe };
   }
 
   public async Task<DieSpotRecipeRow?> FindByIdAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.DieSpotRecipes.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieSpotRecipes.AsNoTracking()
         .FirstOrDefaultAsync(r => r.Id == id, ct);
     return entity is null ? null : ToRow(entity);
   }
 
   public async Task<IReadOnlyList<DieSpotRecipeRow>> ListAsync(CancellationToken ct = default) {
-    var entities = await _db.DieSpotRecipes.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.DieSpotRecipes.AsNoTracking()
         .OrderByDescending(r => r.CreatedAt)
         .ToListAsync(ct);
     return entities.Select(ToRow).ToList();
@@ -55,19 +58,21 @@ public sealed class DieSpotRecipeRepository : IDieSpotRecipeRepository {
   public async Task UpdateAsync(DieSpotRecipeRow item, CancellationToken ct = default) {
     ArgumentNullException.ThrowIfNull(item);
 
-    var entity = await _db.DieSpotRecipes.FindAsync([item.Id], ct)
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieSpotRecipes.FindAsync([item.Id], ct)
         ?? throw new InvalidOperationException($"DieSpotRecipe Id={item.Id} not found.");
     entity.Name = item.Recipe.RecipeName;
     entity.CreatedAt = DateTimeOffset.UtcNow.ToString("O");
     entity.Json = JsonSerializer.Serialize(item.Recipe, RepositoryJsonOptions.Default);
-    await _db.SaveChangesAsync(ct);
+    await db.SaveChangesAsync(ct);
   }
 
   public async Task DeleteAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.DieSpotRecipes.FindAsync([id], ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieSpotRecipes.FindAsync([id], ct);
     if (entity is not null) {
-      _db.DieSpotRecipes.Remove(entity);
-      await _db.SaveChangesAsync(ct);
+      db.DieSpotRecipes.Remove(entity);
+      await db.SaveChangesAsync(ct);
     }
   }
 

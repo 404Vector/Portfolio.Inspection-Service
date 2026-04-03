@@ -13,10 +13,10 @@ using Microsoft.EntityFrameworkCore;
 namespace InspectionClient.Repositories;
 
 public sealed class InspectionResultRepository : IInspectionResultRepository {
-  private readonly InspectionDbContext _db;
+  private readonly IDbContextFactory<InspectionDbContext> _factory;
 
-  public InspectionResultRepository(InspectionDbContext db) {
-    _db = db;
+  public InspectionResultRepository(IDbContextFactory<InspectionDbContext> factory) {
+    _factory = factory;
   }
 
   public async Task<string> SaveAsync(WaferSurfaceInspectionResult result, CancellationToken ct = default) {
@@ -33,15 +33,17 @@ public sealed class InspectionResultRepository : IInspectionResultRepository {
       Json = JsonSerializer.Serialize(result, RepositoryJsonOptions.Default),
     };
 
-    _db.InspectionResults.Add(entity);
-    await _db.SaveChangesAsync(ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    db.InspectionResults.Add(entity);
+    await db.SaveChangesAsync(ct);
     return resultId;
   }
 
   public async Task<WaferSurfaceInspectionResult?> FindAsync(string resultId, CancellationToken ct = default) {
     ArgumentException.ThrowIfNullOrWhiteSpace(resultId);
 
-    var entity = await _db.InspectionResults.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.InspectionResults.AsNoTracking()
         .FirstOrDefaultAsync(r => r.ResultId == resultId, ct);
     if (entity is null)
       return null;
@@ -51,7 +53,8 @@ public sealed class InspectionResultRepository : IInspectionResultRepository {
   }
 
   public async Task<IReadOnlyList<WaferSurfaceInspectionResult>> ListAsync(CancellationToken ct = default) {
-    var entities = await _db.InspectionResults.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.InspectionResults.AsNoTracking()
         .OrderByDescending(r => r.StartedAt)
         .ToListAsync(ct);
 
@@ -62,7 +65,8 @@ public sealed class InspectionResultRepository : IInspectionResultRepository {
   }
 
   public async Task<IReadOnlyList<InspectionResultEntry>> ListEntriesAsync(CancellationToken ct = default) {
-    var entities = await _db.InspectionResults.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.InspectionResults.AsNoTracking()
         .OrderByDescending(r => r.StartedAt)
         .ToListAsync(ct);
 
@@ -78,10 +82,11 @@ public sealed class InspectionResultRepository : IInspectionResultRepository {
   public async Task DeleteAsync(string resultId, CancellationToken ct = default) {
     ArgumentException.ThrowIfNullOrWhiteSpace(resultId);
 
-    var entity = await _db.InspectionResults.FindAsync([resultId], ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.InspectionResults.FindAsync([resultId], ct);
     if (entity is not null) {
-      _db.InspectionResults.Remove(entity);
-      await _db.SaveChangesAsync(ct);
+      db.InspectionResults.Remove(entity);
+      await db.SaveChangesAsync(ct);
     }
   }
 }

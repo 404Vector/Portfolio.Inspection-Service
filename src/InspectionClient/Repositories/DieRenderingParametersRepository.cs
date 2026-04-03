@@ -14,10 +14,10 @@ using Microsoft.EntityFrameworkCore;
 namespace InspectionClient.Repositories;
 
 public sealed class DieRenderingParametersRepository : IDieRenderingParametersRepository {
-  private readonly InspectionDbContext _db;
+  private readonly IDbContextFactory<InspectionDbContext> _factory;
 
-  public DieRenderingParametersRepository(InspectionDbContext db) {
-    _db = db;
+  public DieRenderingParametersRepository(IDbContextFactory<InspectionDbContext> factory) {
+    _factory = factory;
   }
 
   public async Task<DieParametersRow> CreateAsync(string name, CancellationToken ct = default) {
@@ -29,19 +29,22 @@ public sealed class DieRenderingParametersRepository : IDieRenderingParametersRe
       Json = Serialize(defaults),
     };
 
-    _db.DieRenderingParameters.Add(entity);
-    await _db.SaveChangesAsync(ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    db.DieRenderingParameters.Add(entity);
+    await db.SaveChangesAsync(ct);
     return new DieParametersRow { Id = entity.Id, Name = name, Parameters = defaults };
   }
 
   public async Task<DieParametersRow?> FindByIdAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.DieRenderingParameters.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieRenderingParameters.AsNoTracking()
         .FirstOrDefaultAsync(r => r.Id == id, ct);
     return entity is null ? null : ToRow(entity);
   }
 
   public async Task<IReadOnlyList<DieParametersRow>> ListAsync(CancellationToken ct = default) {
-    var entities = await _db.DieRenderingParameters.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.DieRenderingParameters.AsNoTracking()
         .OrderByDescending(r => r.Id)
         .ToListAsync(ct);
     return entities.Select(ToRow).ToList();
@@ -50,18 +53,20 @@ public sealed class DieRenderingParametersRepository : IDieRenderingParametersRe
   public async Task UpdateAsync(DieParametersRow item, CancellationToken ct = default) {
     ArgumentNullException.ThrowIfNull(item);
 
-    var entity = await _db.DieRenderingParameters.FindAsync([item.Id], ct)
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieRenderingParameters.FindAsync([item.Id], ct)
         ?? throw new InvalidOperationException($"DieRenderingParameters Id={item.Id} not found.");
     entity.Name = item.Name;
     entity.Json = Serialize(item.Parameters);
-    await _db.SaveChangesAsync(ct);
+    await db.SaveChangesAsync(ct);
   }
 
   public async Task DeleteAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.DieRenderingParameters.FindAsync([id], ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.DieRenderingParameters.FindAsync([id], ct);
     if (entity is not null) {
-      _db.DieRenderingParameters.Remove(entity);
-      await _db.SaveChangesAsync(ct);
+      db.DieRenderingParameters.Remove(entity);
+      await db.SaveChangesAsync(ct);
     }
   }
 

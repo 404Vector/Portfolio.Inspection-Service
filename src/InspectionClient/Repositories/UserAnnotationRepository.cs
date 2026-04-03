@@ -12,10 +12,10 @@ using Microsoft.EntityFrameworkCore;
 namespace InspectionClient.Repositories;
 
 public sealed class UserAnnotationRepository : IUserAnnotationRepository {
-  private readonly InspectionDbContext _db;
+  private readonly IDbContextFactory<InspectionDbContext> _factory;
 
-  public UserAnnotationRepository(InspectionDbContext db) {
-    _db = db;
+  public UserAnnotationRepository(IDbContextFactory<InspectionDbContext> factory) {
+    _factory = factory;
   }
 
   public async Task SaveAsync(UserAnnotation annotation, CancellationToken ct = default) {
@@ -30,8 +30,9 @@ public sealed class UserAnnotationRepository : IUserAnnotationRepository {
       CreatedAt = annotation.CreatedAt.ToString("O"),
     };
 
-    _db.UserAnnotations.Add(entity);
-    await _db.SaveChangesAsync(ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    db.UserAnnotations.Add(entity);
+    await db.SaveChangesAsync(ct);
   }
 
   public async Task<IReadOnlyList<UserAnnotationEntry>> ListAsync(
@@ -39,7 +40,8 @@ public sealed class UserAnnotationRepository : IUserAnnotationRepository {
     ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
 
     var kindStr = kind.ToString();
-    var entities = await _db.UserAnnotations.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.UserAnnotations.AsNoTracking()
         .Where(a => a.EntityId == entityId && a.EntityKind == kindStr)
         .OrderByDescending(a => a.CreatedAt)
         .ToListAsync(ct);
@@ -58,10 +60,11 @@ public sealed class UserAnnotationRepository : IUserAnnotationRepository {
   }
 
   public async Task DeleteAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.UserAnnotations.FindAsync([id], ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.UserAnnotations.FindAsync([id], ct);
     if (entity is not null) {
-      _db.UserAnnotations.Remove(entity);
-      await _db.SaveChangesAsync(ct);
+      db.UserAnnotations.Remove(entity);
+      await db.SaveChangesAsync(ct);
     }
   }
 }

@@ -14,10 +14,10 @@ using Microsoft.EntityFrameworkCore;
 namespace InspectionClient.Repositories;
 
 public sealed class WaferInfoRepository : IWaferInfoRepository {
-  private readonly InspectionDbContext _db;
+  private readonly IDbContextFactory<InspectionDbContext> _factory;
 
-  public WaferInfoRepository(InspectionDbContext db) {
-    _db = db;
+  public WaferInfoRepository(IDbContextFactory<InspectionDbContext> factory) {
+    _factory = factory;
   }
 
   public async Task<WaferInfoRow> CreateAsync(string name, CancellationToken ct = default) {
@@ -33,8 +33,9 @@ public sealed class WaferInfoRepository : IWaferInfoRepository {
       Json = json,
     };
 
-    _db.WaferInfos.Add(entity);
-    await _db.SaveChangesAsync(ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    db.WaferInfos.Add(entity);
+    await db.SaveChangesAsync(ct);
 
     var row = new WaferInfoRow { Id = entity.Id, Name = name };
     row.LoadFrom(info);
@@ -42,13 +43,15 @@ public sealed class WaferInfoRepository : IWaferInfoRepository {
   }
 
   public async Task<WaferInfoRow?> FindByIdAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.WaferInfos.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.WaferInfos.AsNoTracking()
         .FirstOrDefaultAsync(r => r.Id == id, ct);
     return entity is null ? null : ToRow(entity);
   }
 
   public async Task<IReadOnlyList<WaferInfoRow>> ListAsync(CancellationToken ct = default) {
-    var entities = await _db.WaferInfos.AsNoTracking()
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entities = await db.WaferInfos.AsNoTracking()
         .OrderByDescending(r => r.Id)
         .ToListAsync(ct);
     return entities.Select(ToRow).ToList();
@@ -57,7 +60,8 @@ public sealed class WaferInfoRepository : IWaferInfoRepository {
   public async Task UpdateAsync(WaferInfoRow item, CancellationToken ct = default) {
     ArgumentNullException.ThrowIfNull(item);
 
-    var entity = await _db.WaferInfos.FindAsync([item.Id], ct)
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.WaferInfos.FindAsync([item.Id], ct)
         ?? throw new InvalidOperationException($"WaferInfo Id={item.Id} not found.");
     var info = item.ToWaferInfo();
     entity.Name = item.Name;
@@ -65,27 +69,25 @@ public sealed class WaferInfoRepository : IWaferInfoRepository {
     entity.CreatedAt = info.CreatedAt.ToString("O");
     entity.DieParametersId = item.DieParametersId;
     entity.Json = JsonSerializer.Serialize(info, RepositoryJsonOptions.Default);
-    await _db.SaveChangesAsync(ct);
+    await db.SaveChangesAsync(ct);
   }
 
   public async Task<WaferInfoRow?> FindByWaferIdAsync(string waferId, CancellationToken ct = default) {
     ArgumentException.ThrowIfNullOrWhiteSpace(waferId);
 
-    // JSON 내부의 WaferId를 기준으로 검색한다.
-    // EF Core SQLite에서는 json_extract를 직접 사용할 수 없으므로 클라이언트 평가한다.
-    var entities = await _db.WaferInfos.AsNoTracking().ToListAsync(ct);
-    var entity = entities.FirstOrDefault(e => {
-      var info = JsonSerializer.Deserialize<WaferInfo>(e.Json, RepositoryJsonOptions.Default);
-      return info?.WaferId == waferId;
-    });
+    // CreateAsync에서 Name = WaferId로 저장하므로 Name 컬럼으로 서버사이드 필터링한다.
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.WaferInfos.AsNoTracking()
+        .FirstOrDefaultAsync(e => e.Name == waferId, ct);
     return entity is null ? null : ToRow(entity);
   }
 
   public async Task DeleteAsync(long id, CancellationToken ct = default) {
-    var entity = await _db.WaferInfos.FindAsync([id], ct);
+    await using var db = await _factory.CreateDbContextAsync(ct);
+    var entity = await db.WaferInfos.FindAsync([id], ct);
     if (entity is not null) {
-      _db.WaferInfos.Remove(entity);
-      await _db.SaveChangesAsync(ct);
+      db.WaferInfos.Remove(entity);
+      await db.SaveChangesAsync(ct);
     }
   }
 

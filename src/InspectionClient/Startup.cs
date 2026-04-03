@@ -77,10 +77,11 @@ internal static class Startup
         services.AddHostedService(sp => sp.GetRequiredService<ConnectionMonitor>());
 
         // ── Database ──────────────────────────────────────────────────────────
+        // DbContext는 thread-safe하지 않으므로 IDbContextFactory를 통해
+        // 각 작업 단위마다 새 인스턴스를 생성한다.
         var dbPath = Path.Combine(AppContext.BaseDirectory, "inspection.db");
-        services.AddDbContext<InspectionDbContext>(
-            options => options.UseSqlite($"Data Source={dbPath}"),
-            ServiceLifetime.Singleton);
+        services.AddDbContextFactory<InspectionDbContext>(
+            options => options.UseSqlite($"Data Source={dbPath}"));
 
         // ── Die Rendering ─────────────────────────────────────────────────────
         services.AddSingleton<IDieImageRenderer, DieImageRenderer>();
