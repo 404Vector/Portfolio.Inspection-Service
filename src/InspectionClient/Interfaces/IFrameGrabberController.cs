@@ -42,7 +42,7 @@ public interface IFrameGrabberController
 
   /// <summary>
   /// 대용량 바이너리 파라미터를 Client Streaming RPC로 전송한다.
-  /// wafer_image 등 대용량 byte[] 데이터에 사용한다.
+  /// die_image 등 대용량 byte[] 데이터에 사용한다.
   /// </summary>
   Task<(bool Success, string Message)> SetParameterWithStreamAsync(string key, byte[] data, CancellationToken ct = default);
 

@@ -32,18 +32,26 @@ VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 
 ## VirtualFrameGrabberService 동작 흐름
 
-1. 클라이언트가 `SetParameterWithStream("wafer_image", ...)` 으로 웨이퍼 이미지(RAW 바이트) 전달
-2. 클라이언트가 `SetParameterWithStream("scan_plan", JSON bytes)` 으로 ScanPlan 전달 → FOV 크기에서 Width/Height 자동 계산
+1. 클라이언트가 `SetParameterWithStream("die_image", ...)` 으로 Die 이미지(PNG/JPEG 인코딩) 전달
+2. 클라이언트가 `SetParameterWithStream("scan_plan", JSON bytes)` 으로 ScanPlan 전달
 3. `StartAcquisition` → Boustrophedon 순서로 Shot 순회 시작
-4. 각 Shot: 물리좌표(µm) → 픽셀좌표 변환 → 웨이퍼 이미지에서 FOV 영역 crop → GrabbedFrame 생성
+4. 각 Shot: FOV 물리좌표(µm) → Die 로컬좌표 → Die 이미지 리샘플링 → GrabberConfig.Width×Height 해상도의 GrabbedFrame 생성
 5. 모든 Shot 완료 시 자동으로 Idle 상태 전환
+
+### 프레임 생성 (CropShotFrame)
+
+- 출력 프레임 크기 = `GrabberConfig.Width × Height` (카메라 센서 해상도)
+- FOV 물리 영역 내 각 출력 픽셀의 웨이퍼 좌표를 계산
+- 해당 좌표가 속하는 Die를 `DieMap.FindByCoordinate()`로 탐색
+- Die 로컬 좌표로 변환 후 Die 이미지에서 리샘플링 (Die 이미지 해상도 ↔ Die 물리 크기 비율)
+- Die 영역 밖 픽셀은 검정(0)
 
 ### 좌표 변환
 
 - 이미지 관례: 원점 = 좌상단, Y↓
 - 웨이퍼 좌표: 원점 = 중심, Y↑
-- `scaleX = imageWidth_px / (2 × radiusUm)`, `scaleY = imageHeight_px / (2 × radiusUm)`
-- `pixelX = (waferXum + radiusUm) × scaleX`, `pixelY = (radiusUm − waferYum) × scaleY`
+- Die 이미지 ↔ Die 물리: `dieScaleX = dieImageWidth / dieWidthUm`, `dieScaleY = dieImageHeight / dieHeightUm`
+- 출력 프레임 ↔ FOV 물리: `umPerPxX = fovWidthUm / outWidth`, `umPerPxY = fovHeightUm / outHeight`
 
 ## FramePump lifecycle
 
@@ -64,7 +72,7 @@ VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 - `IFrameGrabber.GetParameters()` / `GetCommands()`로 구현체가 지원하는 항목을 노출한다.
 - gRPC: `GetCapabilities`, `GetParameter`, `SetParameter`, `SetParameterWithStream`, `ExecuteCommand` RPC로 클라이언트에 노출.
 - `ParameterValue`는 `oneof(int64, double, bool, string, bytes)` — proto 타입은 `Core.Grpc.FrameGrabber` 네임스페이스.
-- `SetParameterWithStream` — Client Streaming RPC. 대용량 바이너리 데이터(웨이퍼 이미지 등)를 chunk 단위로 전송.
+- `SetParameterWithStream` — Client Streaming RPC. 대용량 바이너리 데이터(Die 이미지 등)를 chunk 단위로 전송.
 
 ### 지원 파라미터
 
@@ -73,7 +81,7 @@ VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 | `frame_rate_hz` | Double | 연속 모드 프레임 레이트 (1.0–1000.0 Hz) |
 | `pixel_format` | String | 출력 픽셀 포맷 (Mono8/Rgb8/Bgr8) |
 | `acquisition_mode` | String | 획득 모드 (Continuous/Triggered) |
-| `wafer_image` | Bytes | 웨이퍼 이미지 RAW 바이트 (`SetParameterWithStream` 사용) |
+| `die_image` | Bytes | Die 이미지 PNG/JPEG 인코딩 (`SetParameterWithStream` 사용) |
 | `scan_plan` | Bytes | ScanPlan JSON (UTF-8 bytes, `SetParameterWithStream` 사용) |
 
 ## 설계 원칙

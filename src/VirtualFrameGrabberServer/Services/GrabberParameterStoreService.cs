@@ -5,7 +5,7 @@ namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// IFrameGrabber 파라미터 레지스트리와 GrabberConfig 바인딩을 담당한다.
-/// source_mode 상태를 보관하며, wafer_image / scan_plan은 VirtualFrameGrabberService가 직접 처리한다.
+/// source_mode 상태를 보관하며, die_image / scan_plan은 VirtualFrameGrabberService가 직접 처리한다.
 /// </summary>
 public sealed class GrabberParameterStoreService
 {
@@ -24,7 +24,7 @@ public sealed class GrabberParameterStoreService
     new("pixel_format",     "Pixel Format",       ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Mono8"),
     new("acquisition_mode", "Acquisition Mode",   ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Continuous"),
     new("source_mode",      "Source Mode",        ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "gradient"),
-    new("wafer_image",      "Wafer Image",        ParameterValueType.Bytes,  MinValue: null, MaxValue: null,   DefaultValue: null),
+    new("die_image",        "Die Image",          ParameterValueType.Bytes,  MinValue: null, MaxValue: null,   DefaultValue: null),
     new("scan_plan",        "Scan Plan (JSON)",   ParameterValueType.Bytes,  MinValue: null, MaxValue: null,   DefaultValue: null),
   ];
 
@@ -38,14 +38,14 @@ public sealed class GrabberParameterStoreService
     "pixel_format"     => new ParameterValue.StringValue(config.PixelFormat.ToString()),
     "acquisition_mode" => new ParameterValue.StringValue(config.Mode.ToString()),
     "source_mode"      => new ParameterValue.StringValue(SourceMode),
-    "wafer_image"      => new ParameterValue.StringValue("(binary data)"),
+    "die_image"        => new ParameterValue.StringValue("(binary data)"),
     "scan_plan"        => new ParameterValue.StringValue("(see SetParameter)"),
     _                  => throw new KeyNotFoundException($"Unknown parameter: '{key}'")
   };
 
   /// <summary>
   /// GrabberConfig에 매핑되는 파라미터를 적용한 새 GrabberConfig를 반환한다.
-  /// source_mode / wafer_image / scan_plan / acquisition_mode는 별도 처리한다.
+  /// source_mode / die_image / scan_plan / acquisition_mode는 별도 처리한다.
   /// </summary>
   public GrabberConfig ApplyParameter(GrabberConfig config, string key, ParameterValue value) =>
     key switch
