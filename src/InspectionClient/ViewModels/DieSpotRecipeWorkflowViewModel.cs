@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Core.Logging.Interfaces;
@@ -23,25 +21,9 @@ namespace InspectionClient.ViewModels;
 ///
 /// WaferId는 검사 실행 화면에서 Wafer를 선택할 때 결정한다.
 /// </summary>
-public partial class DieSpotRecipeWorkflowViewModel : ViewModelBase
+public partial class DieSpotRecipeWorkflowViewModel : DbTableWorkflowViewModelBase<DieSpotRecipeRow>
 {
-  private readonly IDieSpotRecipeRepository _repository;
-  private readonly IEquipmentConfigService  _equipmentConfig;
-
-  // ── Recipe 목록 ───────────────────────────────────────────────────────
-
-  public ObservableCollection<DieSpotRecipeRow> Items { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
-  [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
-  private DieSpotRecipeRow? _selectedItem;
-
-  /// <summary>
-  /// 현재 편집 중인 항목. DbTableControl.LoadedItem과 양방향 바인딩.
-  /// null이면 Browse 상태, non-null이면 Edit 상태.
-  /// </summary>
-  [ObservableProperty] private DieSpotRecipeRow? _loadedItem;
+  private readonly IEquipmentConfigService _equipmentConfig;
 
   // ── Recipe 파라미터 편집 버퍼 ─────────────────────────────────────────
 
@@ -80,78 +62,19 @@ public partial class DieSpotRecipeWorkflowViewModel : ViewModelBase
       IDieSpotRecipeRepository  repository,
       IEquipmentConfigService   equipmentConfig,
       ILogService               logService)
-      : base(logService)
+      : base(repository, logService)
   {
-    _repository             = repository;
     _equipmentConfig        = equipmentConfig;
     AvailableMagnifications = equipmentConfig.Config.Magnifications.AsReadOnly();
     _ = RefreshAsync();
     RecalculateFov();
   }
 
-  // ── CRUD 커맨드 ──────────────────────────────────────────────────────
+  // ── 파생 훅 ──────────────────────────────────────────────────────────
 
-  [RelayCommand]
-  private async Task RefreshAsync() => await Execute(async () =>
-  {
-    var list = await _repository.ListAsync();
-    Items.Clear();
-    foreach (var item in list)
-      Items.Add(item);
-  }, nameof(RefreshAsync));
+  protected override void OnLoaded(DieSpotRecipeRow row) => ApplyToForm(row.Recipe);
 
-  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
-  private void Load(object? item) => Execute(() =>
-  {
-    if (SelectedItem is not DieSpotRecipeRow row)
-      return;
-    ApplyToForm(row.Recipe);
-  }, nameof(Load));
-
-  [RelayCommand]
-  private async Task CreateAsync() => await Execute(async () =>
-  {
-    var name = $"New-{DateTime.Now:yyMMdd-HHmmss}";
-    var row  = await _repository.CreateAsync(name);
-    await RefreshAsync();
-    SelectedItem = FindById(row.Id);
-  }, nameof(CreateAsync));
-
-  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
-  private async Task DeleteAsync() => await Execute(async () =>
-  {
-    if (SelectedItem is not DieSpotRecipeRow current)
-      return;
-    await _repository.DeleteAsync(current.Id);
-    Items.Remove(current);
-    SelectedItem = null;
-  }, nameof(DeleteAsync));
-
-  [RelayCommand]
-  private async Task SaveAsync() => await Execute(async () =>
-  {
-    if (LoadedItem is not DieSpotRecipeRow current)
-      return;
-    current.Recipe = BuildRecipe();
-    await _repository.UpdateAsync(current);
-    LoadedItem = null;
-  }, nameof(SaveAsync));
-
-  [RelayCommand]
-  private async Task CancelAsync() => await Execute(async () =>
-  {
-    if (LoadedItem is not DieSpotRecipeRow current)
-      return;
-    var restored = await _repository.FindByIdAsync(current.Id);
-    if (restored is not null)
-    {
-      var idx = Items.IndexOf(current);
-      if (idx >= 0)
-        Items[idx] = restored;
-      SelectedItem = restored;
-    }
-    LoadedItem = null;
-  }, nameof(CancelAsync));
+  protected override void OnBeforeSave(DieSpotRecipeRow row) => row.Recipe = BuildRecipe();
 
   // ── 보조편집패널 커맨드 ──────────────────────────────────────────────
 
@@ -171,10 +94,6 @@ public partial class DieSpotRecipeWorkflowViewModel : ViewModelBase
   // ── 프로퍼티 변경 연동 ───────────────────────────────────────────────
 
   partial void OnSelectedMagnificationChanged(uint value) => RecalculateFov();
-
-  // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
-
-  private bool HasSelectedItem => SelectedItem is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 
@@ -212,13 +131,5 @@ public partial class DieSpotRecipeWorkflowViewModel : ViewModelBase
     ShotCenterYum = recipe.ShotCenter.Yum;
     Threshold     = recipe.Threshold;
     SaveOnFail    = recipe.SaveOnFail;
-  }
-
-  private DieSpotRecipeRow? FindById(long id)
-  {
-    foreach (var item in Items)
-      if (item.Id == id)
-        return item;
-    return null;
   }
 }

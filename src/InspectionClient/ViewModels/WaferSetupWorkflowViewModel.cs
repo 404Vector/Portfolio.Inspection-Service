@@ -1,4 +1,3 @@
-using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,25 +17,9 @@ namespace InspectionClient.ViewModels;
 ///   - LoadedItem을 직접 바인딩하여 View에서 편집
 ///   - 보조편집패널: ComboBox 대체 리스트 및 DieParameters 선택
 /// </summary>
-public partial class WaferSetupWorkflowViewModel : ViewModelBase
+public partial class WaferSetupWorkflowViewModel : DbTableWorkflowViewModelBase<WaferInfoRow>
 {
-  private readonly IWaferInfoRepository _repository;
   private readonly IDieRenderingParametersRepository _dieRepository;
-
-  // ── WaferInfo 목록 ────────────────────────────────────────────────────
-
-  public ObservableCollection<WaferInfoRow> Items { get; } = new();
-
-  [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
-  [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
-  private WaferInfoRow? _selectedItem;
-
-  /// <summary>
-  /// 현재 편집 중인 항목. DbTableControl.LoadedItem과 양방향 바인딩.
-  /// null이면 Browse 상태, non-null이면 Edit 상태.
-  /// </summary>
-  [ObservableProperty] private WaferInfoRow? _loadedItem;
 
   // ── Die 파라미터 목록 ─────────────────────────────────────────────────
 
@@ -65,9 +48,8 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
       IWaferInfoRepository              repository,
       IDieRenderingParametersRepository dieRepository,
       ILogService                       logService)
-      : base(logService)
+      : base(repository, logService)
   {
-    _repository    = repository;
     _dieRepository = dieRepository;
     _ = InitializeAsync();
   }
@@ -80,7 +62,7 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
     await RefreshAsync();
   }
 
-  // ── 커맨드 ───────────────────────────────────────────────────────────
+  // ── Die 목록 커맨드 ─────────────────────────────────────────────────
 
   [RelayCommand]
   private async Task RefreshDieAsync() => await Execute(async () =>
@@ -90,65 +72,6 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
     foreach (var item in list)
       DieItems.Add(item);
   }, nameof(RefreshDieAsync));
-
-  [RelayCommand]
-  private async Task RefreshAsync() => await Execute(async () =>
-  {
-    var list = await _repository.ListAsync();
-    Items.Clear();
-    foreach (var item in list)
-      Items.Add(item);
-  }, nameof(RefreshAsync));
-
-  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
-  private void Load(object? item) => Execute(() =>
-  {
-    // LoadedItem.DieParametersId가 이미 row에 포함되어 있으므로 추가 작업 불필요.
-  }, nameof(Load));
-
-  [RelayCommand]
-  private async Task CreateAsync() => await Execute(async () =>
-  {
-    var name = $"New-{DateTime.Now:yyMMdd-HHmmss}";
-    var row  = await _repository.CreateAsync(name);
-    await RefreshAsync();
-    SelectedItem = FindById(row.Id);
-  }, nameof(CreateAsync));
-
-  [RelayCommand(CanExecute = nameof(HasSelectedItem))]
-  private async Task DeleteAsync() => await Execute(async () =>
-  {
-    if (SelectedItem is not WaferInfoRow current)
-      return;
-    await _repository.DeleteAsync(current.Id);
-    Items.Remove(current);
-    SelectedItem = null;
-  }, nameof(DeleteAsync));
-
-  [RelayCommand]
-  private async Task SaveAsync() => await Execute(async () =>
-  {
-    if (LoadedItem is not WaferInfoRow current)
-      return;
-    await _repository.UpdateAsync(current);
-    LoadedItem = null;
-  }, nameof(SaveAsync));
-
-  [RelayCommand]
-  private async Task CancelAsync() => await Execute(async () =>
-  {
-    if (LoadedItem is not WaferInfoRow current)
-      return;
-    var restored = await _repository.FindByIdAsync(current.Id);
-    if (restored is not null)
-    {
-      var idx = Items.IndexOf(current);
-      if (idx >= 0)
-        Items[idx] = restored;
-      SelectedItem = restored;
-    }
-    LoadedItem = null;
-  }, nameof(CancelAsync));
 
   // ── 보조편집패널 커맨드 ──────────────────────────────────────────────
 
@@ -212,19 +135,7 @@ public partial class WaferSetupWorkflowViewModel : ViewModelBase
     ActiveSidePanel = SidePanelMode.None;
   }
 
-  // ── CanExecute 헬퍼 ─────────────────────────────────────────────────
-
-  private bool HasSelectedItem => SelectedItem is not null;
-
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
-
-  private WaferInfoRow? FindById(long id)
-  {
-    foreach (var item in Items)
-      if (item.Id == id)
-        return item;
-    return null;
-  }
 
   private DieParametersRow? FindDieById(long id)
   {
