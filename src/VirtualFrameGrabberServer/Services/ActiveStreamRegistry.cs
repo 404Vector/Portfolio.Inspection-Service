@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// 활성 서버 스트리밍 RPC의 CancellationTokenSource를 추적하고,

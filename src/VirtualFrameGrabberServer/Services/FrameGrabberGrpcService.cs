@@ -2,14 +2,14 @@ using System.Threading.Channels;
 using Core.Grpc.FrameGrabber;
 using Core.FrameGrabber.Interfaces;
 using Core.SharedMemory.Models;
-using FileFrameGrabberService.Utils;
+using VirtualFrameGrabberServer.Utils;
 using Grpc.Core;
 
 using ProtoCommandResult       = Core.Grpc.FrameGrabber.CommandResult;
 using ProtoCommandDescriptor   = Core.Grpc.FrameGrabber.CommandDescriptor;
 using ProtoParameterDescriptor = Core.Grpc.FrameGrabber.ParameterDescriptor;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
 {

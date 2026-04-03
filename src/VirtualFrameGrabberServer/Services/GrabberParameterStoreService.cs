@@ -1,12 +1,12 @@
 using Core.FrameGrabber.Models;
 using CE = Core.Enums;
 
-namespace FileFrameGrabberService.Services;
+namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// IFrameGrabber 파라미터 레지스트리와 GrabberConfig 바인딩을 담당한다.
 /// GrabberConfig에 매핑되지 않는 파라미터(source_mode, image_path)는
-/// 이 클래스가 상태를 보관하고, 처리는 FileFrameGrabberService가 담당한다.
+/// 이 클래스가 상태를 보관하고, 처리는 VirtualFrameGrabberServer가 담당한다.
 /// </summary>
 public sealed class GrabberParameterStoreService
 {

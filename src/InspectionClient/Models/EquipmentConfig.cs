@@ -115,11 +115,11 @@ public class EquipmentConfig
 
   [Category("Communication")]
   [DisplayName("FrameGrabber Service Address")]
-  [Description("gRPC address of the FrameGrabberService.")]
-  public string FrameGrabberServiceAddress { get; set; } = "http://localhost:5100";
+  [Description("gRPC address of the VirtualFrameGrabberServer.")]
+  public string FrameGrabberServerAddress { get; set; } = "http://localhost:5100";
 
   [Category("Communication")]
-  [DisplayName("Inspection Service Address")]
-  [Description("gRPC address of the InspectionService.")]
-  public string InspectionServiceAddress { get; set; } = "http://localhost:5200";
+  [DisplayName("Inspection Server Address")]
+  [Description("gRPC address of the InspectionServer.")]
+  public string InspectionServerAddress { get; set; } = "http://localhost:5200";
 }

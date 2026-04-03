@@ -11,8 +11,8 @@ A .NET 10 inspection service system consisting of a desktop GUI client, two gRPC
                │ gRPC                 │ gRPC
                ▼                      ▼
 ┌──────────────────────┐  ┌──────────────────────────┐
-│   InspectionService  │  │   FrameGrabberService    │
-│   localhost:5044     │  │   localhost:5273         │
+│   InspectionServer   │  │  VirtualFrameGrabberServer │
+│   localhost:5044     │  │   localhost:5273          │
 └──────────┬───────────┘  └───────────┬──────────────┘
            │ SharedMemory (MMF)        │ SharedMemory (MMF)
            │         Consumer          │         Producer
@@ -29,9 +29,9 @@ A .NET 10 inspection service system consisting of a desktop GUI client, two gRPC
 ### Dependency Direction
 
 ```
-InspectionClient    →  Core, Core.Logging
-FrameGrabberService →  Core, Core.FrameGrabber, Core.SharedMemory
-InspectionService   →  Core, Core.Logging, Core.SharedMemory
+InspectionClient         →  Core, Core.Logging
+VirtualFrameGrabberServer →  Core, Core.FrameGrabber, Core.SharedMemory
+InspectionServer         →  Core, Core.Logging, Core.SharedMemory
 Core.Logging        →  Core
 Core.SharedMemory   →  Core
 Core.FrameGrabber   →  Core
@@ -52,8 +52,8 @@ Core                →  (BCL only)
 | **Core.Logging** | Shared Library | Service-wide logging standardization wrapper |
 | **Core.SharedMemory** | Shared Library | MMF-based ring buffer implementation (unsafe code isolated) |
 | **Core.FrameGrabber** | Shared Library | Frame grabber domain contracts and dynamic capability API |
-| **FrameGrabberService** | gRPC Service | Frame acquisition and shared memory write (Producer) |
-| **InspectionService** | gRPC Service | Shared memory read (Consumer) and inspection logic |
+| **VirtualFrameGrabberServer** | gRPC Server | Frame acquisition and shared memory write (Producer) |
+| **InspectionServer** | gRPC Server | Shared memory read (Consumer) and inspection logic |
 | **InspectionClient** | Desktop App | Cross-platform desktop UI (Avalonia) — controls and monitors services via gRPC |
 
 ## Technology Stack
@@ -89,10 +89,10 @@ Start each component in a separate terminal:
 
 ```bash
 # Frame grabber (start first — SharedMemory producer)
-dotnet run --project src/FrameGrabberService/FrameGrabberService.csproj
+dotnet run --project src/VirtualFrameGrabberServer/VirtualFrameGrabberServer.csproj
 
-# Inspection service
-dotnet run --project src/InspectionService/InspectionService.csproj
+# Inspection server
+dotnet run --project src/InspectionServer/InspectionServer.csproj
 
 # Desktop client
 dotnet run --project src/InspectionClient/InspectionClient.csproj
@@ -111,8 +111,8 @@ dotnet test --filter "FullyQualifiedName~SomeTest"
 
 | Service | HTTP | HTTPS |
 |---|---|---|
-| InspectionService | `http://localhost:5044` | `https://localhost:7108` |
-| FrameGrabberService | `http://localhost:5273` | `https://localhost:7262` |
+| InspectionServer | `http://localhost:5044` | `https://localhost:7108` |
+| VirtualFrameGrabberServer | `http://localhost:5273` | `https://localhost:7262` |
 
 ## Branching
 

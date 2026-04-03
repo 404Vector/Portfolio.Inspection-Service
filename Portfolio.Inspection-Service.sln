@@ -7,9 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B25AA382-EFD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InspectionClient", "src\InspectionClient\InspectionClient.csproj", "{08F13331-3B83-4E07-96DE-0B52DFE0B468}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileFrameGrabberService", "src\FileFrameGrabberService\FileFrameGrabberService.csproj", "{4BCF2591-0BE3-4C72-9E6F-79571377C12F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualFrameGrabberServer", "src\VirtualFrameGrabberServer\VirtualFrameGrabberServer.csproj", "{4BCF2591-0BE3-4C72-9E6F-79571377C12F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InspectionService", "src\InspectionService\InspectionService.csproj", "{1E0ABA65-5C04-45F0-8B63-9DCBB21F0FC6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InspectionServer", "src\InspectionServer\InspectionServer.csproj", "{1E0ABA65-5C04-45F0-8B63-9DCBB21F0FC6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{DECD3522-D422-4566-B45A-89DAE9E0A6D9}"
 EndProject

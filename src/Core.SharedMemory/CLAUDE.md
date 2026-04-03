@@ -3,7 +3,7 @@
 ## 역할
 
 MMF(Memory-Mapped File) 기반 **링버퍼의 읽기/쓰기 구현**. unsafe 코드를 이 프로젝트에만 격리한다.
-FrameGrabberService(Producer)와 InspectionService(Consumer) 모두가 참조한다.
+VirtualFrameGrabberServer(Producer)와 InspectionServer(Consumer) 모두가 참조한다.
 
 ## 포함 대상
 
@@ -15,7 +15,7 @@ FrameGrabberService(Producer)와 InspectionService(Consumer) 모두가 참조한
 
 ## 제외 대상
 
-- 프레임 획득 로직 (FrameGrabberService 내부에서 처리)
+- 프레임 획득 로직 (VirtualFrameGrabberServer 내부에서 처리)
 - gRPC 변환 로직 (각 서비스에서 처리)
 - 비즈니스 로직
 
@@ -30,9 +30,9 @@ Core.SharedMemory → Core
 
 ## Write() API 설계 원칙
 
-`GrabbedFrame`(FrameGrabberService 전용 타입)에 의존하지 않는다.
+`GrabbedFrame`(VirtualFrameGrabberServer 전용 타입)에 의존하지 않는다.
 Write 시그니처는 원시 파라미터(`byte[]`, `width`, `height`, `PixelFormat` 등)를 받는다.
-FrameGrabberService에서 `GrabbedFrame` → 원시 파라미터로 변환 후 호출한다.
+VirtualFrameGrabberServer에서 `GrabbedFrame` → 원시 파라미터로 변환 후 호출한다.
 
 ## 메모리 레이아웃
 

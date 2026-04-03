@@ -14,7 +14,7 @@ using ProtoParameterDescriptor = Core.Grpc.FrameGrabber.ParameterDescriptor;
 using ProtoCommandDescriptor   = Core.Grpc.FrameGrabber.CommandDescriptor;
 using ProtoParameterValueType  = Core.Grpc.FrameGrabber.ParameterValueType;
 
-namespace FileFrameGrabberService.Utils;
+namespace VirtualFrameGrabberServer.Utils;
 
 internal static class FrameGrabberProtoMapper
 {

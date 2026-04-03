@@ -3,7 +3,7 @@
 ## 역할
 
 검사 시스템의 **Avalonia GUI 클라이언트**. 운영자가 서비스를 제어하고 결과를 모니터링하는 애플리케이션.
-gRPC **클라이언트**로서 `FrameGrabberService`, `InspectionService`와 통신한다.
+gRPC **클라이언트**로서 `VirtualFrameGrabberServer`, `InspectionServer`와 통신한다.
 
 ## 포함 대상
 
@@ -31,8 +31,8 @@ gRPC **클라이언트**로서 `FrameGrabberService`, `InspectionService`와 통
 
 ## 제외 대상
 
-- 검사 비즈니스 로직 (InspectionService에서 처리)
-- 프레임 획득 로직 (FrameGrabberService에서 처리)
+- 검사 비즈니스 로직 (InspectionServer에서 처리)
+- 프레임 획득 로직 (VirtualFrameGrabberServer에서 처리)
 
 ## 의존성 규칙
 
@@ -44,9 +44,9 @@ InspectionClient → CommunityToolkit.Mvvm (NuGet)
 ```
 
 - `Core.SharedMemory`는 프레임 픽셀 데이터 읽기 전용으로 참조한다.
-  `FrameGrabberService`로부터 `FrameHandle`(gRPC)을 수신한 뒤,
+  `VirtualFrameGrabberServer`로부터 `FrameHandle`(gRPC)을 수신한 뒤,
   `SharedMemoryRingBufferReader`로 해당 슬롯의 픽셀 데이터를 읽어 UI에 표시한다.
-- 서비스 프로젝트(`FrameGrabberService`, `InspectionService`)를 직접 참조하지 않는다.
+- 서버 프로젝트(`VirtualFrameGrabberServer`, `InspectionServer`)를 직접 참조하지 않는다.
 
 ## UI 아키텍처 — MVVM
 
