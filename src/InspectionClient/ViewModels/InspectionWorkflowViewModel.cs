@@ -8,7 +8,7 @@ using Core.Logging.Interfaces;
 using Core.Models;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
-using InspectionRecipe.Models;
+using Core.Recipe.Models;
 
 namespace InspectionClient.ViewModels;
 

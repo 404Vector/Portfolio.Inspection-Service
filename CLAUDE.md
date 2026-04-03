@@ -11,6 +11,7 @@ Portfolio.Inspection-Service is a .NET application for an inspection service con
 - **Core.Grpc**: gRPC proto 중앙 저장소. 모든 서비스의 proto 파일과 생성 코드를 포함.
 - **Core.Logging**: 서비스 전반 로깅 표준화 래퍼.
 - **Core.SharedMemory**: MMF 기반 링버퍼 구현. unsafe 코드 격리.
+- **Core.Recipe**: 검사 레시피 인터페이스 및 모델 정의.
 
 **Servers**
 - **VirtualFrameGrabberServer**: gRPC 서버. 프레임 획득 및 SharedMemory Write (Producer).
@@ -26,11 +27,12 @@ The projects are organized under `Portfolio.Inspection-Service.sln`.
 ### 의존성 방향
 
 ```
-InspectionClient         →  Core, Core.Grpc, Core.Logging, Core.SharedMemory
+InspectionClient         →  Core, Core.Grpc, Core.Logging, Core.Recipe, Core.SharedMemory
 VirtualFrameGrabberServer →  Core, Core.FrameGrabber, Core.Grpc, Core.Logging, Core.SharedMemory
-InspectionServer         →  Core, Core.Logging, Core.SharedMemory
+InspectionServer         →  Core, Core.Grpc, Core.Logging, Core.Recipe, Core.SharedMemory
 Core.Grpc           →  (proto 생성 코드만 — Grpc.AspNetCore NuGet)
 Core.Logging        →  Core
+Core.Recipe         →  Core
 Core.SharedMemory   →  Core
 Core                →  (외부 패키지 없음 또는 BCL만)
 ```

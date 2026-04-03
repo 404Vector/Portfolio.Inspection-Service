@@ -1,7 +1,7 @@
 using Core.Models;
-using InspectionRecipe.Interfaces;
+using Core.Recipe.Interfaces;
 
-namespace InspectionRecipe.Models;
+namespace Core.Recipe.Models;
 
 /// <summary>
 /// 웨이퍼 전체 Surface를 Boustrophedon 경로로 스캔하여 die-to-die 검사하는 레시피.

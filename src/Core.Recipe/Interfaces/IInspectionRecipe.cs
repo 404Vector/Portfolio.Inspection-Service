@@ -1,4 +1,4 @@
-namespace InspectionRecipe.Interfaces;
+namespace Core.Recipe.Interfaces;
 
 /// <summary>
 /// 검사 레시피의 공통 계약입니다.

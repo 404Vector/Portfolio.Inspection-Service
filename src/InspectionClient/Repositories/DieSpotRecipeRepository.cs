@@ -9,7 +9,7 @@ using InspectionClient.Infrastructure;
 using InspectionClient.Infrastructure.Entities;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
-using InspectionRecipe.Models;
+using Core.Recipe.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace InspectionClient.Repositories;

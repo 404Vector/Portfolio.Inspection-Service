@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Core.Models;
-using InspectionRecipe.Models;
+using Core.Recipe.Models;
 
 namespace InspectionClient.Interfaces;
 

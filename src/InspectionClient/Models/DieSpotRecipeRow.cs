@@ -1,5 +1,5 @@
 using InspectionClient.Interfaces;
-using InspectionRecipe.Models;
+using Core.Recipe.Models;
 
 namespace InspectionClient.Models;
 
