@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Core.Grpc.FrameGrabber;
 using Core.Logging.Interfaces;
+using Google.Protobuf;
 using Grpc.Core;
 using InspectionClient.Interfaces;
 using InspectionClient.Models;
@@ -63,6 +64,42 @@ public sealed class FrameGrabberControlService : IFrameGrabberController
       var response = await _grpcClient.SetParameterAsync(
           new SetParameterRequest { Key = key, Value = proto },
           cancellationToken: ct);
+      return (response.Success, response.Message);
+    }
+    catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+    {
+      return (false, "Cancelled");
+    }
+    catch (Exception ex)
+    {
+      return (false, ex.Message);
+    }
+  }
+
+  private const int ChunkSize = 64 * 1024; // 64 KB
+
+  public async Task<(bool Success, string Message)> SetParameterWithStreamAsync(
+      string key, byte[] data, CancellationToken ct = default)
+  {
+    try
+    {
+      using var call = _grpcClient.SetParameterWithStream(cancellationToken: ct);
+
+      for (int offset = 0; offset < data.Length; offset += ChunkSize)
+      {
+        var length = Math.Min(ChunkSize, data.Length - offset);
+        var chunk = new SetParameterChunk
+        {
+          Key       = key,
+          Data      = ByteString.CopyFrom(data, offset, length),
+          Offset    = offset,
+          TotalSize = data.Length
+        };
+        await call.RequestStream.WriteAsync(chunk, ct);
+      }
+
+      await call.RequestStream.CompleteAsync();
+      var response = await call;
       return (response.Success, response.Message);
     }
     catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)

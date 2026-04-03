@@ -25,5 +25,14 @@ public partial class GrabberParameterItem : ObservableObject
   /// <summary>원래 서버 값. Apply/Restore 비교에 사용.</summary>
   public object? OriginalValue { get; set; }
 
-  public bool IsModified => !Equals(CurrentValue, OriginalValue);
+  /// <summary>
+  /// Bytes 타입 파라미터의 바이너리 데이터.
+  /// 파일 선택 시 읽어 들인 byte[]를 보관하고, Apply 시 스트리밍 전송에 사용한다.
+  /// CurrentValue에는 파일 이름(표시용)을 저장한다.
+  /// </summary>
+  public byte[]? BytesData { get; set; }
+
+  public bool IsModified => ValueType == ParameterValueType.Bytes
+      ? BytesData is not null
+      : !Equals(CurrentValue, OriginalValue);
 }

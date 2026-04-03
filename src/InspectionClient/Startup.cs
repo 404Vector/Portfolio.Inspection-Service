@@ -103,8 +103,8 @@ internal static class Startup
         services.AddSingleton<SetupWorkflowViewModel>();
         services.AddSingleton<InspectionWorkflowViewModel>();
         services.AddSingleton<HistoryViewModel>();
-        services.AddTransient<FileFrameGrabberViewModel>();
-        services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<FileFrameGrabberViewModel>());
+        services.AddTransient<VirtualFrameGrabberViewModel>();
+        services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<VirtualFrameGrabberViewModel>());
         services.AddTransient<AppSettingViewModel>();
         services.AddTransient<EquipmentSpecViewModel>();
         services.AddSingleton<MainViewModel>();

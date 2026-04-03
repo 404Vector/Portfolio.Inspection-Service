@@ -16,6 +16,7 @@ internal static class GrabberProtoMapper
     ParameterValue.ValueOneofCase.DoubleVal => v.DoubleVal,
     ParameterValue.ValueOneofCase.BoolVal   => v.BoolVal,
     ParameterValue.ValueOneofCase.StringVal => v.StringVal,
+    ParameterValue.ValueOneofCase.BytesVal  => v.BytesVal.ToByteArray(),
     _                                       => null
   };
 
