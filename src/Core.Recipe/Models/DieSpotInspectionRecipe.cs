@@ -1,7 +1,7 @@
 using Core.Models;
-using InspectionRecipe.Interfaces;
+using Core.Recipe.Interfaces;
 
-namespace InspectionRecipe.Models;
+namespace Core.Recipe.Models;
 
 /// <summary>
 /// 특정 Die 1개를 지목하여 좌·중·우 3-shot으로 die-to-die 검사하는 레시피.

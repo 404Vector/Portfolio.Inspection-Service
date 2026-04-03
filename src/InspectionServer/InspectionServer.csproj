@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Core.Grpc\Core.Grpc.csproj" />
-    <ProjectReference Include="..\InspectionRecipe\InspectionRecipe.csproj" />
+    <ProjectReference Include="..\Core.Recipe\Core.Recipe.csproj" />
   </ItemGroup>
 
   <ItemGroup>

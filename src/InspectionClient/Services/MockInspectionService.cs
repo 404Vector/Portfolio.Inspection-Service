@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using Core.Models;
 using InspectionClient.Interfaces;
-using InspectionRecipe.Models;
+using Core.Recipe.Models;
 
 namespace InspectionClient.Services;
 

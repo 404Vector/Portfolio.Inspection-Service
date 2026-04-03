@@ -25,7 +25,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.FrameGrabber", "src\Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Grpc", "src\Core.Grpc\Core.Grpc.csproj", "{E71928F7-5352-43AE-9323-20CB89F3B388}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InspectionRecipe", "src\InspectionRecipe\InspectionRecipe.csproj", "{C3A7F2B1-D894-4E56-A012-F345678901BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Recipe", "src\Core.Recipe\Core.Recipe.csproj", "{C3A7F2B1-D894-4E56-A012-F345678901BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -106,7 +106,7 @@ public class InspectionDbContext : DbContext {
       });
 
     // Recipe
-    var recipe = new InspectionRecipe.Models.WaferSurfaceInspectionRecipe(
+    var recipe = new Core.Recipe.Models.WaferSurfaceInspectionRecipe(
       RecipeName: "SEED-RECIPE", Description: "Seed dummy recipe",
       Fov: new FovSize(1413.0, 1035.0));
     modelBuilder.Entity<RecipeEntity>().HasData(
