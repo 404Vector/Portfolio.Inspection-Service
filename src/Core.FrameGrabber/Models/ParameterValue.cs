@@ -9,4 +9,5 @@ public abstract record ParameterValue
     public sealed record DoubleValue(double Value) : ParameterValue;
     public sealed record BoolValue  (bool   Value) : ParameterValue;
     public sealed record StringValue(string Value) : ParameterValue;
+    public sealed record BytesValue (byte[] Value) : ParameterValue;
 }

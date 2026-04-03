@@ -29,7 +29,8 @@ public record ScanPlan {
   /// <summary>전체 Shot 총 개수</summary>
   public int TotalShotCount => Sectors.Sum(s => s.ShotCount);
 
-  private ScanPlan(
+  [System.Text.Json.Serialization.JsonConstructor]
+  public ScanPlan(
     DieMap                    dieMap,
     FovSize                   fov,
     double                    overlapXum,

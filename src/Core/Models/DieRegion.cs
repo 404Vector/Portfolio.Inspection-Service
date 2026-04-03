@@ -17,6 +17,7 @@ public readonly struct DieRegion : IEquatable<DieRegion> {
   /// <summary>Die 높이 (µm)</summary>
   public double HeightUm { get; }
 
+  [System.Text.Json.Serialization.JsonConstructor]
   public DieRegion(DieIndex index, WaferCoordinate bottomLeft, double widthUm, double heightUm) {
     Index      = index;
     BottomLeft = bottomLeft;

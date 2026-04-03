@@ -20,6 +20,7 @@ public readonly struct ScanShot : IEquatable<ScanShot> {
   /// </summary>
   public IReadOnlyList<DieIndex> CoveredDies { get; }
 
+  [System.Text.Json.Serialization.JsonConstructor]
   public ScanShot(int index, WaferCoordinate center, FovSize fov, IReadOnlyList<DieIndex> coveredDies) {
     Index       = index;
     Center      = center;

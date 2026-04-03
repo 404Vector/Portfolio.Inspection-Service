@@ -11,6 +11,7 @@ public readonly struct FovSize : IEquatable<FovSize> {
   /// <summary>FOV 높이 (µm). Y축 방향.</summary>
   public double HeightUm { get; }
 
+  [System.Text.Json.Serialization.JsonConstructor]
   public FovSize(double widthUm, double heightUm) {
     if (widthUm <= 0) throw new ArgumentOutOfRangeException(nameof(widthUm), "FOV 너비는 0보다 커야 합니다.");
     if (heightUm <= 0) throw new ArgumentOutOfRangeException(nameof(heightUm), "FOV 높이는 0보다 커야 합니다.");

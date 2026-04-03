@@ -28,8 +28,9 @@ public record DieMap {
   /// <summary>유효 Die 총 개수</summary>
   public int DieCount => Dies.Count;
 
-  private DieMap(double radiusUm, double activeRadiusUm,
-                 IReadOnlyList<DieRegion> dies, IReadOnlyList<DieRegion> activeDies) {
+  [System.Text.Json.Serialization.JsonConstructor]
+  public DieMap(double radiusUm, double activeRadiusUm,
+                IReadOnlyList<DieRegion> dies, IReadOnlyList<DieRegion> activeDies) {
     RadiusUm       = radiusUm;
     ActiveRadiusUm = activeRadiusUm;
     Dies           = dies;

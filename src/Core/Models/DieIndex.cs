@@ -12,6 +12,7 @@ public readonly struct DieIndex : IEquatable<DieIndex>, IComparable<DieIndex> {
   /// <summary>행 인덱스. +Y 방향(위쪽)으로 증가.</summary>
   public int Row { get; }
 
+  [System.Text.Json.Serialization.JsonConstructor]
   public DieIndex(int col, int row) {
     Col = col;
     Row = row;

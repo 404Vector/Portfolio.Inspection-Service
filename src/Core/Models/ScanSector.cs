@@ -28,6 +28,7 @@ public record ScanSector {
   /// <summary>이 Sector의 Shot 총 개수</summary>
   public int ShotCount => Shots.Count;
 
+  [System.Text.Json.Serialization.JsonConstructor]
   public ScanSector(int index, ScanDirection direction, double centerYum, IReadOnlyList<ScanShot> shots) {
     Index      = index;
     Direction  = direction;
