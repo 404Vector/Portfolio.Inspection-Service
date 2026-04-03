@@ -18,15 +18,15 @@ public partial class DieRenderingParameters : ObservableObject
     /// <summary>최소 캔버스 폭 (μm). 1,000 μm = 1 mm.</summary>
     public const int CanvasWidthMin    = 3_000;
     /// <summary>
-    /// 최대 캔버스 폭/높이 (μm).
-    /// 웨이퍼 직경 200 mm 기준, 엣지 제외 반경 (100 - 2) mm를
-    /// 대각선 방향 Die 최대 변으로 환산: (98 mm) / √2 ≈ 69,296 μm.
+    /// 최대 캔버스 폭 (μm).
+    /// 1 px = 1 μm 렌더링 정책에서 BGRA 비트맵 메모리를 8 GB 이내로 유지하기 위해
+    /// 정사각형 기준 sqrt(8 × 1024³ / 4) ≈ 46,340 μm → 46,000 μm로 제한한다.
     /// </summary>
-    public const int CanvasWidthMax    = 69_296;
+    public const int CanvasWidthMax    = 46_000;
     /// <summary>최소 캔버스 높이 (μm).</summary>
     public const int CanvasHeightMin   = 3_000;
     /// <summary>최대 캔버스 높이 (μm). <see cref="CanvasWidthMax"/> 참조.</summary>
-    public const int CanvasHeightMax   = 69_296;
+    public const int CanvasHeightMax   = 46_000;
     public const int BackgroundGrayMin = 0;
     public const int BackgroundGrayMax = 255;
     public const int PadRowCountMin    = 1;

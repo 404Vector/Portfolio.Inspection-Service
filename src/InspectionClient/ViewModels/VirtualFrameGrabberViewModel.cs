@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia;
@@ -188,7 +187,7 @@ public partial class VirtualFrameGrabberViewModel : FrameGrabberViewModelBase
   // ── Die Image 인코딩 ───────────────────────────────────────
 
   /// <summary>
-  /// Die 1개를 렌더링하여 PNG로 인코딩한다.
+  /// Die 1개를 렌더링하여 PNG로 인코딩한다. (1 px = 1 μm)
   /// 서버에서 이 이미지를 Die 물리 크기와 매핑하여 FOV 단위로 리샘플링한다.
   /// </summary>
   private byte[] EncodeDieImagePng(DieRenderingParameters dieParams)
