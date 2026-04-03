@@ -29,9 +29,7 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   private readonly IInspectionService          _inspectionService;
   private readonly IWaferInfoRepository        _waferRepository;
 
-  private WaferSurfaceInspectionRecipe? _loadedRecipe;
-  private WaferInfo?                    _loadedWafer;
-  private DateTimeOffset                _inspectionStartedAt;
+  private DateTimeOffset _inspectionStartedAt;
 
   // ── 상태 표시 ──────────────────────────────────────────────────────────
 
@@ -56,11 +54,15 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── Recipe 목록 패널 ─────────────────────────────────────────────────
 
-  public ObservableCollection<WaferSurfaceInspectionRecipe> RecipeList { get; } = new();
+  public ObservableCollection<RecipeRow> RecipeList { get; } = new();
 
   [ObservableProperty]
   [NotifyCanExecuteChangedFor(nameof(LoadSelectedRecipeCommand))]
-  private WaferSurfaceInspectionRecipe? _selectedRecipe;
+  private RecipeRow? _selectedRecipe;
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+  private RecipeRow? _loadedRecipe;
 
   // ── Wafer 목록 패널 ──────────────────────────────────────────────────
 
@@ -69,6 +71,10 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   [ObservableProperty]
   [NotifyCanExecuteChangedFor(nameof(LoadSelectedWaferCommand))]
   private WaferInfoRow? _selectedWafer;
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+  private WaferInfoRow? _loadedWafer;
 
   public InspectionWorkflowViewModel(
       IRecipeRepository           recipeRepository,
@@ -126,15 +132,15 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   private async Task SaveResultAsync(bool cancelled)
   {
-    if (_loadedRecipe is null || _loadedWafer is null) return;
+    if (LoadedRecipe?.Recipe is null || LoadedWafer is null) return;
 
     var status = cancelled
         ? Core.Enums.InspectionStatus.Aborted
         : Core.Enums.InspectionStatus.Pass;
 
     var result = new WaferSurfaceInspectionResult(
-      RecipeName:   _loadedRecipe.RecipeName,
-      WaferId:      _loadedWafer.WaferId,
+      RecipeName:   LoadedRecipe.Recipe.RecipeName,
+      WaferId:      LoadedWafer.WaferId,
       Status:       status,
       StartedAt:    _inspectionStartedAt,
       CompletedAt:  DateTimeOffset.UtcNow,
@@ -153,14 +159,16 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── 커맨드 ─────────────────────────────────────────────────────────────
 
-  private bool CanStart() => !IsRunning && _loadedRecipe is not null && _loadedWafer is not null;
+  private bool CanStart() => !IsRunning
+      && LoadedRecipe?.Recipe is not null
+      && LoadedWafer is not null;
   private bool CanStop()  => IsRunning;
 
   [RelayCommand(CanExecute = nameof(CanStart))]
   private async Task StartAsync() => await Execute(async () =>
   {
-    var recipe = _loadedRecipe!;
-    var wafer  = _loadedWafer!;
+    var recipe = LoadedRecipe!.Recipe;
+    var wafer  = LoadedWafer!.ToWaferInfo();
     ResetMap();
     IsRunning            = true;
     _inspectionStartedAt = DateTimeOffset.UtcNow;
@@ -180,15 +188,25 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
     var list = await _recipeRepository.ListAsync();
     RecipeList.Clear();
     foreach (var row in list)
-      RecipeList.Add(row.Recipe);
+      RecipeList.Add(row);
   }, nameof(RefreshRecipeListAsync));
 
   /// <summary>선택된 Recipe를 검사에 연결한다.</summary>
   [RelayCommand(CanExecute = nameof(HasSelectedRecipe))]
-  private async Task LoadSelectedRecipeAsync() => await Execute(async () =>
+  private void LoadSelectedRecipe() => Execute(() =>
   {
-    await SetRecipeAsync(SelectedRecipe!);
-  }, nameof(LoadSelectedRecipeAsync));
+    LoadedRecipe  = SelectedRecipe!;
+    var r = LoadedRecipe.Recipe;
+    RecipeSummary = $"{r.RecipeName} | FOV {r.Fov.WidthUm:0}×{r.Fov.HeightUm:0} µm";
+  }, nameof(LoadSelectedRecipe));
+
+  /// <summary>Recipe 선택을 해제한다.</summary>
+  [RelayCommand]
+  private void UnloadRecipe() => Execute(() =>
+  {
+    LoadedRecipe  = null;
+    RecipeSummary = "(Recipe를 선택하세요)";
+  }, nameof(UnloadRecipe));
 
   /// <summary>Wafer DB 목록을 새로고침한다.</summary>
   [RelayCommand]
@@ -204,8 +222,22 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   [RelayCommand(CanExecute = nameof(HasSelectedWafer))]
   private void LoadSelectedWafer() => Execute(() =>
   {
-    SetWafer(SelectedWafer!);
+    LoadedWafer  = SelectedWafer!;
+    var wafer    = LoadedWafer.ToWaferInfo();
+    WaferSummary = $"{wafer.WaferId} | {wafer.WaferType}";
+    DieMap       = DieMap.From(wafer);
+    ResetMap();
   }, nameof(LoadSelectedWafer));
+
+  /// <summary>Wafer 선택을 해제한다.</summary>
+  [RelayCommand]
+  private void UnloadWafer() => Execute(() =>
+  {
+    LoadedWafer  = null;
+    WaferSummary = "(Wafer를 선택하세요)";
+    DieMap       = null;
+    ResetMap();
+  }, nameof(UnloadWafer));
 
   // ── CanExecute 헬퍼 ───────────────────────────────────────────────────
 
@@ -213,23 +245,6 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   private bool HasSelectedWafer  => SelectedWafer is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
-
-  private Task SetRecipeAsync(WaferSurfaceInspectionRecipe recipe)
-  {
-    _loadedRecipe = recipe;
-    RecipeSummary = $"{recipe.RecipeName} | FOV {recipe.Fov.WidthUm:0}×{recipe.Fov.HeightUm:0} µm";
-    StartCommand.NotifyCanExecuteChanged();
-    return Task.CompletedTask;
-  }
-
-  private void SetWafer(WaferInfoRow waferRow)
-  {
-    _loadedWafer  = waferRow.ToWaferInfo();
-    WaferSummary  = $"{_loadedWafer.WaferId} | {_loadedWafer.WaferType}";
-    DieMap        = DieMap.From(_loadedWafer);
-    StartCommand.NotifyCanExecuteChanged();
-    ResetMap();
-  }
 
   private void ResetMap()
   {
