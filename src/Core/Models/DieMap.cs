@@ -9,17 +9,31 @@ public record DieMap {
   public double RadiusUm { get; }
 
   /// <summary>
+  /// 유효 검사 영역 반지름 (µm). RadiusUm - EdgeOffsetUm.
+  /// EdgeOffsetUm이 0이면 RadiusUm과 동일합니다.
+  /// </summary>
+  public double ActiveRadiusUm { get; }
+
+  /// <summary>
   /// 유효 Die 목록. DieIndex(Col, Row)로 조회 가능합니다.
   /// Row 내림차순(위→아래), Col 오름차순(왼→오) 순서로 정렬됩니다.
   /// </summary>
   public IReadOnlyList<DieRegion> Dies { get; }
 
+  /// <summary>
+  /// ActiveRadius 안에 중심이 위치하는 Die 목록. 검사 대상입니다.
+  /// </summary>
+  public IReadOnlyList<DieRegion> ActiveDies { get; }
+
   /// <summary>유효 Die 총 개수</summary>
   public int DieCount => Dies.Count;
 
-  private DieMap(double radiusUm, IReadOnlyList<DieRegion> dies) {
-    RadiusUm = radiusUm;
-    Dies     = dies;
+  private DieMap(double radiusUm, double activeRadiusUm,
+                 IReadOnlyList<DieRegion> dies, IReadOnlyList<DieRegion> activeDies) {
+    RadiusUm       = radiusUm;
+    ActiveRadiusUm = activeRadiusUm;
+    Dies           = dies;
+    ActiveDies     = activeDies;
   }
 
   /// <summary>
@@ -64,7 +78,17 @@ public record DieMap {
       }
     }
 
-    return new DieMap(radiusUm, dies.AsReadOnly());
+    double activeRadiusUm = Math.Max(0, radiusUm - wafer.EdgeOffsetUm);
+    double activeRadiusSq = activeRadiusUm * activeRadiusUm;
+
+    var activeDies = new List<DieRegion>();
+    foreach (var die in dies) {
+      if (IsEntirelyInside(die, activeRadiusSq)) {
+        activeDies.Add(die);
+      }
+    }
+
+    return new DieMap(radiusUm, activeRadiusUm, dies.AsReadOnly(), activeDies.AsReadOnly());
   }
 
   /// <summary>
@@ -87,5 +111,20 @@ public record DieMap {
       if (die.Contains(point)) return die;
     }
     return null;
+  }
+
+  /// <summary>
+  /// Die의 네 꼭짓점이 모두 주어진 반지름 안에 있는지 판정합니다.
+  /// </summary>
+  private static bool IsEntirelyInside(DieRegion die, double radiusSq) {
+    double x0 = die.BottomLeft.Xum;
+    double y0 = die.BottomLeft.Yum;
+    double x1 = x0 + die.WidthUm;
+    double y1 = y0 + die.HeightUm;
+
+    return x0 * x0 + y0 * y0 <= radiusSq
+        && x1 * x1 + y0 * y0 <= radiusSq
+        && x0 * x0 + y1 * y1 <= radiusSq
+        && x1 * x1 + y1 * y1 <= radiusSq;
   }
 }

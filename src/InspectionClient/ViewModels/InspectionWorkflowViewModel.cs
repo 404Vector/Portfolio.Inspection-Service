@@ -17,10 +17,10 @@ namespace InspectionClient.ViewModels;
 ///
 /// 책임:
 ///   - IRecipeRepository에서 Recipe 로드
+///   - IWaferInfoRepository에서 Wafer 로드
 ///   - IInspectionService를 통한 검사 실행
 ///   - 실시간 WaferMap 상태 업데이트
 ///   - 완료된 검사 결과를 IInspectionResultRepository에 저장
-///   - 검사 결과 목록 표시
 /// </summary>
 public partial class InspectionWorkflowViewModel : ViewModelBase
 {
@@ -29,13 +29,12 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
   private readonly IInspectionService          _inspectionService;
   private readonly IWaferInfoRepository        _waferRepository;
 
-  private WaferSurfaceInspectionRecipe? _loadedRecipe;
-  private WaferInfo?                    _loadedWafer;
-  private DateTimeOffset                _inspectionStartedAt;
+  private DateTimeOffset _inspectionStartedAt;
 
   // ── 상태 표시 ──────────────────────────────────────────────────────────
 
-  [ObservableProperty] private string _recipeSummary = "(없음 — Recipe 목록에서 선택하세요)";
+  [ObservableProperty] private string _recipeSummary = "(Recipe를 선택하세요)";
+  [ObservableProperty] private string _waferSummary  = "(Wafer를 선택하세요)";
   [ObservableProperty] private string _progressText  = string.Empty;
   [ObservableProperty] private double _progressRatio;
 
@@ -55,19 +54,27 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── Recipe 목록 패널 ─────────────────────────────────────────────────
 
-  public ObservableCollection<WaferSurfaceInspectionRecipe> RecipeList { get; } = new();
+  public ObservableCollection<RecipeRow> RecipeList { get; } = new();
 
   [ObservableProperty]
   [NotifyCanExecuteChangedFor(nameof(LoadSelectedRecipeCommand))]
-  private WaferSurfaceInspectionRecipe? _selectedRecipe;
-
-  // ── 검사 결과 목록 패널 ──────────────────────────────────────────────
-
-  public ObservableCollection<InspectionResultEntry> ResultList { get; } = new();
+  private RecipeRow? _selectedRecipe;
 
   [ObservableProperty]
-  [NotifyCanExecuteChangedFor(nameof(DeleteSelectedResultCommand))]
-  private InspectionResultEntry? _selectedResult;
+  [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+  private RecipeRow? _loadedRecipe;
+
+  // ── Wafer 목록 패널 ──────────────────────────────────────────────────
+
+  public ObservableCollection<WaferInfoRow> WaferList { get; } = new();
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(LoadSelectedWaferCommand))]
+  private WaferInfoRow? _selectedWafer;
+
+  [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+  private WaferInfoRow? _loadedWafer;
 
   public InspectionWorkflowViewModel(
       IRecipeRepository           recipeRepository,
@@ -84,6 +91,9 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
     _inspectionService.ProgressChanged += OnProgressChanged;
     _inspectionService.Completed       += OnCompleted;
+
+    _ = RefreshRecipeListAsync();
+    _ = RefreshWaferListAsync();
   }
 
   // ── 검사 이벤트 핸들러 ────────────────────────────────────────────────
@@ -118,20 +128,19 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
     ProgressText = e.Cancelled ? "중단됨" : "완료";
 
     await SaveResultAsync(e.Cancelled);
-    await RefreshResultListAsync();
   }
 
   private async Task SaveResultAsync(bool cancelled)
   {
-    if (_loadedRecipe is null) return;
+    if (LoadedRecipe?.Recipe is null || LoadedWafer is null) return;
 
     var status = cancelled
         ? Core.Enums.InspectionStatus.Aborted
         : Core.Enums.InspectionStatus.Pass;
 
     var result = new WaferSurfaceInspectionResult(
-      RecipeName:   _loadedRecipe.RecipeName,
-      WaferId:      _loadedRecipe.WaferId,
+      RecipeName:   LoadedRecipe.Recipe.RecipeName,
+      WaferId:      LoadedWafer.WaferId,
       Status:       status,
       StartedAt:    _inspectionStartedAt,
       CompletedAt:  DateTimeOffset.UtcNow,
@@ -150,14 +159,16 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
 
   // ── 커맨드 ─────────────────────────────────────────────────────────────
 
-  private bool CanStart() => !IsRunning && _loadedRecipe is not null && _loadedWafer is not null;
+  private bool CanStart() => !IsRunning
+      && LoadedRecipe?.Recipe is not null
+      && LoadedWafer is not null;
   private bool CanStop()  => IsRunning;
 
   [RelayCommand(CanExecute = nameof(CanStart))]
   private async Task StartAsync() => await Execute(async () =>
   {
-    var recipe = _loadedRecipe!;
-    var wafer  = _loadedWafer!;
+    var recipe = LoadedRecipe!.Recipe;
+    var wafer  = LoadedWafer!.ToWaferInfo();
     ResetMap();
     IsRunning            = true;
     _inspectionStartedAt = DateTimeOffset.UtcNow;
@@ -177,53 +188,63 @@ public partial class InspectionWorkflowViewModel : ViewModelBase
     var list = await _recipeRepository.ListAsync();
     RecipeList.Clear();
     foreach (var row in list)
-      RecipeList.Add(row.Recipe);
+      RecipeList.Add(row);
   }, nameof(RefreshRecipeListAsync));
 
   /// <summary>선택된 Recipe를 검사에 연결한다.</summary>
   [RelayCommand(CanExecute = nameof(HasSelectedRecipe))]
-  private async Task LoadSelectedRecipeAsync() => await Execute(async () =>
+  private void LoadSelectedRecipe() => Execute(() =>
   {
-    await SetRecipeAsync(SelectedRecipe!);
-  }, nameof(LoadSelectedRecipeAsync));
+    LoadedRecipe  = SelectedRecipe!;
+    var r = LoadedRecipe.Recipe;
+    RecipeSummary = $"{r.RecipeName} | FOV {r.Fov.WidthUm:0}×{r.Fov.HeightUm:0} µm";
+  }, nameof(LoadSelectedRecipe));
 
-  /// <summary>검사 결과 DB 목록을 새로고침한다.</summary>
+  /// <summary>Recipe 선택을 해제한다.</summary>
   [RelayCommand]
-  private async Task RefreshResultListAsync() => await Execute(async () =>
+  private void UnloadRecipe() => Execute(() =>
   {
-    var list = await _resultRepository.ListEntriesAsync();
-    ResultList.Clear();
-    foreach (var item in list)
-      ResultList.Add(item);
-  }, nameof(RefreshResultListAsync));
+    LoadedRecipe  = null;
+    RecipeSummary = "(Recipe를 선택하세요)";
+  }, nameof(UnloadRecipe));
 
-  /// <summary>선택된 검사 결과를 DB에서 삭제한다.</summary>
-  [RelayCommand(CanExecute = nameof(HasSelectedResult))]
-  private async Task DeleteSelectedResultAsync() => await Execute(async () =>
+  /// <summary>Wafer DB 목록을 새로고침한다.</summary>
+  [RelayCommand]
+  private async Task RefreshWaferListAsync() => await Execute(async () =>
   {
-    var toDelete = SelectedResult!;
-    await _resultRepository.DeleteAsync(toDelete.ResultId);
-    SelectedResult = null;
-    await RefreshResultListAsync();
-  }, nameof(DeleteSelectedResultAsync));
+    var list = await _waferRepository.ListAsync();
+    WaferList.Clear();
+    foreach (var row in list)
+      WaferList.Add(row);
+  }, nameof(RefreshWaferListAsync));
+
+  /// <summary>선택된 Wafer를 검사에 연결한다.</summary>
+  [RelayCommand(CanExecute = nameof(HasSelectedWafer))]
+  private void LoadSelectedWafer() => Execute(() =>
+  {
+    LoadedWafer  = SelectedWafer!;
+    var wafer    = LoadedWafer.ToWaferInfo();
+    WaferSummary = $"{wafer.WaferId} | {wafer.WaferType}";
+    DieMap       = DieMap.From(wafer);
+    ResetMap();
+  }, nameof(LoadSelectedWafer));
+
+  /// <summary>Wafer 선택을 해제한다.</summary>
+  [RelayCommand]
+  private void UnloadWafer() => Execute(() =>
+  {
+    LoadedWafer  = null;
+    WaferSummary = "(Wafer를 선택하세요)";
+    DieMap       = null;
+    ResetMap();
+  }, nameof(UnloadWafer));
 
   // ── CanExecute 헬퍼 ───────────────────────────────────────────────────
 
   private bool HasSelectedRecipe => SelectedRecipe is not null;
-  private bool HasSelectedResult => SelectedResult is not null;
+  private bool HasSelectedWafer  => SelectedWafer is not null;
 
   // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
-
-  private async Task SetRecipeAsync(WaferSurfaceInspectionRecipe recipe)
-  {
-    var waferRow = await _waferRepository.FindByWaferIdAsync(recipe.WaferId);
-    _loadedWafer  = waferRow?.ToWaferInfo();
-    _loadedRecipe = recipe;
-    RecipeSummary = $"{recipe.RecipeName} | {recipe.WaferId} | FOV {recipe.Fov.WidthUm:0}×{recipe.Fov.HeightUm:0} µm";
-    DieMap        = _loadedWafer is not null ? DieMap.From(_loadedWafer) : null;
-    StartCommand.NotifyCanExecuteChanged();
-    ResetMap();
-  }
 
   private void ResetMap()
   {

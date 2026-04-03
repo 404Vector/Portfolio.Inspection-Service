@@ -55,7 +55,7 @@ public sealed class MockInspectionService : IInspectionService
     try
     {
       var dieMap = DieMap.From(wafer);
-      var dies   = dieMap.Dies;
+      var dies   = dieMap.ActiveDies;
       int total  = dies.Count;
 
       for (int i = 0; i < total; i++)

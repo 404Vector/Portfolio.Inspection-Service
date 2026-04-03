@@ -96,7 +96,7 @@ internal static class Startup
         services.AddSingleton<RecipeSetupWorkflowViewModel>();
         services.AddSingleton<SetupWorkflowViewModel>();
         services.AddSingleton<InspectionWorkflowViewModel>();
-        services.AddTransient<HistoryViewModel>();
+        services.AddSingleton<HistoryViewModel>();
         services.AddTransient<FileFrameGrabberViewModel>();
         services.AddTransient<FrameGrabberViewModelBase>(sp => sp.GetRequiredService<FileFrameGrabberViewModel>());
         services.AddTransient<AppSettingViewModel>();

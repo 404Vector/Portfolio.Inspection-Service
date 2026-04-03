@@ -16,7 +16,7 @@
                              Header="SAVED PARAMETERS"
                              ItemsSource="{Binding Items}"
                              SelectedItem="{Binding SelectedItem}"
-                             LoadedItem="{Binding LoadedItem, Mode=TwoWay}"
+                             LoadedItem="{Binding LoadedItem}"
                              LoadCommand="{Binding LoadCommand}"
                              CreateCommand="{Binding CreateCommand}"
                              DeleteCommand="{Binding DeleteCommand}"

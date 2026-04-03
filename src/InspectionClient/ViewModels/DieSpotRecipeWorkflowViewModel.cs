@@ -110,7 +110,6 @@ public partial class DieSpotRecipeWorkflowViewModel : DbTableWorkflowViewModelBa
   private DieSpotInspectionRecipe BuildRecipe() => new(
     RecipeName:  RecipeName,
     Description: Description,
-    WaferId:     LoadedItem?.Recipe.WaferId ?? string.Empty,
     Fov:         new FovSize(FovWidthUm, FovHeightUm),
     ShotCenter:  new WaferCoordinate(ShotCenterXum, ShotCenterYum),
     Threshold:   Threshold,

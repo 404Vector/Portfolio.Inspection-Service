@@ -15,7 +15,7 @@ namespace InspectionClient.Services;
 public sealed class InspectionDatabase : IDisposable
 {
   // 스키마 변경 시 이 값을 증가시키면 다음 실행 시 DB가 자동으로 재생성됩니다.
-  private const int SchemaVersion = 5;
+  private const int SchemaVersion = 6;
 
   private SqliteConnection _connection;
 
@@ -89,7 +89,6 @@ public sealed class InspectionDatabase : IDisposable
       CREATE TABLE IF NOT EXISTS Recipe (
         Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         Name      TEXT    NOT NULL UNIQUE,
-        WaferId   TEXT    NOT NULL,
         CreatedAt TEXT    NOT NULL,
         Json      TEXT    NOT NULL
       )
@@ -99,7 +98,6 @@ public sealed class InspectionDatabase : IDisposable
       CREATE TABLE IF NOT EXISTS DieSpotRecipe (
         Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         Name      TEXT    NOT NULL UNIQUE,
-        WaferId   TEXT    NOT NULL,
         CreatedAt TEXT    NOT NULL,
         Json      TEXT    NOT NULL
       )
@@ -222,11 +220,9 @@ public sealed class InspectionDatabase : IDisposable
 
   private void SeedRecipe(SqliteTransaction tx)
   {
-    var dummy  = Core.Models.WaferInfo.CreateDummy();
     var recipe = new InspectionRecipe.Models.WaferSurfaceInspectionRecipe(
       RecipeName:  "SEED-RECIPE",
       Description: "Seed dummy recipe",
-      WaferId:     dummy.WaferId,
       Fov:         new Core.Models.FovSize(1413.0, 1035.0)
     );
     var json      = Serialize(recipe);
@@ -235,11 +231,10 @@ public sealed class InspectionDatabase : IDisposable
     using var cmd = _connection.CreateCommand();
     cmd.Transaction = tx;
     cmd.CommandText = """
-      INSERT INTO Recipe (Name, WaferId, CreatedAt, Json)
-      VALUES ($name, $waferId, $createdAt, $json)
+      INSERT INTO Recipe (Name, CreatedAt, Json)
+      VALUES ($name, $createdAt, $json)
       """;
     cmd.Parameters.AddWithValue("$name",      recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
     cmd.ExecuteNonQuery();

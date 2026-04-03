@@ -27,7 +27,6 @@ public sealed class SqliteDieSpotRecipeRepository : IDieSpotRecipeRepository
     var recipe    = new DieSpotInspectionRecipe(
       RecipeName:  name,
       Description: string.Empty,
-      WaferId:     string.Empty,
       Fov:         new FovSize(1413.0, 1035.0),
       ShotCenter:  WaferCoordinate.Origin);
     var createdAt = DateTimeOffset.UtcNow.ToString("O");
@@ -35,12 +34,11 @@ public sealed class SqliteDieSpotRecipeRepository : IDieSpotRecipeRepository
 
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
-      INSERT INTO DieSpotRecipe (Name, WaferId, CreatedAt, Json)
-      VALUES ($name, $waferId, $createdAt, $json)
+      INSERT INTO DieSpotRecipe (Name, CreatedAt, Json)
+      VALUES ($name, $createdAt, $json)
       RETURNING Id
       """;
     cmd.Parameters.AddWithValue("$name",      name);
-    cmd.Parameters.AddWithValue("$waferId",   recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
 
@@ -84,12 +82,11 @@ public sealed class SqliteDieSpotRecipeRepository : IDieSpotRecipeRepository
     await using var cmd = _db.Connection.CreateCommand();
     cmd.CommandText = """
       UPDATE DieSpotRecipe
-      SET Name = $name, WaferId = $waferId, CreatedAt = $createdAt, Json = $json
+      SET Name = $name, CreatedAt = $createdAt, Json = $json
       WHERE Id = $id
       """;
     cmd.Parameters.AddWithValue("$id",        item.Id);
     cmd.Parameters.AddWithValue("$name",      item.Recipe.RecipeName);
-    cmd.Parameters.AddWithValue("$waferId",   item.Recipe.WaferId);
     cmd.Parameters.AddWithValue("$createdAt", createdAt);
     cmd.Parameters.AddWithValue("$json",      json);
     await cmd.ExecuteNonQueryAsync(ct);
