@@ -2,6 +2,7 @@ using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Core.Enums;
 using Core.Models;
+using InspectionClient.Interfaces;
 
 namespace InspectionClient.Models;
 
@@ -11,7 +12,7 @@ namespace InspectionClient.Models;
 /// WaferInfo 필드를 flat하게 보유하여 View에서 직접 바인딩 가능하다.
 /// DieParametersId: 연결된 DieRenderingParameters의 FK (nullable).
 /// </summary>
-public sealed class WaferInfoRow : ObservableObject
+public sealed class WaferInfoRow : ObservableObject, IRowId
 {
   public long   Id   { get; init; }
   public string Name { get; set; } = string.Empty;
