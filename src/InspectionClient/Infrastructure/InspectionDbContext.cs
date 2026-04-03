@@ -1,18 +1,13 @@
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Core.Enums;
 using Core.Models;
 using InspectionClient.Infrastructure.Entities;
+using InspectionClient.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace InspectionClient.Infrastructure;
 
 public class InspectionDbContext : DbContext {
-  private static readonly JsonSerializerOptions JsonOptions = new() {
-    WriteIndented = false,
-    Converters = { new JsonStringEnumConverter() },
-  };
 
   public DbSet<RecipeEntity> Recipes => Set<RecipeEntity>();
   public DbSet<DieSpotRecipeEntity> DieSpotRecipes => Set<DieSpotRecipeEntity>();
@@ -151,5 +146,5 @@ public class InspectionDbContext : DbContext {
   }
 
   private static string Serialize<T>(T value) =>
-      JsonSerializer.Serialize(value, JsonOptions);
+      System.Text.Json.JsonSerializer.Serialize(value, RepositoryJsonOptions.Default);
 }

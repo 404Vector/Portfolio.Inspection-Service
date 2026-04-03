@@ -15,10 +15,18 @@ gRPC **클라이언트**로서 `FrameGrabberService`, `InspectionService`와 통
 
 현재 구현된 ViewModel:
 - `ViewModelBase` — 공통 로깅/Execute 래퍼
-- `MainWindowViewModel` — 탭 내비게이션 및 타이틀 관리
-- `InspectionViewModel` — 검사 화면
-- `HistoryViewModel` — 이력 화면
-- `OpticSettingViewModel` — 광학계 설정 화면
+- `DbTableWorkflowViewModelBase<TRow>` — DbTableControl 기반 CRUD 워크플로 공통 베이스
+- `MainViewModel` — 탭 내비게이션 및 타이틀 관리 (Shell)
+- `SetupWorkflowViewModel` — Setup 섹션 Shell (Die/Wafer/Recipe 탭)
+- `RecipeSetupWorkflowViewModel` — Recipe Setup Shell (WaferSurface/DieSpot 탭)
+- `InspectionWorkflowViewModel` — 검사 실행 화면
+- `HistoryViewModel` — 검사 이력 화면
+- `DieSetupWorkflowViewModel` — Die 파라미터 CRUD
+- `WaferSetupWorkflowViewModel` — Wafer 정보 CRUD
+- `WaferSurfaceRecipeWorkflowViewModel` — Wafer Surface Recipe CRUD
+- `DieSpotRecipeWorkflowViewModel` — Die Spot Recipe CRUD
+- `FrameGrabberViewModelBase` / `FileFrameGrabberViewModel` — 프레임 그래버 제어
+- `EquipmentSpecViewModel` — 장비 스펙 조회
 - `AppSettingViewModel` — 앱 설정 화면
 
 ## 제외 대상
