@@ -2,16 +2,17 @@
 
 ## 역할
 
-카메라 또는 이미지 소스에서 프레임을 획득하고 **SharedMemory 링버퍼에 기록하는 gRPC 서버 (Producer)**.
+클라이언트로부터 웨이퍼 이미지와 ScanPlan을 전달받아 Shot별 FOV 영역을 crop하여 프레임을 생성하고,
+**SharedMemory 링버퍼에 기록하는 gRPC 서버 (Producer)**.
 gRPC를 통해 클라이언트가 Frame Grabber를 제어(설정, 획득 시작/정지, SW 트리거)하고 프레임 스트림을 구독할 수 있다.
 
 ## 포함 대상
 
 - gRPC 서버 구현 (`framegrabber.proto` 기반, 네임스페이스: `VirtualFrameGrabberServer.Grpc`)
-- `Grabbers/` — `IFrameGrabber` 구현체
-  - `FileFrameGrabber` — 스토리지 이미지를 읽어 그랩 이벤트를 발생시키는 구현체
-  - `FramePump` — `IFrameGrabber` → `SharedMemoryRingBuffer` 단일 프로듀서 (순수 클래스, lifecycle은 gRPC 서비스가 제어)
+- `Services/VirtualFrameGrabberService` — ScanPlan 기반 IFrameGrabber 구현체. 웨이퍼 이미지에서 Shot별 crop 수행.
+- `Services/FramePumpHostedService` — `IFrameGrabber` → `SharedMemoryRingBuffer` 단일 프로듀서 (lifecycle은 gRPC 서비스가 제어)
 - `Services/FrameGrabberGrpcService` — gRPC RPC 구현 및 FramePump 오케스트레이션
+- `Services/GrabberParameterStoreService` — 파라미터 레지스트리 및 GrabberConfig 바인딩
 
 ## 제외 대상
 
@@ -29,12 +30,26 @@ VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 
 - `InspectionServer`, `InspectionClient` 프로젝트를 참조하지 않는다.
 
+## VirtualFrameGrabberService 동작 흐름
+
+1. 클라이언트가 `SetParameterWithStream("wafer_image", ...)` 으로 웨이퍼 이미지(RAW 바이트) 전달
+2. 클라이언트가 `SetParameterWithStream("scan_plan", JSON bytes)` 으로 ScanPlan 전달 → FOV 크기에서 Width/Height 자동 계산
+3. `StartAcquisition` → Boustrophedon 순서로 Shot 순회 시작
+4. 각 Shot: 물리좌표(µm) → 픽셀좌표 변환 → 웨이퍼 이미지에서 FOV 영역 crop → GrabbedFrame 생성
+5. 모든 Shot 완료 시 자동으로 Idle 상태 전환
+
+### 좌표 변환
+
+- 이미지 관례: 원점 = 좌상단, Y↓
+- 웨이퍼 좌표: 원점 = 중심, Y↑
+- `scaleX = imageWidth_px / (2 × radiusUm)`, `scaleY = imageHeight_px / (2 × radiusUm)`
+- `pixelX = (waferXum + radiusUm) × scaleX`, `pixelY = (radiusUm − waferYum) × scaleY`
+
 ## FramePump lifecycle
 
-- `FramePump`는 `BackgroundService`를 상속하지 않는 순수 클래스 (`IAsyncDisposable` 구현).
-- `StartAcquisition` RPC → `_grabber.StartAsync()` 후 `_pump.Start()` 호출.
-- `StopAcquisition` RPC → `_pump.StopAsync()` 후 `_grabber.StopAsync()` 호출.
-- 앱 종료 시 `Program.cs`의 `ApplicationStopping` 훅에서 `_pump.StopAsync()` 호출.
+- `FramePumpHostedService`는 `IHostedService` 구현. 앱 종료 시 Hosting이 StopAsync를 호출.
+- `StartAcquisition` RPC → `_grabber.StartAsync()` 후 `_pump.StartPump()` 호출.
+- `StopAcquisition` RPC → `_pump.StopPumpAsync()` 후 `_grabber.StopAsync()` 호출.
 - `Start` / `StopAsync`는 `lock`으로 보호하여 SPSC 전제를 보장한다.
 - `FrameWritten` 이벤트 — 프레임이 링버퍼에 기록된 직후 발행. SW 트리거 등 단일 프레임 완료 대기에 사용.
 
@@ -47,17 +62,28 @@ VirtualFrameGrabberServer → Grpc.AspNetCore (NuGet, gRPC 호스팅용)
 ## 동적 파라미터 / 명령
 
 - `IFrameGrabber.GetParameters()` / `GetCommands()`로 구현체가 지원하는 항목을 노출한다.
-- gRPC: `GetCapabilities`, `GetParameter`, `SetParameter`, `ExecuteCommand` RPC로 클라이언트에 노출.
-- `ParameterValue`는 `oneof(int64, double, bool, string)` — proto 타입은 `Core.Grpc.FrameGrabber` 네임스페이스.
+- gRPC: `GetCapabilities`, `GetParameter`, `SetParameter`, `SetParameterWithStream`, `ExecuteCommand` RPC로 클라이언트에 노출.
+- `ParameterValue`는 `oneof(int64, double, bool, string, bytes)` — proto 타입은 `Core.Grpc.FrameGrabber` 네임스페이스.
+- `SetParameterWithStream` — Client Streaming RPC. 대용량 바이너리 데이터(웨이퍼 이미지 등)를 chunk 단위로 전송.
+
+### 지원 파라미터
+
+| 키 | 타입 | 설명 |
+|---|---|---|
+| `frame_rate_hz` | Double | 연속 모드 프레임 레이트 (1.0–1000.0 Hz) |
+| `pixel_format` | String | 출력 픽셀 포맷 (Mono8/Rgb8/Bgr8) |
+| `acquisition_mode` | String | 획득 모드 (Continuous/Triggered) |
+| `wafer_image` | Bytes | 웨이퍼 이미지 RAW 바이트 (`SetParameterWithStream` 사용) |
+| `scan_plan` | Bytes | ScanPlan JSON (UTF-8 bytes, `SetParameterWithStream` 사용) |
 
 ## 설계 원칙
 
 - `IFrameGrabber` 구현체는 SRP에 따라 프레임 생성 책임만 가진다 — 링버퍼 접근 금지.
-- `FramePump`는 `IFrameGrabber`와 `SharedMemoryRingBuffer` 사이의 단일 책임 어댑터다.
+- `FramePumpHostedService`는 `IFrameGrabber`와 `SharedMemoryRingBuffer` 사이의 단일 책임 어댑터다.
 - gRPC 서비스 메서드는 얇게 유지한다: 입력 파싱 → 도메인 객체 호출 → 응답 매핑. 비즈니스 로직은 서비스 메서드 내부에 작성하지 않는다.
 
 ## 네임스페이스
 
-- `VirtualFrameGrabberServer.Grabbers` — 구현체
-- `VirtualFrameGrabberServer.Services` — gRPC 서비스
+- `VirtualFrameGrabberServer.Services` — 서비스 구현체, gRPC 서비스
+- `VirtualFrameGrabberServer.Utils` — 매퍼 유틸리티
 - `Core.Grpc.FrameGrabber` — proto 생성 코드 (`Core.Grpc` 프로젝트, `csharp_namespace`)

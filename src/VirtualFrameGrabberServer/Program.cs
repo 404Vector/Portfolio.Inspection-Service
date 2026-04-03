@@ -15,9 +15,8 @@ builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSe
 // ── Frame Grabber ────────────────────────────────────────────────────────────
 // IFrameGrabber 구현체를 교체하는 것으로 실제 카메라로 전환 가능
 builder.Services.AddSingleton<GradientFrameSynthesizerService>();
-builder.Services.AddSingleton<FileImageFrameSynthesizerService>();
 builder.Services.AddSingleton<GrabberParameterStoreService>();
-builder.Services.AddSingleton<IFrameGrabber, VirtualFrameGrabberServer.Services.VirtualFrameGrabberServer>();
+builder.Services.AddSingleton<IFrameGrabber, VirtualFrameGrabberService>();
 
 // ── Shared Memory Ring Buffer ────────────────────────────────────────────────
 var ringBufferOptions = builder.Configuration

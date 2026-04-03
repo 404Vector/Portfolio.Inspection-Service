@@ -261,6 +261,45 @@ public sealed class FrameGrabberGrpcService : FrameGrabber.FrameGrabberBase
     }
   }
 
+  // ── 대용량 파라미터 스트리밍 RPC ────────────────────────────────────────────
+
+  public override async Task<SetParameterResponse> SetParameterWithStream(
+      IAsyncStreamReader<SetParameterChunk> requestStream, ServerCallContext context)
+  {
+    string? key = null;
+    long totalSize = 0;
+    byte[]? buffer = null;
+
+    try
+    {
+      await foreach (var chunk in requestStream.ReadAllAsync(context.CancellationToken))
+      {
+        key ??= chunk.Key;
+
+        if (buffer is null)
+        {
+          totalSize = chunk.TotalSize;
+          buffer    = new byte[totalSize];
+        }
+
+        chunk.Data.CopyTo(buffer, (int)chunk.Offset);
+      }
+
+      if (buffer is null || key is null)
+        return new SetParameterResponse { Success = false, Message = "No data received." };
+
+      var value = new Core.FrameGrabber.Models.ParameterValue.BytesValue(buffer);
+      await _grabber.SetParameterAsync(key, value, context.CancellationToken);
+      _logger.LogInformation("SetParameterWithStream: key={Key} totalSize={Size}", key, totalSize);
+      return new SetParameterResponse { Success = true };
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "SetParameterWithStream failed");
+      return new SetParameterResponse { Success = false, Message = ex.Message };
+    }
+  }
+
   public override async Task<ProtoCommandResult> ExecuteCommand(
       ExecuteCommandRequest request, ServerCallContext context)
   {

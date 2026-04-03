@@ -17,6 +17,9 @@ service FrameGrabber {
   rpc GetParameter      (GetParameterRequest)     returns (GetParameterResponse);
   rpc SetParameter      (SetParameterRequest)     returns (SetParameterResponse);
   rpc ExecuteCommand    (ExecuteCommandRequest)   returns (CommandResult);
+
+  // ── 대용량 파라미터 (Client Streaming) ───────────────────────────────────
+  rpc SetParameterWithStream (stream SetParameterChunk) returns (SetParameterResponse);
 }
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -47,6 +50,7 @@ enum ParameterValueType {
   PARAMETER_VALUE_TYPE_DOUBLE      = 2;
   PARAMETER_VALUE_TYPE_BOOL        = 3;
   PARAMETER_VALUE_TYPE_STRING      = 4;
+  PARAMETER_VALUE_TYPE_BYTES       = 5;
 }
 
 // ── Common value type ─────────────────────────────────────────────────────────
@@ -57,6 +61,7 @@ message ParameterValue {
     double double_val = 2;
     bool   bool_val   = 3;
     string string_val = 4;
+    bytes  bytes_val  = 5;
   }
 }
 
@@ -139,6 +144,15 @@ message SetParameterRequest {
 message SetParameterResponse {
   bool   success = 1;
   string message = 2;
+}
+
+// ── Streaming parameter (large payload) ───────────────────────────────────────
+
+message SetParameterChunk {
+  string key        = 1;  // 파라미터 키 (모든 chunk에 동일한 값)
+  bytes  data       = 2;  // 데이터 chunk
+  int64  offset     = 3;  // 전체 데이터 내 바이트 오프셋
+  int64  total_size = 4;  // 전체 데이터 크기 (첫 chunk에서 설정)
 }
 
 // ── Command execution ─────────────────────────────────────────────────────────

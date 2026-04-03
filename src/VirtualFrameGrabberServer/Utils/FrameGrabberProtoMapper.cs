@@ -71,6 +71,7 @@ internal static class FrameGrabberProtoMapper
     DomainParameterValueType.Double => ProtoParameterValueType.Double,
     DomainParameterValueType.Bool   => ProtoParameterValueType.Bool,
     DomainParameterValueType.String => ProtoParameterValueType.String,
+    DomainParameterValueType.Bytes  => ProtoParameterValueType.Bytes,
     _                               => ProtoParameterValueType.Unspecified
   };
 
@@ -96,6 +97,7 @@ internal static class FrameGrabberProtoMapper
     DomainParameterValue.DoubleValue d => new ProtoParameterValue { DoubleVal = d.Value },
     DomainParameterValue.BoolValue   b => new ProtoParameterValue { BoolVal   = b.Value },
     DomainParameterValue.StringValue s => new ProtoParameterValue { StringVal = s.Value },
+    DomainParameterValue.BytesValue  b => new ProtoParameterValue { BytesVal  = Google.Protobuf.ByteString.CopyFrom(b.Value) },
     _                                  => new ProtoParameterValue()
   };
 
@@ -106,6 +108,7 @@ internal static class FrameGrabberProtoMapper
         ProtoParameterValue.ValueOneofCase.DoubleVal => new DomainParameterValue.DoubleValue(proto.DoubleVal),
         ProtoParameterValue.ValueOneofCase.BoolVal   => new DomainParameterValue.BoolValue(proto.BoolVal),
         ProtoParameterValue.ValueOneofCase.StringVal => new DomainParameterValue.StringValue(proto.StringVal),
+        ProtoParameterValue.ValueOneofCase.BytesVal  => new DomainParameterValue.BytesValue(proto.BytesVal.ToByteArray()),
         _ => throw new ArgumentException("ParameterValue has no value set")
       };
 

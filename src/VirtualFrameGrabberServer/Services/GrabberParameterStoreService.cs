@@ -5,16 +5,14 @@ namespace VirtualFrameGrabberServer.Services;
 
 /// <summary>
 /// IFrameGrabber 파라미터 레지스트리와 GrabberConfig 바인딩을 담당한다.
-/// GrabberConfig에 매핑되지 않는 파라미터(source_mode, image_path)는
-/// 이 클래스가 상태를 보관하고, 처리는 VirtualFrameGrabberServer가 담당한다.
+/// source_mode 상태를 보관하며, wafer_image / scan_plan은 VirtualFrameGrabberService가 직접 처리한다.
 /// </summary>
 public sealed class GrabberParameterStoreService
 {
-  // ── source_mode / image_path 상태 ────────────────────────────────────────
+  // ── source_mode 상태 ─────────────────────────────────────────────────────
   // GrabberConfig에 속하지 않으므로 여기서 직접 보관한다.
 
   public string SourceMode { get; private set; } = "gradient";
-  public string ImagePath  { get; private set; } = string.Empty;
 
   // ── 파라미터 레지스트리 ───────────────────────────────────────────────────
 
@@ -26,7 +24,8 @@ public sealed class GrabberParameterStoreService
     new("pixel_format",     "Pixel Format",       ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Mono8"),
     new("acquisition_mode", "Acquisition Mode",   ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "Continuous"),
     new("source_mode",      "Source Mode",        ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: "gradient"),
-    new("image_path",       "Image Path",         ParameterValueType.String, MinValue: null, MaxValue: null,   DefaultValue: ""),
+    new("wafer_image",      "Wafer Image",        ParameterValueType.Bytes,  MinValue: null, MaxValue: null,   DefaultValue: null),
+    new("scan_plan",        "Scan Plan (JSON)",   ParameterValueType.Bytes,  MinValue: null, MaxValue: null,   DefaultValue: null),
   ];
 
   public IReadOnlyList<ParameterDescriptor> GetParameters() => SupportedParameters;
@@ -39,13 +38,14 @@ public sealed class GrabberParameterStoreService
     "pixel_format"     => new ParameterValue.StringValue(config.PixelFormat.ToString()),
     "acquisition_mode" => new ParameterValue.StringValue(config.Mode.ToString()),
     "source_mode"      => new ParameterValue.StringValue(SourceMode),
-    "image_path"       => new ParameterValue.StringValue(ImagePath),
+    "wafer_image"      => new ParameterValue.StringValue("(binary data)"),
+    "scan_plan"        => new ParameterValue.StringValue("(see SetParameter)"),
     _                  => throw new KeyNotFoundException($"Unknown parameter: '{key}'")
   };
 
   /// <summary>
   /// GrabberConfig에 매핑되는 파라미터를 적용한 새 GrabberConfig를 반환한다.
-  /// source_mode / image_path는 이 메서드로 처리하지 않는다 — ApplySynthesizerParameter()를 사용한다.
+  /// source_mode / wafer_image / scan_plan / acquisition_mode는 별도 처리한다.
   /// </summary>
   public GrabberConfig ApplyParameter(GrabberConfig config, string key, ParameterValue value) =>
     key switch
@@ -74,30 +74,20 @@ public sealed class GrabberParameterStoreService
     };
 
   /// <summary>
-  /// source_mode / image_path 파라미터를 적용한다.
+  /// source_mode 파라미터를 적용한다.
   /// 처리 대상이면 true, 해당 없으면 false를 반환한다.
   /// </summary>
-  public bool ApplySynthesizerParameter(string key, ParameterValue value)
+  public bool ApplySourceModeParameter(string key, ParameterValue value)
   {
-    switch (key)
-    {
-      case "source_mode":
-        if (value is not ParameterValue.StringValue sm)
-          throw new ArgumentException($"Expected String for '{key}'");
-        if (sm.Value is not ("gradient" or "file"))
-          throw new ArgumentException($"Invalid source_mode '{sm.Value}'. Valid values: gradient, file");
-        SourceMode = sm.Value;
-        return true;
+    if (key != "source_mode") return false;
 
-      case "image_path":
-        if (value is not ParameterValue.StringValue ip)
-          throw new ArgumentException($"Expected String for '{key}'");
-        ImagePath = ip.Value;
-        return true;
+    if (value is not ParameterValue.StringValue sm)
+      throw new ArgumentException($"Expected String for '{key}'");
+    if (sm.Value is not ("gradient" or "scan"))
+      throw new ArgumentException($"Invalid source_mode '{sm.Value}'. Valid values: gradient, scan");
 
-      default:
-        return false;
-    }
+    SourceMode = sm.Value;
+    return true;
   }
 
   private static T ValidateRange<T>(T value, T min, T max, string key)
